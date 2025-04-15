@@ -9,48 +9,58 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4; /* Светлый фон */
+            background-color: #f4f4f4;
         }
         header {
-            background-color: #003366; /* Темно-синий фон */
-            color: #ffffff; /* Белый текст */
+            background-color: #003366;
+            color: #ffffff;
             padding: 15px 20px;
             display: flex;
-            justify-content: space-between; /* Разделение логотипа и меню */
+            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Тень для шапки */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         .logo {
-            font-size: 28px; /* Размер шрифта логотипа */
+            font-size: 28px;
             font-weight: bold;
         }
         .sidebar {
-            width: 200px; /* Ширина боковой панели */
-            background-color: #ffffff; /* Белый фон */
+            width: 200px;
+            background-color: #ffffff;
             padding: 15px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Тень для боковой панели */
-            position: fixed; /* Фиксированное положение */
-            top: 60px; /* Отступ от верхней части страницы */
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 60px;
             left: 0;
-            height: calc(100% - 60px); /* Высота боковой панели */
+            height: calc(100% - 60px);
         }
         .sidebar a {
-            display: block; /* Отображение ссылок как блоки */
-            color: #003366; /* Темный цвет текста */
+            display: block;
+            color: #003366;
             text-decoration: none;
             padding: 10px;
-            margin-bottom: 10px; /* Отступ между ссылками */
-            border-radius: 4px; /* Радиус углов */
+            margin-bottom: 10px;
+            border-radius: 4px;
             transition: background-color 0.3s;
         }
         .sidebar a:hover {
-            background-color: #f0f0f0; /* Светлее при наведении */
+            background-color: #f0f0f0;
         }
         .dropdown {
-            display: none; /* Скрываем выпадающие списки по умолчанию */
+            display: none;
             margin-top: 10px;
             padding-left: 15px;
-            border-left: 2px solid #003366; /* Отступ для визуального разделения */
+            border-left: 2px solid #003366;
+        }
+        @media (max-width: 600px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            main {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
@@ -59,20 +69,20 @@
         <div class="logo">Полезная информация</div>
     </header>
 
-    <div class="sidebar">
+    <nav class="sidebar" role="navigation">
         <a href="#" onclick="toggleDropdown('verificationList')">Поверка</a>
-        <div id="verificationList" class="dropdown">
+        <div id="verificationList" class="dropdown" aria-hidden="true">
             <p>1. Метод A</p>
             <p>2. Метод B</p>
             <p>3. Метод C</p>
         </div>
         <a href="#" onclick="toggleDropdown('calibrationList')">Калибровка</a>
-        <div id="calibrationList" class="dropdown">
+        <div id="calibrationList" class="dropdown" aria-hidden="true">
             <p><a href="calibration.html" target="_blank">Методики калибровки и стандартные неопределенности ИТЭ</a></p>
             <p>2. Метод Y</p>
             <p>3. Метод Z</p>
         </div>
-    </div>
+    </nav>
     
     <main style="margin-left: 220px; padding: 20px;">
         <!-- Основное содержимое страницы -->
@@ -82,14 +92,15 @@
         function toggleDropdown(listId) {
             const dropdown = document.getElementById(listId);
             dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+            dropdown.setAttribute("aria-hidden", dropdown.style.display === "none");
         }
 
-        // Закрытие всех выпадающих списков при клике вне их
         window.onclick = function(event) {
             const dropdowns = document.querySelectorAll('.dropdown');
             dropdowns.forEach(dropdown => {
                 if (event.target.closest('.sidebar') === null) {
                     dropdown.style.display = "none";
+                    dropdown.setAttribute("aria-hidden", "true");
                 }
             });
         }

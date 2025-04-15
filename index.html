@@ -17,10 +17,28 @@
             padding: 50px 20px;
             text-align: center;
         }
+        nav {
+            display: flex;
+            flex-direction: column; /* Вертикальное расположение ссылок */
+            align-items: flex-start; /* Выровнять ссылки по левому краю */
+        }
         nav a {
             color: white;
-            margin: 0 15px;
+            margin: 5px 0; /* Отступ между ссылками */
             text-decoration: none;
+        }
+        .calibration-button {
+            background-color: #007BFF; /* Синий цвет кнопки */
+            color: white;
+            padding: 15px; /* Увеличенный отступ */
+            text-decoration: none;
+            border-radius: 5px;
+            width: 100%; /* На всю ширину страницы */
+            margin-top: 15px;
+            text-align: center; /* Центрирование текста кнопки */
+        }
+        .calibration-button:hover {
+            background-color: #0056b3; /* Темнее при наведении */
         }
     </style>
 </head>
@@ -31,6 +49,7 @@
             <a href="#about">О нас</a>
             <a href="#projects">Проекты</a>
             <a href="#contact">Контакты</a>
+            <a href="calibration.html" class="calibration-button">Калибровка</a>
         </nav>
     </header>
 </body>

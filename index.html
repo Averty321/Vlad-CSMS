@@ -3,55 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой сайт</title>
+    <title>Научный Сайт</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            background-color: #f4f4f4; /* Светлый фон */
         }
         header {
-            background-image: url('https://bogatyr.club/uploads/posts/2023-03/29758/1679145823_bogatyr-club-p-fon-metrologiya-foni-vkontakte-11.png');
-            background-size: cover;
-            color: white;
-            padding: 50px 20px;
-            text-align: center;
-        }
-        nav {
+            background-color: #003366; /* Темно-синий фон */
+            color: #ffffff; /* Белый текст */
+            padding: 15px 20px;
             display: flex;
-            flex-direction: column; /* Вертикальное расположение ссылок */
-            align-items: flex-start; /* Выровнять ссылки по левому краю */
+            justify-content: space-between; /* Разделение логотипа и меню */
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Тень для шапки */
         }
-        nav a {
-            color: white;
-            margin: 5px 0; /* Отступ между ссылками */
+        .logo {
+            font-size: 28px; /* Размер шрифта логотипа */
+            font-weight: bold;
+        }
+        .sidebar {
+            width: 200px; /* Ширина боковой панели */
+            background-color: #ffffff; /* Белый фон */
+            padding: 15px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Тень для боковой панели */
+            position: fixed; /* Фиксированное положение */
+            top: 60px; /* Отступ от верхней части страницы */
+            left: 0;
+            height: calc(100% - 60px); /* Высота боковой панели */
+        }
+        .sidebar a {
+            display: block; /* Отображение ссылок как блоки */
+            color: #003366; /* Темный цвет текста */
             text-decoration: none;
+            padding: 10px;
+            margin-bottom: 10px; /* Отступ между ссылками */
+            border-radius: 4px; /* Радиус углов */
+            transition: background-color 0.3s;
         }
-        .calibration-button {
-            background-color: #007BFF; /* Синий цвет кнопки */
-            color: white;
-            padding: 15px; /* Увеличенный отступ */
-            text-decoration: none;
-            border-radius: 5px;
-            width: 100%; /* На всю ширину страницы */
-            margin-top: 15px;
-            text-align: center; /* Центрирование текста кнопки */
+        .sidebar a:hover {
+            background-color: #f0f0f0; /* Светлее при наведении */
         }
-        .calibration-button:hover {
-            background-color: #0056b3; /* Темнее при наведении */
+        .dropdown {
+            display: none; /* Скрываем выпадающие списки по умолчанию */
+            margin-top: 10px;
+            padding-left: 15px;
+            border-left: 2px solid #003366; /* Отступ для визуального разделения */
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Полезная информация</h1>
-        <nav>
-            <a href="calibration.html" class="calibration-button">Методики калибровки и стандартные неопределенности</a>
-        </nav>
+        <div class="logo">Полезная информация</div>
     </header>
 
-    <nav>
-        <a href="https://raw.githubusercontent.com/<ваш-логин>/<имя-репозитория>/main/Заключение%20о%20непригодности%20в%20не%20сферы.docx" target="_blank" class="calibration-button">Пример браковки вне сферы</a>
-    </nav>
+    <div class="sidebar">
+        <a href="#" onclick="toggleDropdown('verificationList')">Поверка</a>
+        <div id="verificationList" class="dropdown">
+            <p>1. Метод A</p>
+            <p>2. Метод B</p>
+            <p>3. Метод C</p>
+        </div>
+        <a href="#" onclick="toggleDropdown('calibrationList')">Калибровка</a>
+        <div id="calibrationList" class="dropdown">
+            <p>1. Метод X</p>
+            <p>2. Метод Y</p>
+            <p>3. Метод Z</p>
+        </div>
+    </div>
+    
+    <main style="margin-left: 220px; padding: 20px;">
+        <!-- Основное содержимое страницы -->
+    </main>
+
+    <script>
+        function toggleDropdown(listId) {
+            const dropdown = document.getElementById(listId);
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        // Закрытие всех выпадающих списков при клике вне их
+        window.onclick = function(event) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(dropdown => {
+                if (event.target.closest('.sidebar') === null) {
+                    dropdown.style.display = "none";
+                }
+            });
+        }
+    </script>
 </body>
 </html>

@@ -3,96 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Научный Сайт</title>
+    <title>Калибровка</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
-            background-color: #f4f4f4; /* Светлый фон */
+            padding: 20px;
+            background-color: #f4f4f4;
         }
-        header {
-            background-color: #003366; /* Темно-синий фон */
-            color: #ffffff; /* Белый текст */
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between; /* Разделение логотипа и меню */
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Тень для шапки */
+        h1 {
+            text-align: center;
+            color: #fff;
+            background-color: #007BFF; /* Синий цвет */
+            padding: 15px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
-        .logo {
-            font-size: 28px; /* Размер шрифта логотипа */
-            font-weight: bold;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
         }
-        .sidebar {
-            width: 200px; /* Ширина боковой панели */
-            background-color: #ffffff; /* Белый фон */
+        th, td {
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007BFF; /* Синий цвет для шапки таблицы */
+            color: #fff; /* Белый текст */
+        }
+        tbody tr:nth-child(odd) {
+            background-color: #f9f9f9; /* Серый фон для четных строк */
+        }
+        tbody tr:hover {
+            background-color: #eaeaea; /* Фон при наведении на строку */
+        }
+        .spacing {
+            margin-top: 40px; /* Отступ перед новой таблицей */
+        }
+        .back-button {
+            display: block;
+            width: 100%;
+            text-align: center;
+            background-color: #007BFF;
+            color: white;
             padding: 15px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Тень для боковой панели */
-            position: fixed; /* Фиксированное положение */
-            top: 60px; /* Отступ от верхней части страницы */
-            left: 0;
-            height: calc(100% - 60px); /* Высота боковой панели */
-        }
-        .sidebar a {
-            display: block; /* Отображение ссылок как блоки */
-            color: #003366; /* Темный цвет текста */
             text-decoration: none;
-            padding: 10px;
-            margin-bottom: 10px; /* Отступ между ссылками */
-            border-radius: 4px; /* Радиус углов */
-            transition: background-color 0.3s;
+            border-radius: 5px;
+            margin-top: 20px;
         }
-        .sidebar a:hover {
-            background-color: #f0f0f0; /* Светлее при наведении */
+        .back-button:hover {
+            background-color: #0056b3; /* Темнее при наведении */
         }
-        .dropdown {
-            display: none; /* Скрываем выпадающие списки по умолчанию */
-            margin-top: 10px;
-            padding-left: 15px;
-            border-left: 2px solid #003366; /* Отступ для визуального разделения */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            th, td {
+                padding: 8px;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">Полезная информация</div>
-    </header>
 
-    <div class="sidebar">
-        <a href="#" onclick="toggleDropdown('verificationList')">Поверка</a>
-        <div id="verificationList" class="dropdown">
-            <p>1. Метод A</p>
-            <p>2. Метод B</p>
-            <p>3. Метод C</p>
-        </div>
-        <a href="#" onclick="toggleDropdown('calibrationList')">Калибровка</a>
-        <div id="calibrationList" class="dropdown">
-            <p><a href="calibration.html" target="_blank">Методики калибровки и стандартные неопределенности ИТЭ</a></p>
-            <p>2. Метод Y</p>
-            <p>3. Метод Z</p>
-        </div>
-    </div>
-    
-    <main style="margin-left: 220px; padding: 20px;">
-        <!-- Основное содержимое страницы -->
-    </main>
+    <h1>Калибровка</h1>
 
-    <script>
-        function toggleDropdown(listId) {
-            const dropdown = document.getElementById(listId);
-            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-        }
+    <table>
+        <thead>
+            <tr>
+                <th colspan="2">Методики калибровки</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Биметаллический, манометрический</td>
+                <td>МК.ГМ 1600-2013</td>
+            </tr>
+            <tr>
+                <td>Термометр электрический</td>
+                <td>МК.ГМ 1601-2013</td>
+            </tr>
+            <tr>
+                <td>Термометр технический (жидкостный, ртуть)</td>
+                <td>МК.ГМ 1601-2013</td>
+            </tr>
+        </tbody>
+    </table>
 
-        // Закрытие всех выпадающих списков при клике вне их
-        window.onclick = function(event) {
-            const dropdowns = document.querySelectorAll('.dropdown');
-            dropdowns.forEach(dropdown => {
-                if (event.target.closest('.sidebar') === null) {
-                    dropdown.style.display = "none";
-                }
-            });
-        }
-    </script>
+    <div class="spacing"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Температура (°C)</th>
+                <th>Стандартные неопределенности ИТЭ (°C)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>от минус 80 до 0 (°C)</td>
+                <td>0,0097</td>
+            </tr>
+            <tr>
+                <td>от 0,01 до 156,6 (°C)</td>
+                <td>0,0008</td>
+            </tr>
+            <tr>
+                <td>от 156,6 до 231,9 (°C)</td>
+                <td>0,0039</td>
+            </tr>
+            <tr>
+                <td>от 231,9 до 419,5 (°C)</td>
+                <td>0,0073</td>
+            </tr>
+            <tr>
+                <td>от 419,5 и свыше (°C)</td>
+                <td>0,0010</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="https://github.com/Averty321/Averty321-Vlad-CSMS-Gomel/raw/main/calibration.html" class="back-button" target="_blank">Вернуться</a>
 </body>
 </html>

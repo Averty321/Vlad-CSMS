@@ -49,11 +49,14 @@
             margin-bottom: 5px;
         }
         .record-data {
-            display: flex;
-            justify-content: space-between;
+            margin: 5px 0;
         }
         .edit-delete-buttons {
             margin-top: 10px;
+        }
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -89,7 +92,8 @@
                     time: dateTime.split(' ')[3],
                     humidity: humidity,
                     temperature: temperature,
-                    pressure: pressure
+                    pressure: pressure,
+                    timestamp: now.getTime() // Добавим метку времени
                 };
 
                 let records = JSON.parse(localStorage.getItem('records')) || [];
@@ -107,6 +111,7 @@
             const recordsDiv = document.getElementById('records');
             recordsDiv.innerHTML = '';
             const records = JSON.parse(localStorage.getItem('records')) || [];
+            const now = new Date().setHours(0, 0, 0, 0); // Устанавливаем время на начало дня
 
             records.forEach(record => {
                 const recordElement = document.createElement('div');
@@ -116,23 +121,40 @@
                 recordHeader.classList.add('record-header');
                 recordHeader.textContent = `${record.date} ${record.month} ${record.year} ${record.time}`;
                 
-                const recordData = document.createElement('div');
-                recordData.classList.add('record-data');
-                recordData.innerHTML = `
-                    <div>Влажность: ${record.humidity}%</div>
-                    <div>Температура: ${record.temperature}°C</div>
-                    <div>Давление: ${record.pressure} мм рт. ст.</div>
-                `;
+                const recordDataHumidity = document.createElement('div');
+                recordDataHumidity.classList.add('record-data');
+                recordDataHumidity.textContent = `Влажность: ${record.humidity}%`;
+
+                const recordDataTemperature = document.createElement('div');
+                recordDataTemperature.classList.add('record-data');
+                recordDataTemperature.textContent = `Температура: ${record.temperature}°C`;
+
+                const recordDataPressure = document.createElement('div');
+                recordDataPressure.classList.add('record-data');
+                recordDataPressure.textContent = `Давление: ${record.pressure} мм рт. ст.`;
 
                 const buttonsDiv = document.createElement('div');
                 buttonsDiv.classList.add('edit-delete-buttons');
-                buttonsDiv.innerHTML = `
-                    <button onclick="editRecord(${record.id})">Изменить</button>
-                    <button onclick="deleteRecord(${record.id})">Удалить</button>
-                `;
+
+                // Проверка, можно ли изменить или удалить запись
+                const recordDate = new Date(record.timestamp).setHours(0, 0, 0, 0);
+                if (recordDate < now) {
+                    buttonsDiv.classList.add('disabled');
+                    buttonsDiv.innerHTML = `
+                        <button disabled>Изменить</button>
+                        <button disabled>Удалить</button>
+                    `;
+                } else {
+                    buttonsDiv.innerHTML = `
+                        <button onclick="editRecord(${record.id})">Изменить</button>
+                        <button onclick="deleteRecord(${record.id})">Удалить</button>
+                    `;
+                }
 
                 recordElement.appendChild(recordHeader);
-                recordElement.appendChild(recordData);
+                recordElement.appendChild(recordDataHumidity);
+                recordElement.appendChild(recordDataTemperature);
+                recordElement.appendChild(recordDataPressure);
                 recordElement.appendChild(buttonsDiv);
                 recordsDiv.appendChild(recordElement);
             });

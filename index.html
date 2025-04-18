@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Проезная информация </title>
+    <title>Проезная информация</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -70,11 +70,17 @@
     </header>
 
     <nav class="sidebar" role="navigation">
+        <a href="#" onclick="toggleDropdown('certificateList')">Примеры свидетельств и заключений</a>
+        <div id="certificateList" class="dropdown" aria-hidden="true">
+            <p><a href="Заключение-о-непригодности-в-не-сферы.pdf" target="_blank">Пример заключения об непригодности вне сферы законодательной метрологии</a></p>
+            <p>Свидетельство о соответствия образца</p>
+            <p>Заключение о пригодности оборудования</p>
+        </div>
         <a href="#" onclick="toggleDropdown('verificationList')">Поверка</a>
         <div id="verificationList" class="dropdown" aria-hidden="true">
             <p><a href="Заключение-о-непригодности-в-не-сферы.pdf" target="_blank">Пример заключения об непригодности вне сферы законодательной метрологии</a></p>
-            <p><a href="Gigro.html" target="_blank">Гигрометры психометрические Вит</a> </p>  
-            <p><a href="El-term.html" target="_blank">Термометры электронные цифровые </a></p>
+            <p><a href="Gigro.html" target="_blank">Гигрометры психометрические Вит</a></p>  
+            <p><a href="El-term.html" target="_blank">Термометры электронные цифровые</a></p>
             <p>3. Метод C</p>
         </div>
         <a href="#" onclick="toggleDropdown('calibrationList')">Калибровка</a>

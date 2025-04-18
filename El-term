@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Цифровые термометры</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #3399ff; /* Светлее синий цвет шапки */
+            color: white; /* Белый текст */
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #3399ff; /* Светлее синий цвет кнопки */
+            color: white; /* Белый текст на кнопке */
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button:hover {
+            background-color: #007bff; /* Более тёмный синий при наведении */
+        }
+    </style>
+</head>
+<body>
+
+<h1>Термометры электронные цифровые</h1>
+<table>
+    <tr>
+        <th>Код</th>
+        <th>Модель</th>
+        <th>Срок действия</th>
+        <th>Гарантия</th>
+    </tr>
+    <tr>
+        <td>РБ0325555714</td>
+        <td>Vedo-Итал.(family/Clear)</td>
+        <td>30.10.2014 - 30.10.2019</td>
+        <td>24 месяца</td>
+    </tr>
+    <tr>
+        <td>РБ0325770720</td>
+        <td>Veco-Итал./Кит.(family/clear)</td>
+        <td>28.08.2020 - 28.08.2025</td>
+        <td>24 месяца</td>
+    </tr>
+</table>
+
+<a href="index.html" class="back-button">Назад</a>
+
+</body>
+</html>

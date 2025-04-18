@@ -62,7 +62,23 @@
     </tr>
 </table>
 
-<a href="index.html" class="back-button">Назад</a>
+<a href="javascript:history.back()" class="back-button">Назад</a>
+
+<style>
+    .back-button {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 15px;
+        background-color: #6ca0f4; /* Более тёмный светло-синий цвет */
+        color: white; /* Белый текст */
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+    .back-button:hover {
+        background-color: #5a8edc; /* Ещё более тёмный при наведении */
+    }
+</style>
 
 </body>
 </html>

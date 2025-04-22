@@ -43,6 +43,9 @@
             border-radius: 4px;
             transition: background-color 0.3s;
         }
+        .sidebar a.highlight {
+            background-color: #ffcc00; /* Цвет выделения */
+        }
         .sidebar a:hover {
             background-color: #f0f0f0;
         }
@@ -51,6 +54,28 @@
             margin-top: 10px;
             padding-left: 15px;
             border-left: 2px solid #003366;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #003366;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
         }
         @media (max-width: 600px) {
             .sidebar {
@@ -73,26 +98,29 @@
         <a href="#" onclick="toggleDropdown('certificateList')">Примеры свидетельств и заключений</a>
         <div id="certificateList" class="dropdown" aria-hidden="true">
             <p><a href="Заключение-о-непригодности-в-не-сферы.pdf" target="_blank">Пример заключения об непригодности вне сферы законодательной метрологии</a></p>
-            </div>
+        </div>
         <a href="#" onclick="toggleDropdown('verificationList')">Поверка</a>
         <div id="verificationList" class="dropdown" aria-hidden="true">
-            <p><a href="Gigro.html" target="_blank">Гигрометры психометрические Вит</a></p>  
+            <p><a href="Gigro.html" target="_blank">Гигрометры психометрические Вит</a></p>
             <p><a href="El-term.html" target="_blank">Термометры электронные цифровые</a></p>
-           <p> <a href="Term-glass.html" target="_blank"> Термометры стеклянные </a></p>
-            <p> <a href="Term-glass-el.html" target="_blank"> Термометры стеклянные ртутные электроконтактные </a></p>
-            <p> <a href="Infra-el-term.html" target="_blank"> Термометры инфракрасные </a></p>
-            <p> <a href="Term-table.html" target="_blank"> Поверяемые градусные отметки в зависимости от цены деления шкалы  </a></p>
+            <p><a href="Term-glass.html" target="_blank">Термометры стеклянные</a></p>
+            <p><a href="Term-glass-el.html" target="_blank">Термометры стеклянные ртутные электроконтактные</a></p>
+            <p><a href="Infra-el-term.html" target="_blank">Термометры инфракрасные</a></p>
+            <p><a href="Term-table.html" target="_blank">Поверяемые градусные отметки в зависимости от цены деления шкалы</a></p>
         </div>
-        <a href="#" onclick="toggleDropdown('calibrationList')">Калибровка</a>
-        <div id="calibrationList" class="dropdown" aria-hidden="true">
-            <p><a href="calibration.html" target="_blank">Методики калибровки и стандартные неопределенности ИТЭ</a></p>
-            <p> <a href="Окр-ср.html" target="_blank"> окружающая среда </a></p>
-        </div>
+        <a href="#" id="referenceLink" onclick="togglePopup()">Эталоны</a>
     </nav>
     
     <main style="margin-left: 220px; padding: 20px;">
         <!-- Основное содержимое страницы -->
     </main>
+
+    <div class="popup-overlay" id="popupOverlay" onclick="togglePopup()"></div>
+    <div class="popup" id="popupWindow">
+        <h2>Эталоны</h2>
+        <p>Здесь будет информация об эталонах.</p>
+        <button onclick="togglePopup()">Закрыть</button>
+    </div>
 
     <script>
         function toggleDropdown(listId) {
@@ -100,6 +128,38 @@
             dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
             dropdown.setAttribute("aria-hidden", dropdown.style.display === "none");
         }
+
+        function togglePopup() {
+            const popup = document.getElementById('popupWindow');
+            const overlay = document.getElementById('popupOverlay');
+            const isVisible = popup.style.display === "block";
+            popup.style.display = isVisible ? "none" : "block";
+            overlay.style.display = isVisible ? "none" : "block";
+        }
+
+        function highlightReferenceLink() {
+            const referenceLink = document.getElementById('referenceLink');
+
+            // Проверка цвета ячеек в таблице на странице reference.html
+            fetch('reference.html')
+                .then(response => response.text())
+                .then(data => {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = data;
+                    const cells = tempDiv.querySelectorAll('td');
+
+                    cells.forEach(cell => {
+                        const bgColor = window.getComputedStyle(cell).backgroundColor;
+                        if (bgColor === 'rgb(255, 165, 0)' || bgColor === 'rgb(255, 0, 0)') {
+                            referenceLink.classList.add('highlight');
+                        }
+                    });
+                })
+                .catch(error => console.error('Ошибка при загрузке reference.html:', error));
+        }
+
+        // Вызываем функцию при загрузке страницы
+        window.onload = highlightReferenceLink;
 
         window.onclick = function(event) {
             const dropdowns = document.querySelectorAll('.dropdown');

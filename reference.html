@@ -78,8 +78,11 @@
             appId: "YOUR_APP_ID"
         };
 
+        // Инициализация Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+
+        let editKey = null;
 
         function renderTable() {
             const tbody = document.querySelector('#standardsTable tbody');
@@ -120,6 +123,7 @@
         }
 
         function openModal(key = null) {
+            editKey = key;
             const modal = document.getElementById('modal');
             if (key) {
                 database.ref('standards/' + key).once('value').then((snapshot) => {
@@ -148,9 +152,11 @@
             const date = document.getElementById('date').value;
             const interval = document.getElementById('interval').value;
 
-            if (editIndex) {
-                database.ref('standards/' + editIndex).set({ name, number, date, interval });
+            if (editKey) {
+                // Обновление существующего эталона
+                database.ref('standards/' + editKey).set({ name, number, date, interval });
             } else {
+                // Добавление нового эталона
                 database.ref('standards').push({ name, number, date, interval });
             }
 
@@ -164,6 +170,7 @@
             }
         }
 
+        // Инициализация таблицы при загрузке
         renderTable();
     </script>
 </body>

@@ -15,6 +15,10 @@
             border-collapse: collapse;
             margin-top: 20px;
         }
+        th {
+            background-color: #1E90FF; /* Цвет шапки таблицы */
+            color: white;              /* Белый текст */
+        }
         th, td {
             border: 1px solid #ccc;
             padding: 10px;
@@ -72,17 +76,17 @@
                 const now = new Date();
                 const intervalMonths = parseInt(standard.interval);
                 const dueDate = new Date(checkDate);
-                dueDate.setMonth(checkDate.getMonth() + intervalMonths); // Установка даты окончания
+                dueDate.setMonth(checkDate.getMonth() + intervalMonths);
 
                 const oneMonthBeforeDueDate = new Date(dueDate);
-                oneMonthBeforeDueDate.setMonth(dueDate.getMonth() - 1); // Одна месяца до окончания
+                oneMonthBeforeDueDate.setMonth(dueDate.getMonth() - 1);
 
                 const row = document.createElement('tr');
 
                 if (now > dueDate) {
-                    row.classList.add('red'); // Просрочено
+                    row.classList.add('red');
                 } else if (now > oneMonthBeforeDueDate) {
-                    row.classList.add('orange'); // Одна месяца до окончания
+                    row.classList.add('orange');
                 }
 
                 row.innerHTML = `
@@ -126,10 +130,8 @@
             const interval = document.getElementById('interval').value;
 
             if (editIndex >= 0) {
-                // Изменение существующего эталона
                 standards[editIndex] = { name, number, date, interval };
             } else {
-                // Добавление нового эталона
                 standards.push({ name, number, date, interval });
             }
 
@@ -139,12 +141,13 @@
         }
 
         function deleteStandard(index) {
-            standards.splice(index, 1);
-            localStorage.setItem('standards', JSON.stringify(standards));
-            renderTable();
+            if (confirm("Вы действительно хотите удалить этот эталон?")) {
+                standards.splice(index, 1);
+                localStorage.setItem('standards', JSON.stringify(standards));
+                renderTable();
+            }
         }
 
-        // Инициализация таблицы
         renderTable();
     </script>
 </body>

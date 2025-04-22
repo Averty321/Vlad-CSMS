@@ -55,7 +55,7 @@
         <label>Наименование: <input type="text" id="name" required></label><br>
         <label>Номер: <input type="text" id="number" required></label><br>
         <label>Дата поверки: <input type="date" id="date" required></label><br>
-        <label>Межповерочный интервал (дни): <input type="number" id="interval" required></label><br>
+        <label>Межповерочный интервал (месяцы): <input type="number" id="interval" required></label><br>
         <button onclick="saveStandard()">Сохранить</button>
         <button onclick="closeModal()">Закрыть</button>
     </div>
@@ -68,16 +68,21 @@
             const tbody = document.querySelector('#standardsTable tbody');
             tbody.innerHTML = '';
             standards.forEach((standard, index) => {
-                const row = document.createElement('tr');
                 const checkDate = new Date(standard.date);
                 const now = new Date();
-                const interval = standard.interval * 24 * 60 * 60 * 1000; // дни в миллисекундах
-                const dueDate = new Date(checkDate.getTime() + interval);
+                const intervalMonths = parseInt(standard.interval);
+                const dueDate = new Date(checkDate);
+                dueDate.setMonth(checkDate.getMonth() + intervalMonths); // Установка даты окончания
+
+                const oneMonthBeforeDueDate = new Date(dueDate);
+                oneMonthBeforeDueDate.setMonth(dueDate.getMonth() - 1); // Одна месяца до окончания
+
+                const row = document.createElement('tr');
 
                 if (now > dueDate) {
-                    row.classList.add('red');
-                } else if (now > new Date(dueDate.getTime() - (7 * 24 * 60 * 60 * 1000))) {
-                    row.classList.add('orange');
+                    row.classList.add('red'); // Просрочено
+                } else if (now > oneMonthBeforeDueDate) {
+                    row.classList.add('orange'); // Одна месяца до окончания
                 }
 
                 row.innerHTML = `
@@ -121,8 +126,10 @@
             const interval = document.getElementById('interval').value;
 
             if (editIndex >= 0) {
+                // Изменение существующего эталона
                 standards[editIndex] = { name, number, date, interval };
             } else {
+                // Добавление нового эталона
                 standards.push({ name, number, date, interval });
             }
 

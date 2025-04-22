@@ -48,6 +48,7 @@
                 <th>Наименование</th>
                 <th>Номер</th>
                 <th>Дата поверки</th>
+                <th>Осталось дней</th> <!-- Новый столбец -->
                 <th>Действия</th>
             </tr>
         </thead>
@@ -81,6 +82,8 @@
                 const oneMonthBeforeDueDate = new Date(dueDate);
                 oneMonthBeforeDueDate.setMonth(dueDate.getMonth() - 1);
 
+                const daysRemaining = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24)); // Осталось дней
+
                 const row = document.createElement('tr');
 
                 if (now > dueDate) {
@@ -93,6 +96,7 @@
                     <td>${standard.name}</td>
                     <td>${standard.number}</td>
                     <td>${standard.date}</td>
+                    <td>${daysRemaining} дней</td> <!-- Отображение оставшихся дней -->
                     <td>
                         <span class="btn" onclick="openModal(${index})">Изменить</span>
                         <span class="btn" onclick="deleteStandard(${index})">Удалить</span>

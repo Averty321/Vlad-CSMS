@@ -41,14 +41,14 @@
 <body>
     <h1>Управление эталонами</h1>
     <button onclick="openModal()">➕ Добавить эталон</button>
-    
+
     <table id="standardsTable">
         <thead>
             <tr>
                 <th>Наименование</th>
                 <th>Номер</th>
                 <th>Дата поверки</th>
-                <th>Осталось дней</th> <!-- Новый столбец -->
+                <th>Осталось дней</th>
                 <th>Действия</th>
             </tr>
         </thead>
@@ -65,55 +65,74 @@
         <button onclick="closeModal()">Закрыть</button>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
     <script>
-        let standards = JSON.parse(localStorage.getItem('standards')) || [];
-        let editIndex = -1;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBzKDsZJYhC0bcpdUGcAdbuiUwCY90-auM",
+            authDomain: "vlad-csms.firebaseapp.com",
+            databaseURL: "https://vlad-csms-default-rtdb.firebaseio.com/",
+            projectId: "vlad-csms",
+            storageBucket: "vlad-csms.appspot.com",
+            messagingSenderId: "68047474577",
+            appId: "1:68047474577:web:039d8a29e9430778ee9430"
+        };
+
+        // Инициализация Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let editKey = null;
 
         function renderTable() {
             const tbody = document.querySelector('#standardsTable tbody');
             tbody.innerHTML = '';
-            standards.forEach((standard, index) => {
-                const checkDate = new Date(standard.date);
-                const now = new Date();
-                const intervalMonths = parseInt(standard.interval);
-                const dueDate = new Date(checkDate);
-                dueDate.setMonth(checkDate.getMonth() + intervalMonths);
+            database.ref('standards').on('value', (snapshot) => {
+                const standards = snapshot.val() || {};
+                for (const key in standards) {
+                    const standard = standards[key];
+                    const checkDate = new Date(standard.date);
+                    const now = new Date();
+                    const intervalMonths = parseInt(standard.interval);
+                    const dueDate = new Date(checkDate);
+                    dueDate.setMonth(checkDate.getMonth() + intervalMonths);
 
-                const oneMonthBeforeDueDate = new Date(dueDate);
-                oneMonthBeforeDueDate.setMonth(dueDate.getMonth() - 1);
+                    const daysRemaining = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
 
-                const daysRemaining = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24)); // Осталось дней
+                    const row = document.createElement('tr');
 
-                const row = document.createElement('tr');
+                    if (now > dueDate) {
+                        row.classList.add('red');
+                    } else if (now > dueDate.setMonth(dueDate.getMonth() - 1)) {
+                        row.classList.add('orange');
+                    }
 
-                if (now > dueDate) {
-                    row.classList.add('red');
-                } else if (now > oneMonthBeforeDueDate) {
-                    row.classList.add('orange');
+                    row.innerHTML = `
+                        <td>${standard.name}</td>
+                        <td>${standard.number}</td>
+                        <td>${standard.date}</td>
+                        <td>${daysRemaining}</td>
+                        <td>
+                            <span class="btn" onclick="openModal('${key}')">Изменить</span>
+                            <span class="btn" onclick="deleteStandard('${key}')">Удалить</span>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
                 }
-
-                row.innerHTML = `
-                    <td>${standard.name}</td>
-                    <td>${standard.number}</td>
-                    <td>${standard.date}</td>
-                    <td>${daysRemaining}</td> <!-- Удалено "дней" -->
-                    <td>
-                        <span class="btn" onclick="openModal(${index})">Изменить</span>
-                        <span class="btn" onclick="deleteStandard(${index})">Удалить</span>
-                    </td>
-                `;
-                tbody.appendChild(row);
             });
         }
 
-        function openModal(index = -1) {
-            editIndex = index;
+        function openModal(key = null) {
+            editKey = key;
             const modal = document.getElementById('modal');
-            if (index >= 0) {
-                document.getElementById('name').value = standards[index].name;
-                document.getElementById('number').value = standards[index].number;
-                document.getElementById('date').value = standards[index].date;
-                document.getElementById('interval').value = standards[index].interval;
+            if (key) {
+                database.ref('standards/' + key).once('value').then((snapshot) => {
+                    const standard = snapshot.val();
+                    document.getElementById('name').value = standard.name;
+                    document.getElementById('number').value = standard.number;
+                    document.getElementById('date').value = standard.date;
+                    document.getElementById('interval').value = standard.interval;
+                });
             } else {
                 document.getElementById('name').value = '';
                 document.getElementById('number').value = '';
@@ -133,25 +152,25 @@
             const date = document.getElementById('date').value;
             const interval = document.getElementById('interval').value;
 
-            if (editIndex >= 0) {
-                standards[editIndex] = { name, number, date, interval };
+            if (editKey) {
+                // Обновление существующего эталона
+                database.ref('standards/' + editKey).set({ name, number, date, interval });
             } else {
-                standards.push({ name, number, date, interval });
+                // Добавление нового эталона
+                database.ref('standards').push({ name, number, date, interval });
             }
 
-            localStorage.setItem('standards', JSON.stringify(standards));
             renderTable();
             closeModal();
         }
 
-        function deleteStandard(index) {
+        function deleteStandard(key) {
             if (confirm("Вы действительно хотите удалить этот эталон?")) {
-                standards.splice(index, 1);
-                localStorage.setItem('standards', JSON.stringify(standards));
-                renderTable();
+                database.ref('standards/' + key).remove();
             }
         }
 
+        // Инициализация таблицы при загрузке
         renderTable();
     </script>
 </body>

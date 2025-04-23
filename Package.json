@@ -1,22 +1,14 @@
 {
-  "name": "my-server",                     // Название вашего проекта
-  "version": "1.0.0",                      // Версия проекта
-  "description": "A simple Node.js server", // Описание проекта
-  "main": "server.js",                     // Основной файл вашего приложения
+  "name": "my-server",
+  "version": "1.0.0",
+  "main": "server.js",
   "scripts": {
-    "start": "node server.js"              // Команда для запуска сервера
+    "start": "node server.js"
   },
-  "dependencies": {                         // Зависимости проекта
-    "express": "^4.17.1",                  // Основной фреймворк для сервера
-    "cors": "^2.8.5",                      // Middleware для CORS
-    "body-parser": "^1.19.0",              // Middleware для парсинга тела запросов
-    "mongoose": "^5.10.9"                   // Библиотека для работы с MongoDB (если используется)
-  },
-  "devDependencies": {                      // Зависимости для разработки (если есть)
-    "nodemon": "^2.0.7"                    // Утилита для автоматического перезапуска сервера (по желанию)
-  },
-  "engines": {
-    "node": ">=14.0.0"                     // Версия Node.js, необходимая для проекта
-  },
-  "license": "MIT"                         // Лицензия проекта
+  "dependencies": {
+    "express": "^4.17.1",
+    "cors": "^2.8.5",
+    "body-parser": "^1.19.0",
+    "mongoose": "^5.10.9"
+  }
 }

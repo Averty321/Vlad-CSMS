@@ -3,26 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Эталоны</title>
+    <title>Управление эталонами</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; padding: 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background-color: #1E90FF; color: white; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-        .red { background-color: red; color: white; }
-        .orange { background-color: orange; }
-        .btn { cursor: pointer; color: blue; text-decoration: underline; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        button {
+            margin-right: 10px;
+        }
+        table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #f0f8ff; /* Цвет фона таблицы */
+        }
+        th, td {
+            border: 1px solid #007bff; /* Цвет границы */
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff; /* Синяя заливка заголовков */
+            color: white; /* Цвет текста заголовков */
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            z-index: 1000;
+            width: 300px;
+        }
+        .expired {
+            background-color: #ffcccc; /* Красный цвет для просроченных эталонов */
+        }
     </style>
 </head>
 <body>
-    <h1>Управление эталонами</h1>
-    <button onclick="openModal()">➕ Добавить эталон</button>
-    <table id="standardsTable">
+
+    <button id="createRoom">Создать комнату</button>
+    <button id="openAddStandard">Добавить эталон</button>
+
+    <table id="items">
         <thead>
             <tr>
                 <th>Наименование</th>
                 <th>Номер</th>
-                <th>Дата поверки</th>
+                <th>Дата</th>
+                <th>Тип</th>
+                <th>Комната</th>
                 <th>Осталось дней</th>
                 <th>Действия</th>
             </tr>
@@ -30,122 +79,142 @@
         <tbody></tbody>
     </table>
 
-    <div id="modal" style="display:none;">
-        <h2>Добавить/Изменить эталон</h2>
-        <label>Наименование: <input type="text" id="name" required></label><br>
-        <label>Номер: <input type="text" id="number" required></label><br>
-        <label>Дата поверки: <input type="date" id="date" required></label><br>
-        <label>Межповерочный интервал (месяцы): <input type="number" id="interval" required></label><br>
-        <button onclick="saveStandard()">Сохранить</button>
-        <button onclick="closeModal()">Закрыть</button>
+    <div class="overlay" id="overlay"></div>
+    <div class="modal" id="addStandardModal">
+        <h3>Добавить эталон</h3>
+        <label for="roomSelect">Комната:</label>
+        <select id="roomSelect" required></select>
+        <label for="standardNumber">Номер:</label>
+        <input type="text" id="standardNumber" required>
+        <label for="standardDate">Дата:</label>
+        <input type="date" id="standardDate" required>
+        <label for="interval">Межповерочный интервал (месяцы):</label>
+        <input type="number" id="interval" required>
+        <label for="type">Тип:</label>
+        <select id="type">
+            <option value="поверка">Поверка</option>
+            <option value="калибровка">Калибровка</option>
+        </select>
+        <button id="addStandard">Добавить</button>
+        <button id="closeModal">Закрыть</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "firebase/app";
-        import { getDatabase, ref, set, onValue, remove } from "firebase/database";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
-            authDomain: "vlad-csms-af6df.firebaseapp.com",
-            databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
-            projectId: "vlad-csms-af6df",
-            storageBucket: "vlad-csms-af6df.firebasestorage.app",
-            messagingSenderId: "417297799117",
-            appId: "1:417297799117:web:0a93dce429cd37db499684",
-            measurementId: "G-MD79ZVT24Z"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    <script>
         let standards = [];
-        let editIndex = -1;
+        let rooms = [];
 
-        function renderTable() {
-            const tbody = document.querySelector('#standardsTable tbody');
+        document.getElementById('createRoom').addEventListener('click', () => {
+            const roomName = prompt('Введите название комнаты (можно текст):');
+            rooms.push(roomName);
+            alert(`Комната "${roomName}" создана!`);
+            updateRoomSelect();
+        });
+
+        function updateRoomSelect() {
+            const roomSelect = document.getElementById('roomSelect');
+            roomSelect.innerHTML = '';
+            rooms.forEach((room, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = room;
+                roomSelect.appendChild(option);
+            });
+        }
+
+        document.getElementById('openAddStandard').addEventListener('click', () => {
+            if (rooms.length === 0) {
+                alert('Сначала создайте комнату!');
+                return;
+            }
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('addStandardModal').style.display = 'block';
+        });
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('addStandardModal').style.display = 'none';
+        });
+
+        document.getElementById('addStandard').addEventListener('click', () => {
+            const roomIndex = document.getElementById('roomSelect').value;
+            const number = document.getElementById('standardNumber').value;
+            const dateInput = new Date(document.getElementById('standardDate').value);
+            const interval = parseInt(document.getElementById('interval').value);
+            const type = document.getElementById('type').value;
+
+            const expirationDate = new Date(dateInput);
+            expirationDate.setMonth(expirationDate.getMonth() + interval); // Увеличение на месяцы
+
+            const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
+
+            const standard = {
+                name: 'Эталон', // Убрано поле наименования
+                number,
+                date: dateInput,
+                type,
+                room: rooms[roomIndex],
+                expirationDate,
+                daysLeft,
+                additionalInfo: []
+            };
+
+            standards.push(standard);
+            renderStandards();
+            closeModal();
+        });
+
+        function renderStandards() {
+            const tbody = document.querySelector('#items tbody');
             tbody.innerHTML = '';
-            standards.forEach((standard, index) => {
-                const checkDate = new Date(standard.date);
-                const now = new Date();
-                const intervalMonths = parseInt(standard.interval);
-                const dueDate = new Date(checkDate);
-                dueDate.setMonth(checkDate.getMonth() + intervalMonths);
-                const daysRemaining = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
-
+            standards.forEach((standard) => {
                 const row = document.createElement('tr');
-                if (now > dueDate) {
-                    row.classList.add('red');
-                } else if (now > new Date(dueDate.setMonth(dueDate.getMonth() - 1))) {
-                    row.classList.add('orange');
+                if (standard.daysLeft < 0) {
+                    row.classList.add('expired'); // Добавление класса для просроченного эталона
                 }
-
                 row.innerHTML = `
                     <td>${standard.name}</td>
                     <td>${standard.number}</td>
-                    <td>${standard.date}</td>
-                    <td>${daysRemaining}</td>
-                    <td>
-                        <span class="btn" onclick="openModal(${index})">Изменить</span>
-                        <span class="btn" onclick="deleteStandard('${standard.id}')">Удалить</span>
+                    <td>${standard.date.toLocaleDateString()}</td>
+                    <td>${standard.type}</td>
+                    <td>${standard.room}</td>
+                    <td>${standard.daysLeft}</td>
+                    <td class="actions">
+                        <button onclick="editStandard(${standards.indexOf(standard)})">Изменить</button>
+                        <button onclick="deleteStandard(${standards.indexOf(standard)})">Удалить</button>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
         }
 
-        function openModal(index = -1) {
-            editIndex = index;
-            const modal = document.getElementById('modal');
-            if (index >= 0) {
-                document.getElementById('name').value = standards[index].name;
-                document.getElementById('number').value = standards[index].number;
-                document.getElementById('date').value = standards[index].date;
-                document.getElementById('interval').value = standards[index].interval;
-            } else {
-                document.getElementById('name').value = '';
-                document.getElementById('number').value = '';
-                document.getElementById('date').value = '';
-                document.getElementById('interval').value = '';
-            }
-            modal.style.display = 'block';
+        window.editStandard = function(index) {
+            const standard = standards[index];
+            const number = prompt('Введите новый номер эталона:', standard.number);
+            const dateInput = prompt('Введите новую дату (ГГГГ-ММ-ДД):', standard.date.toISOString().split('T')[0]);
+            const date = new Date(dateInput);
+            const interval = parseInt(prompt('Введите новый межповерочный интервал в месяцах:', (standard.expirationDate.getMonth() - standard.date.getMonth())));
+            const type = prompt('Введите новый тип (поверка/калибровка):', standard.type);
+
+            const expirationDate = new Date(date);
+            expirationDate.setMonth(expirationDate.getMonth() + interval);
+            const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
+
+            standard.number = number;
+            standard.date = date;
+            standard.type = type;
+            standard.expirationDate = expirationDate;
+            standard.daysLeft = daysLeft;
+
+            renderStandards();
         }
 
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
-
-        function saveStandard() {
-            const name = document.getElementById('name').value;
-            const number = document.getElementById('number').value;
-            const date = document.getElementById('date').value;
-            const interval = document.getElementById('interval').value;
-
-            const standardData = { name, number, date, interval };
-
-            if (editIndex >= 0) {
-                const id = standards[editIndex].id;
-                set(ref(db, 'standards/' + id), standardData);
-            } else {
-                const newStandardRef = ref(db, 'standards').push();
-                set(newStandardRef, { ...standardData, id: newStandardRef.key });
-            }
-
-            closeModal();
-        }
-
-        function deleteStandard(id) {
-            if (confirm("Вы действительно хотите удалить этот эталон?")) {
-                remove(ref(db, 'standards/' + id));
+        window.deleteStandard = function(index) {
+            if (confirm('Вы уверены, что хотите удалить эталон?')) {
+                standards.splice(index, 1);
+                renderStandards();
             }
         }
-
-        onValue(ref(db, 'standards'), (snapshot) => {
-            standards = [];
-            snapshot.forEach((childSnapshot) => {
-                const childData = childSnapshot.val();
-                standards.push({ ...childData, id: childSnapshot.key });
-            });
-            renderTable();
-        });
     </script>
+
 </body>
 </html>

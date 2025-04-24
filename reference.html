@@ -104,19 +104,18 @@
     <script>
         let standards = [];
         let rooms = [];
+        const serverUrl = 'https://glitch.com/edit/#!/midi-wave-bamboo?path=server.js%3A27%3A3'; // Замените на ваш фактический URL проекта Glitch
 
-        // Загружаем данные из Local Storage при загрузке страницы
+        // Загружаем данные с сервера при загрузке страницы
         window.onload = function() {
-            const storedStandards = localStorage.getItem('standards');
-            const storedRooms = localStorage.getItem('rooms');
-            if (storedStandards) {
-                standards = JSON.parse(storedStandards);
-            }
-            if (storedRooms) {
-                rooms = JSON.parse(storedRooms);
-                updateRoomSelect();
-            }
-            renderStandards();
+            fetch(serverUrl)
+                .then(response => response.json())
+                .then(data => {
+                    standards = data.standards || [];
+                    rooms = data.rooms || [];
+                    updateRoomSelect();
+                    renderStandards();
+                });
         };
 
         document.getElementById('createRoom').addEventListener('click', () => {
@@ -206,8 +205,13 @@
         }
 
         function saveData() {
-            localStorage.setItem('standards', JSON.stringify(standards));
-            localStorage.setItem('rooms', JSON.stringify(rooms));
+            fetch(serverUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ standards, rooms })
+            });
         }
 
         window.editStandard = function(index) {

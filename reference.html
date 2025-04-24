@@ -84,6 +84,8 @@
         <h3>Добавить эталон</h3>
         <label for="roomSelect">Комната:</label>
         <select id="roomSelect" required></select>
+        <label for="standardName">Наименование:</label>
+        <input type="text" id="standardName" required>
         <label for="standardNumber">Номер:</label>
         <input type="text" id="standardNumber" required>
         <label for="standardDate">Дата:</label>
@@ -103,11 +105,26 @@
         let standards = [];
         let rooms = [];
 
+        // Загружаем данные из Local Storage при загрузке страницы
+        window.onload = function() {
+            const storedStandards = localStorage.getItem('standards');
+            const storedRooms = localStorage.getItem('rooms');
+            if (storedStandards) {
+                standards = JSON.parse(storedStandards);
+            }
+            if (storedRooms) {
+                rooms = JSON.parse(storedRooms);
+                updateRoomSelect();
+            }
+            renderStandards();
+        };
+
         document.getElementById('createRoom').addEventListener('click', () => {
             const roomName = prompt('Введите название комнаты (можно текст):');
             rooms.push(roomName);
             alert(`Комната "${roomName}" создана!`);
             updateRoomSelect();
+            saveData();
         });
 
         function updateRoomSelect() {
@@ -137,29 +154,30 @@
 
         document.getElementById('addStandard').addEventListener('click', () => {
             const roomIndex = document.getElementById('roomSelect').value;
+            const name = document.getElementById('standardName').value;
             const number = document.getElementById('standardNumber').value;
             const dateInput = new Date(document.getElementById('standardDate').value);
             const interval = parseInt(document.getElementById('interval').value);
             const type = document.getElementById('type').value;
 
             const expirationDate = new Date(dateInput);
-            expirationDate.setMonth(expirationDate.getMonth() + interval); // Увеличение на месяцы
+            expirationDate.setMonth(expirationDate.getMonth() + interval);
 
             const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
 
             const standard = {
-                name: 'Эталон', // Убрано поле наименования
+                name,
                 number,
-                date: dateInput,
+                date: dateInput.toISOString(),
                 type,
                 room: rooms[roomIndex],
-                expirationDate,
-                daysLeft,
-                additionalInfo: []
+                expirationDate: expirationDate.toISOString(),
+                daysLeft
             };
 
             standards.push(standard);
             renderStandards();
+            saveData();
             closeModal();
         });
 
@@ -169,12 +187,12 @@
             standards.forEach((standard) => {
                 const row = document.createElement('tr');
                 if (standard.daysLeft < 0) {
-                    row.classList.add('expired'); // Добавление класса для просроченного эталона
+                    row.classList.add('expired');
                 }
                 row.innerHTML = `
                     <td>${standard.name}</td>
                     <td>${standard.number}</td>
-                    <td>${standard.date.toLocaleDateString()}</td>
+                    <td>${new Date(standard.date).toLocaleDateString()}</td>
                     <td>${standard.type}</td>
                     <td>${standard.room}</td>
                     <td>${standard.daysLeft}</td>
@@ -187,33 +205,42 @@
             });
         }
 
+        function saveData() {
+            localStorage.setItem('standards', JSON.stringify(standards));
+            localStorage.setItem('rooms', JSON.stringify(rooms));
+        }
+
         window.editStandard = function(index) {
             const standard = standards[index];
+            const name = prompt('Введите новое наименование эталона:', standard.name);
             const number = prompt('Введите новый номер эталона:', standard.number);
-            const dateInput = prompt('Введите новую дату (ГГГГ-ММ-ДД):', standard.date.toISOString().split('T')[0]);
+            const dateInput = prompt('Введите новую дату (ГГГГ-ММ-ДД):', new Date(standard.date).toISOString().split('T')[0]);
             const date = new Date(dateInput);
-            const interval = parseInt(prompt('Введите новый межповерочный интервал в месяцах:', (standard.expirationDate.getMonth() - standard.date.getMonth())));
+            const interval = parseInt(prompt('Введите новый межповерочный интервал в месяцах:', (new Date(standard.expirationDate).getMonth() - date.getMonth())));
             const type = prompt('Введите новый тип (поверка/калибровка):', standard.type);
 
             const expirationDate = new Date(date);
             expirationDate.setMonth(expirationDate.getMonth() + interval);
             const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
 
+            standard.name = name;
             standard.number = number;
-            standard.date = date;
+            standard.date = date.toISOString();
             standard.type = type;
-            standard.expirationDate = expirationDate;
+            standard.expirationDate = expirationDate.toISOString();
             standard.daysLeft = daysLeft;
 
+            saveData();
             renderStandards();
-        }
+        };
 
         window.deleteStandard = function(index) {
             if (confirm('Вы уверены, что хотите удалить эталон?')) {
                 standards.splice(index, 1);
+                saveData();
                 renderStandards();
             }
-        }
+        };
     </script>
 
 </body>

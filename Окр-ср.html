@@ -71,6 +71,26 @@
         <div id="records"></div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+    <script>
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
+  authDomain: "vlad-csms-af6df.firebaseapp.com",
+  databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
+  projectId: "vlad-csms-af6df",
+  storageBucket: "vlad-csms-af6df.firebasestorage.app",
+  messagingSenderId: "417297799117",
+  appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
+  measurementId: "G-0EMQB4HYSQ"
+      };
+
+      // Initialize Firebase
+      const app = firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+    </script>
+
     <script>
         document.addEventListener('DOMContentLoaded', loadRecords);
 
@@ -84,8 +104,8 @@
                 const options = { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
                 const dateTime = now.toLocaleString('ru-RU', options).replace(',', '');
 
+                // Создаем запись для сохранения в Firebase
                 const record = {
-                    id: Date.now(),
                     date: dateTime.split(' ')[0],
                     month: dateTime.split(' ')[1],
                     year: dateTime.split(' ')[2],
@@ -93,15 +113,19 @@
                     humidity: humidity,
                     temperature: temperature,
                     pressure: pressure,
-                    timestamp: now.getTime() // Добавим метку времени
+                    timestamp: now.getTime()
                 };
 
-                let records = JSON.parse(localStorage.getItem('records')) || [];
-                records.push(record);
-                localStorage.setItem('records', JSON.stringify(records));
-
-                loadRecords();
-                clearInputs();
+                // Отправляем данные в Firebase
+                firebase.database().ref('records').push(record)
+                .then(() => {
+                    loadRecords(); // Обновляем список записей
+                    clearInputs(); // Очищаем поля ввода
+                })
+                .catch((error) => {
+                    console.error("Ошибка при сохранении в Firebase:", error);
+                    alert('Ошибка при сохранении данных.');
+                });
             } else {
                 alert('Пожалуйста, заполните все поля.');
             }
@@ -109,54 +133,71 @@
 
         function loadRecords() {
             const recordsDiv = document.getElementById('records');
-            recordsDiv.innerHTML = '';
-            const records = JSON.parse(localStorage.getItem('records')) || [];
-            const now = new Date().setHours(0, 0, 0, 0); // Устанавливаем время на начало дня
+            recordsDiv.innerHTML = ''; // Очищаем предыдущие записи
 
-            records.forEach(record => {
-                const recordElement = document.createElement('div');
-                recordElement.classList.add('record');
-                
-                const recordHeader = document.createElement('div');
-                recordHeader.classList.add('record-header');
-                recordHeader.textContent = `${record.date} ${record.month} ${record.year} ${record.time}`;
-                
-                const recordDataHumidity = document.createElement('div');
-                recordDataHumidity.classList.add('record-data');
-                recordDataHumidity.textContent = `Влажность: ${record.humidity}%`;
+            // Получаем данные из Firebase
+            firebase.database().ref('records').orderByChild('timestamp').once('value')
+            .then(snapshot => {
+                const records = snapshot.val();
+                if (records) {
+                    // Преобразуем объект в массив для удобства обработки
+                    const recordsArray = Object.entries(records).map(([key, value]) => ({
+                        id: key, // Используем ключ из Firebase в качестве ID
+                        ...value
+                    }));
 
-                const recordDataTemperature = document.createElement('div');
-                recordDataTemperature.classList.add('record-data');
-                recordDataTemperature.textContent = `Температура: ${record.temperature}°C`;
+                    const now = new Date().setHours(0, 0, 0, 0);
 
-                const recordDataPressure = document.createElement('div');
-                recordDataPressure.classList.add('record-data');
-                recordDataPressure.textContent = `Давление: ${record.pressure} мм рт. ст.`;
+                    recordsArray.forEach(record => {
+                        const recordElement = document.createElement('div');
+                        recordElement.classList.add('record');
+                        
+                        const recordHeader = document.createElement('div');
+                        recordHeader.classList.add('record-header');
+                        recordHeader.textContent = `${record.date} ${record.month} ${record.year} ${record.time}`;
+                        
+                        const recordDataHumidity = document.createElement('div');
+                        recordDataHumidity.classList.add('record-data');
+                        recordDataHumidity.textContent = `Влажность: ${record.humidity}%`;
 
-                const buttonsDiv = document.createElement('div');
-                buttonsDiv.classList.add('edit-delete-buttons');
+                        const recordDataTemperature = document.createElement('div');
+                        recordDataTemperature.classList.add('record-data');
+                        recordDataTemperature.textContent = `Температура: ${record.temperature}°C`;
 
-                // Проверка, можно ли изменить или удалить запись
-                const recordDate = new Date(record.timestamp).setHours(0, 0, 0, 0);
-                if (recordDate < now) {
-                    buttonsDiv.classList.add('disabled');
-                    buttonsDiv.innerHTML = `
-                        <button disabled>Изменить</button>
-                        <button disabled>Удалить</button>
-                    `;
-                } else {
-                    buttonsDiv.innerHTML = `
-                        <button onclick="editRecord(${record.id})">Изменить</button>
-                        <button onclick="deleteRecord(${record.id})">Удалить</button>
-                    `;
+                        const recordDataPressure = document.createElement('div');
+                        recordDataPressure.classList.add('record-data');
+                        recordDataPressure.textContent = `Давление: ${record.pressure} мм рт. ст.`;
+
+                        const buttonsDiv = document.createElement('div');
+                        buttonsDiv.classList.add('edit-delete-buttons');
+
+                        // Проверка, можно ли изменить или удалить запись
+                        const recordDate = new Date(record.timestamp).setHours(0, 0, 0, 0);
+                        if (recordDate < now) {
+                            buttonsDiv.classList.add('disabled');
+                            buttonsDiv.innerHTML = `
+                                <button disabled>Изменить</button>
+                                <button disabled>Удалить</button>
+                            `;
+                        } else {
+                            buttonsDiv.innerHTML = `
+                                <button onclick="editRecord('${record.id}')">Изменить</button>
+                                <button onclick="deleteRecord('${record.id}')">Удалить</button>
+                            `;
+                        }
+
+                        recordElement.appendChild(recordHeader);
+                        recordElement.appendChild(recordDataHumidity);
+                        recordElement.appendChild(recordDataTemperature);
+                        recordElement.appendChild(recordDataPressure);
+                        recordElement.appendChild(buttonsDiv);
+                        recordsDiv.appendChild(recordElement);
+                    });
                 }
-
-                recordElement.appendChild(recordHeader);
-                recordElement.appendChild(recordDataHumidity);
-                recordElement.appendChild(recordDataTemperature);
-                recordElement.appendChild(recordDataPressure);
-                recordElement.appendChild(buttonsDiv);
-                recordsDiv.appendChild(recordElement);
+            })
+            .catch((error) => {
+                console.error("Ошибка при загрузке данных из Firebase:", error);
+                alert('Ошибка при загрузке данных.');
             });
         }
 
@@ -167,25 +208,36 @@
         }
 
         function editRecord(id) {
-            const records = JSON.parse(localStorage.getItem('records')) || [];
-            const record = records.find(r => r.id === id);
-            if (record) {
-                document.getElementById('humidity').value = record.humidity;
-                document.getElementById('temperature').value = record.temperature;
-                document.getElementById('pressure').value = record.pressure;
+            // Получаем данные записи из Firebase для редактирования
+            firebase.database().ref(`records/${id}`).once('value')
+            .then(snapshot => {
+                const record = snapshot.val();
+                if (record) {
+                    document.getElementById('humidity').value = record.humidity;
+                    document.getElementById('temperature').value = record.temperature;
+                    document.getElementById('pressure').value = record.pressure;
 
-                deleteRecord(id); // Удаляем запись после редактирования
-            }
+                    deleteRecord(id); // Удаляем запись после редактирования
+                }
+            })
+            .catch((error) => {
+                console.error("Ошибка при получении данных для редактирования:", error);
+                alert('Ошибка при получении данных для редактирования.');
+            });
         }
 
         function deleteRecord(id) {
-            let records = JSON.parse(localStorage.getItem('records')) || [];
-            records = records.filter(record => record.id !== id);
-            localStorage.setItem('records', JSON.stringify(records));
-            loadRecords();
+            // Удаляем запись из Firebase
+            firebase.database().ref(`records/${id}`).remove()
+            .then(() => {
+                loadRecords(); // Обновляем список записей
+            })
+            .catch((error) => {
+                console.error("Ошибка при удалении из Firebase:", error);
+                alert('Ошибка при удалении данных.');
+            });
         }
     </script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
 </body>
 </html>
+

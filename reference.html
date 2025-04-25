@@ -167,6 +167,11 @@
         };
 
         window.deleteLocation = function(index) {
+            const isUsed = standards.some(standard => standard.location === locations[index]);
+            if (isUsed) {
+                alert('Нельзя удалить расположение, так как оно используется в эталонах!');
+                return;
+            }
             if (confirm('Вы уверены, что хотите удалить расположение?')) {
                 locations.splice(index, 1);
                 renderLocationList();

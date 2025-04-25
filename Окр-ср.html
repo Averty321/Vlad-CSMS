@@ -72,33 +72,55 @@
     </div>
 
     <script type="module">
-        // Assuming Firebase is already imported and initialized
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, remove, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-        document.getElementById('saveButton').addEventListener('click', saveRecord);
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        function saveRecord() {
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        document.getElementById('saveButton').addEventListener('click', saveData);
+
+        function saveData() {
             const humidity = document.getElementById('humidity').value;
             const temperature = document.getElementById('temperature').value;
             const pressure = document.getElementById('pressure').value;
 
             if (humidity && temperature && pressure) {
-                const timestamp = new Date().toISOString();
-                const date = new Date(timestamp);
-                const record = {
-                    humidity,
-                    temperature,
-                    pressure,
-                    timestamp,
-                    date: date.toLocaleDateString(),
-                    time: date.toLocaleTimeString()
-                };
+                const now = new Date();
+                const timestamp = now.getTime();
+                const recordDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+                const recordTime = new Intl.DateTimeFormat('ru-RU', { hour: 'numeric', minute: 'numeric', second: 'numeric' }).format(now);
+                const recordMonth = new Intl.DateTimeFormat('ru-RU', { month: 'long' }).format(now);
+                const recordYear = new Intl.DateTimeFormat('ru-RU', { year: 'numeric' }).format(now);
+                const recordDay = new Intl.DateTimeFormat('ru-RU', { day: 'numeric' }).format(now);
 
-                // Save to Firebase
                 const recordsRef = ref(database, 'records');
-                push(recordsRef, record)
+                push(recordsRef, {
+                    humidity: humidity,
+                    temperature: temperature,
+                    pressure: pressure,
+                    timestamp: timestamp,
+                    date: recordDay, // день
+                    month: recordMonth, // месяц
+                    year: recordYear, // год
+                    time: recordTime, // время
+                })
                     .then(() => {
-                        loadRecords(); // Update records list
                         clearInputs();
+                        loadRecords(); // Обновляем список записей
                     })
                     .catch((error) => {
                         console.error("Ошибка при сохранении в Firebase:", error);
@@ -111,11 +133,11 @@
 
         function loadRecords() {
             const recordsDiv = document.getElementById('records');
-            recordsDiv.innerHTML = ''; // Clear previous records
+            recordsDiv.innerHTML = ''; // Очищаем содержимое div перед загрузкой
 
             const recordsRef = ref(database, 'records');
             onValue(recordsRef, (snapshot) => {
-                recordsDiv.innerHTML = ''; // Clear div before rendering
+                recordsDiv.innerHTML = ''; // Очищаем div перед каждым рендерингом
                 if (snapshot.exists()) {
                     snapshot.forEach((childSnapshot) => {
                         const record = childSnapshot.val();
@@ -126,7 +148,7 @@
 
                         const recordHeader = document.createElement('div');
                         recordHeader.classList.add('record-header');
-                        recordHeader.textContent = `Запись от ${record.date} в ${record.time}`;
+                        recordHeader.textContent = `Запись от ${record.date} ${record.month} ${record.year} в ${record.time}`;
 
                         const recordDataHumidity = document.createElement('div');
                         recordDataHumidity.classList.add('record-data');
@@ -143,18 +165,24 @@
                         const buttonsDiv = document.createElement('div');
                         buttonsDiv.classList.add('edit-delete-buttons');
 
-                        // Check if we can delete the record (only on the same day)
+                        // Проверка, можно ли удалить запись
                         const now = new Date();
                         const recordDate = new Date(record.timestamp);
-                        const isSameDay = now.getDate() === recordDate.getDate() &&
-                                          now.getMonth() === recordDate.getMonth() &&
-                                          now.getFullYear() === recordDate.getFullYear();
+                        const isSameDay = (
+                            now.getDate() === recordDate.getDate() &&
+                            now.getMonth() === recordDate.getMonth() &&
+                            now.getFullYear() === recordDate.getFullYear()
+                        );
+
+                        let deleteButton = `<button onclick="deleteRecord('${recordId}')">Удалить</button>`;
+                        if (!isSameDay) {
+                            deleteButton = `<button disabled>Удалить</button>`;
+                            buttonsDiv.classList.add('disabled');
+                        }
 
                         buttonsDiv.innerHTML = `
                             <button onclick="editRecord('${recordId}')">Изменить</button>
-                            <button ${isSameDay ? '' : 'disabled'} onclick="deleteRecord('${recordId}')">
-                                Удалить
-                            </button>
+                            ${deleteButton}
                         `;
 
                         recordElement.appendChild(recordHeader);
@@ -177,8 +205,8 @@
             document.getElementById('pressure').value = '';
         }
 
-        window.editRecord = function(id) {
-            // Get data from Firebase for editing
+         window.editRecord = function(id) {
+            // Получаем данные записи из Firebase для редактирования
             const recordRef = ref(database, `records/${id}`);
             get(recordRef)
                 .then(snapshot => {
@@ -187,19 +215,62 @@
                         document.getElementById('humidity').value = record.humidity;
                         document.getElementById('temperature').value = record.temperature;
                         document.getElementById('pressure').value = record.pressure;
+                        saveEditedData(id,record.humidity,record.temperature,record.pressure);
                     }
                 })
                 .catch((error) => {
                     console.error("Ошибка при получении данных для редактирования:", error);
                     alert('Ошибка при получении данных для редактирования.');
                 });
+            // deleteRecord(id);
+        }
+          function saveEditedData(id,humidity,temperature,pressure) {
+          const humidityNew = document.getElementById('humidity').value;
+          const temperatureNew = document.getElementById('temperature').value;
+          const pressureNew = document.getElementById('pressure').value;
+                //  deleteRecord(id);
+                remove(ref(database, `records/${id}`))
+                .then(() => {
+                  const now = new Date();
+                  const timestamp = now.getTime();
+                  const recordDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+                  const recordTime = new Intl.DateTimeFormat('ru-RU', { hour: 'numeric', minute: 'numeric', second: 'numeric' }).format(now);
+                  const recordMonth = new Intl.DateTimeFormat('ru-RU', { month: 'long' }).format(now);
+                  const recordYear = new Intl.DateTimeFormat('ru-RU', { year: 'numeric' }).format(now);
+                  const recordDay = new Intl.DateTimeFormat('ru-RU', { day: 'numeric' }).format(now);
+
+                    const recordsRef = ref(database, 'records');
+                    push(recordsRef, {
+                        humidity: humidityNew,
+                        temperature: temperatureNew,
+                        pressure: pressureNew,
+                        timestamp: timestamp,
+                        date: recordDay, // день
+                        month: recordMonth, // месяц
+                        year: recordYear, // год
+                        time: recordTime, // время
+                    })
+                        .then(() => {
+                            clearInputs();
+                            loadRecords(); // Обновляем список записей
+                        })
+                        .catch((error) => {
+                            console.error("Ошибка при сохранении в Firebase:", error);
+                            alert('Ошибка при сохранении данных.');
+                        });
+                     loadRecords(); // Обновляем список записей
+                })
+                .catch((error) => {
+                    console.error("Ошибка при удалении из Firebase:", error);
+                    alert('Ошибка при удалении данных.');
+                });
         }
 
         window.deleteRecord = function(id) {
-            // Delete record from Firebase
+            // Удаляем запись из Firebase
             remove(ref(database, `records/${id}`))
                 .then(() => {
-                    loadRecords(); // Update records list
+                    loadRecords(); // Обновляем список записей
                 })
                 .catch((error) => {
                     console.error("Ошибка при удалении из Firebase:", error);

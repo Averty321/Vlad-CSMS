@@ -108,133 +108,191 @@
         <button id="closeRoomsModal">Закрыть</button>
     </div>
 
-    <script>
-        let standards = [];
-        let rooms = [];
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getDatabase, ref, push, set, onValue, remove } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
 
-        function updateRoomSelect() {
-            const roomSelect = document.getElementById('roomSelect');
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
+  authDomain: "vlad-csms-af6df.firebaseapp.com",
+  databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
+  projectId: "vlad-csms-af6df",
+  storageBucket: "vlad-csms-af6df.firebasestorage.app",
+  messagingSenderId: "417297799117",
+  appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
+  measurementId: "G-0EMQB4HYSQ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        interface Standard {
+            name: string;
+            number: string;
+            date: string;
+            type: string;
+            room: string;
+            expirationDate: string;
+            daysLeft: number;
+        }
+
+        let standards: Standard[] = [];
+        let rooms: string[] = [];
+        let roomKeys: string[] = [];
+
+        function updateRoomSelect(): void {
+            const roomSelect = document.getElementById('roomSelect') as HTMLSelectElement;
             roomSelect.innerHTML = '';
             rooms.forEach((room, index) => {
                 const option = document.createElement('option');
-                option.value = index;
+                option.value = roomKeys[index]; // Используем ключ Firebase в качестве значения
                 option.textContent = room;
                 roomSelect.appendChild(option);
             });
         }
 
-        document.getElementById('createRoom').addEventListener('click', () => {
+        document.getElementById('createRoom')?.addEventListener('click', () => {
             const roomName = prompt('Введите название расположения:');
             if (roomName && roomName.trim() !== '') {
-                rooms.push(roomName);
-                updateRoomSelect();
-                alert(`Расположение "${roomName}" создано!`);
+                push(ref(database, 'rooms'), roomName)
+                    .then(() => {
+                        alert(`Расположение "${roomName}" создано!`);
+                    })
+                    .catch((error) => {
+                        console.error("Error creating room:", error);
+                        alert('Ошибка при создании расположения!');
+                    });
             } else {
                 alert('Название расположения не может быть пустым!');
             }
         });
 
-        document.getElementById('manageRooms').addEventListener('click', () => {
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('manageRoomsModal').style.display = 'block';
+        document.getElementById('manageRooms')?.addEventListener('click', () => {
+            (document.getElementById('overlay') as HTMLElement).style.display = 'block';
+            (document.getElementById('manageRoomsModal') as HTMLElement).style.display = 'block';
             renderRoomList();
         });
 
-        function renderRoomList() {
-            const roomList = document.getElementById('roomList');
+        function renderRoomList(): void {
+            const roomList = document.getElementById('roomList') as HTMLUListElement;
             roomList.innerHTML = '';
             rooms.forEach((room, index) => {
                 const li = document.createElement('li');
                 li.textContent = room;
                 li.innerHTML += `
-                    <button onclick="editRoom(${index})">Изменить</button>
-                    <button onclick="deleteRoom(${index})">Удалить</button>
+                    <button onclick="editRoom('${roomKeys[index]}')">Изменить</button>
+                    <button onclick="deleteRoom('${roomKeys[index]}')">Удалить</button>
                 `;
                 roomList.appendChild(li);
             });
         }
 
-        window.editRoom = function(index) {
-            const newName = prompt('Введите новое название расположения:', rooms[index]);
+        (window as any).editRoom = function(key: string): void {
+            const newName = prompt('Введите новое название расположения:');
             if (newName && newName.trim() !== '') {
-                rooms[index] = newName;
-                renderRoomList();
-                updateRoomSelect();
+                const roomRef = ref(database, `rooms/${key}`);
+                set(roomRef, newName)
+                    .then(() => {
+                        renderRoomList();
+                        updateRoomSelect();
+                    })
+                    .catch((error) => {
+                        console.error("Error editing room:", error);
+                        alert('Ошибка при изменении расположения!');
+                    });
             } else {
                 alert('Название расположения не может быть пустым!');
             }
         };
 
-        window.deleteRoom = function(index) {
-            const isUsed = standards.some(standard => standard.room === rooms[index]);
-            if (isUsed) {
-                alert('Нельзя удалить расположение, так как оно используется в эталонах!');
-                return;
-            }
-            if (confirm('Вы уверены, что хотите удалить расположение?')) {
-                rooms.splice(index, 1);
+        (window as any).deleteRoom = function(key: string): void {
+    const isUsed = standards.some(standard => standard.room === key);
+
+    if (isUsed) {
+        alert('Нельзя удалить расположение, так как оно используется в эталонах!');
+        return;
+    }
+
+    if (confirm('Вы уверены, что хотите удалить расположение?')) {
+        const roomRef = ref(database, `rooms/${key}`);
+        remove(roomRef)
+            .then(() => {
                 renderRoomList();
                 updateRoomSelect();
-            }
-        };
+            })
+            .catch((error) => {
+                console.error("Error deleting room:", error);
+                alert('Ошибка при удалении расположения!');
+            });
+    }
+};
 
-        document.getElementById('openAddStandard').addEventListener('click', () => {
+
+        document.getElementById('openAddStandard')?.addEventListener('click', () => {
             if (rooms.length === 0) {
                 alert('Сначала создайте расположение!');
                 return;
             }
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('addStandardModal').style.display = 'block';
+            (document.getElementById('overlay') as HTMLElement).style.display = 'block';
+            (document.getElementById('addStandardModal') as HTMLElement).style.display = 'block';
         });
 
-        document.getElementById('closeModal').addEventListener('click', () => {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('addStandardModal').style.display = 'none';
+        document.getElementById('closeModal')?.addEventListener('click', () => {
+            (document.getElementById('overlay') as HTMLElement).style.display = 'none';
+            (document.getElementById('addStandardModal') as HTMLElement).style.display = 'none';
         });
 
-        document.getElementById('closeRoomsModal').addEventListener('click', () => {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('manageRoomsModal').style.display = 'none';
+        document.getElementById('closeRoomsModal')?.addEventListener('click', () => {
+            (document.getElementById('overlay') as HTMLElement).style.display = 'none';
+            (document.getElementById('manageRoomsModal') as HTMLElement).style.display = 'none';
         });
 
-        document.getElementById('addStandard').addEventListener('click', () => {
-            const roomIndex = document.getElementById('roomSelect').value;
-            const name = document.getElementById('standardName').value.trim();
-            const number = document.getElementById('standardNumber').value.trim();
-            const dateInput = new Date(document.getElementById('standardDate').value);
-            const interval = parseInt(document.getElementById('interval').value);
-            const type = document.getElementById('type').value;
+        document.getElementById('addStandard')?.addEventListener('click', () => {
+            const roomSelect = document.getElementById('roomSelect') as HTMLSelectElement;
+            const roomKey = roomSelect.value;
+            const name = (document.getElementById('standardName') as HTMLInputElement).value.trim();
+            const number = (document.getElementById('standardNumber') as HTMLInputElement).value.trim();
+            const dateValue = (document.getElementById('standardDate') as HTMLInputElement).value;
+            const interval = parseInt((document.getElementById('interval') as HTMLInputElement).value);
+            const type = (document.getElementById('type') as HTMLSelectElement).value;
 
-            if (!name || !number || isNaN(interval) || !dateInput || roomIndex === "") {
+            if (!name || !number || isNaN(interval) || !dateValue || roomKey === "") {
                 alert('Пожалуйста, заполните все поля!');
                 return;
             }
 
+            const dateInput = new Date(dateValue);
             const expirationDate = new Date(dateInput);
             expirationDate.setMonth(expirationDate.getMonth() + interval);
-            const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
+            const daysLeft = Math.ceil((expirationDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
 
-            const standard = {
+            const standard: Standard = {
                 name,
                 number,
                 date: dateInput.toISOString(),
                 type,
-                room: rooms[roomIndex],
+                room: roomKey, // Сохраняем ключ расположения
                 expirationDate: expirationDate.toISOString(),
                 daysLeft
             };
 
-            standards.push(standard);
-            renderStandards();
-            saveData();
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('addStandardModal').style.display = 'none';
+            push(ref(database, 'standards'), standard)
+                .then(() => {
+                    (document.getElementById('overlay') as HTMLElement).style.display = 'none';
+                    (document.getElementById('addStandardModal') as HTMLElement).style.display = 'none';
+                })
+                .catch((error) => {
+                    console.error("Error adding standard:", error);
+                    alert('Ошибка при добавлении эталона!');
+                });
         });
 
-        function renderStandards() {
-            const tbody = document.querySelector('#items tbody');
+        function renderStandards(): void {
+            const tbody = document.querySelector('#items tbody') as HTMLTableSectionElement;
             tbody.innerHTML = '';
-            standards.forEach((standard) => {
+            standards.forEach((standard, index) => {
                 const row = document.createElement('tr');
                 if (standard.daysLeft < 0) {
                     row.classList.add('expired');
@@ -244,32 +302,59 @@
                     <td>${standard.number}</td>
                     <td>${new Date(standard.date).toLocaleDateString()}</td>
                     <td>${standard.type}</td>
-                    <td>${standard.room}</td>
+                    <td>${getRoomName(standard.room)}</td>
                     <td>${standard.daysLeft}</td>
                     <td class="actions">
-                        <button onclick="editStandard(${standards.indexOf(standard)})">Изменить</button>
-                        <button onclick="deleteStandard(${standards.indexOf(standard)})">Удалить</button>
+                        <button onclick="editStandard('${index}')">Изменить</button>
+                        <button onclick="deleteStandard('${index}')">Удалить</button>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
         }
 
-        function saveData() {
-            // Сохранение данных в Firebase или локально
+        function getRoomName(roomKey: string): string {
+            const index = roomKeys.indexOf(roomKey);
+            return rooms[index] || 'Неизвестно';
         }
 
-        window.editStandard = function(index) {
+        function loadData(): void {
+    const roomsRef = ref(database, 'rooms');
+    onValue(roomsRef, (snapshot) => {
+        rooms = [];
+        roomKeys = [];
+        snapshot.forEach(childSnapshot => {
+            const key = childSnapshot.key;
+            const value = childSnapshot.val();
+            rooms.push(value);
+            roomKeys.push(key || '');
+        });
+        updateRoomSelect();
+        renderRoomList();
+    });
+
+    const standardsRef = ref(database, 'standards');
+    onValue(standardsRef, (snapshot) => {
+        standards = [];
+        snapshot.forEach(childSnapshot => {
+            standards.push(childSnapshot.val());
+        });
+        renderStandards();
+    });
+}
+
+
+        (window as any).editStandard = function(index: string): void {
             // Логика редактирования эталона
         };
 
-        window.deleteStandard = function(index) {
+        (window as any).deleteStandard = function(index: string): void {
             if (confirm('Вы уверены, что хотите удалить эталон?')) {
-                standards.splice(index, 1);
-                saveData();
-                renderStandards();
+                // Логика удаления эталона
             }
         };
+
+        loadData();
     </script>
 
 </body>

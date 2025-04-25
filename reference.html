@@ -99,7 +99,7 @@
             <option value="калибровка">Калибровка</option>
         </select>
         <button id="addStandard">Добавить</button>
-        <button id="closeModal">Закрыть</button>
+        <button id="closeStandardModal">Закрыть</button>
     </div>
 
     <div class="modal" id="manageLocationsModal">
@@ -188,7 +188,7 @@
             document.getElementById('addStandardModal').style.display = 'block';
         });
 
-        document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('closeStandardModal').addEventListener('click', () => {
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('addStandardModal').style.display = 'none';
         });

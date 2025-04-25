@@ -58,6 +58,8 @@
             background-color: #ffcccc; /* Красный цвет для просроченных эталонов */
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -108,11 +110,8 @@
         <button id="closeRoomsModal">Закрыть</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-        import { getDatabase, ref, push, set, onValue, remove } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-
-        // Your web app's Firebase configuration
+    <script>
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
   authDomain: "vlad-csms-af6df.firebaseapp.com",
@@ -123,176 +122,153 @@
   appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
   measurementId: "G-0EMQB4HYSQ"
         };
-
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        interface Standard {
-            name: string;
-            number: string;
-            date: string;
-            type: string;
-            room: string;
-            expirationDate: string;
-            daysLeft: number;
-        }
+        let standards = [];
+        let rooms = [];
 
-        let standards: Standard[] = [];
-        let rooms: string[] = [];
-        let roomKeys: string[] = [];
-
-        function updateRoomSelect(): void {
-            const roomSelect = document.getElementById('roomSelect') as HTMLSelectElement;
+        function updateRoomSelect() {
+            const roomSelect = document.getElementById('roomSelect');
             roomSelect.innerHTML = '';
             rooms.forEach((room, index) => {
                 const option = document.createElement('option');
-                option.value = roomKeys[index]; // Используем ключ Firebase в качестве значения
+                option.value = index;
                 option.textContent = room;
                 roomSelect.appendChild(option);
             });
         }
 
-        document.getElementById('createRoom')?.addEventListener('click', () => {
+        function fetchRooms() {
+            database.ref('rooms').on('value', snapshot => {
+                rooms = snapshot.val() || [];
+                updateRoomSelect();
+                renderRoomList();
+            });
+        }
+
+        function fetchStandards() {
+            database.ref('standards').on('value', snapshot => {
+                standards = snapshot.val() || [];
+                renderStandards();
+            });
+        }
+
+        document.getElementById('createRoom').addEventListener('click', () => {
             const roomName = prompt('Введите название расположения:');
             if (roomName && roomName.trim() !== '') {
-                push(ref(database, 'rooms'), roomName)
-                    .then(() => {
-                        alert(`Расположение "${roomName}" создано!`);
-                    })
-                    .catch((error) => {
-                        console.error("Error creating room:", error);
-                        alert('Ошибка при создании расположения!');
-                    });
+                rooms.push(roomName);
+                database.ref('rooms').set(rooms);
+                alert(`Расположение "${roomName}" создано!`);
             } else {
                 alert('Название расположения не может быть пустым!');
             }
         });
 
-        document.getElementById('manageRooms')?.addEventListener('click', () => {
-            (document.getElementById('overlay') as HTMLElement).style.display = 'block';
-            (document.getElementById('manageRoomsModal') as HTMLElement).style.display = 'block';
+        document.getElementById('manageRooms').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('manageRoomsModal').style.display = 'block';
             renderRoomList();
         });
 
-        function renderRoomList(): void {
-            const roomList = document.getElementById('roomList') as HTMLUListElement;
+        function renderRoomList() {
+            const roomList = document.getElementById('roomList');
             roomList.innerHTML = '';
             rooms.forEach((room, index) => {
                 const li = document.createElement('li');
                 li.textContent = room;
                 li.innerHTML += `
-                    <button onclick="editRoom('${roomKeys[index]}')">Изменить</button>
-                    <button onclick="deleteRoom('${roomKeys[index]}')">Удалить</button>
+                    <button onclick="editRoom(${index})">Изменить</button>
+                    <button onclick="deleteRoom(${index})">Удалить</button>
                 `;
                 roomList.appendChild(li);
             });
         }
 
-        (window as any).editRoom = function(key: string): void {
-            const newName = prompt('Введите новое название расположения:');
+        window.editRoom = function(index) {
+            const newName = prompt('Введите новое название расположения:', rooms[index]);
             if (newName && newName.trim() !== '') {
-                const roomRef = ref(database, `rooms/${key}`);
-                set(roomRef, newName)
-                    .then(() => {
-                        renderRoomList();
-                        updateRoomSelect();
-                    })
-                    .catch((error) => {
-                        console.error("Error editing room:", error);
-                        alert('Ошибка при изменении расположения!');
-                    });
+                rooms[index] = newName;
+                database.ref('rooms').set(rooms);
+                renderRoomList();
+                updateRoomSelect();
             } else {
                 alert('Название расположения не может быть пустым!');
             }
         };
 
-        (window as any).deleteRoom = function(key: string): void {
-    const isUsed = standards.some(standard => standard.room === key);
-
-    if (isUsed) {
-        alert('Нельзя удалить расположение, так как оно используется в эталонах!');
-        return;
-    }
-
-    if (confirm('Вы уверены, что хотите удалить расположение?')) {
-        const roomRef = ref(database, `rooms/${key}`);
-        remove(roomRef)
-            .then(() => {
+        window.deleteRoom = function(index) {
+            const isUsed = standards.some(standard => standard.room === rooms[index]);
+            if (isUsed) {
+                alert('Нельзя удалить расположение, так как оно используется в эталонах!');
+                return;
+            }
+            if (confirm('Вы уверены, что хотите удалить расположение?')) {
+                rooms.splice(index, 1);
+                database.ref('rooms').set(rooms);
                 renderRoomList();
                 updateRoomSelect();
-            })
-            .catch((error) => {
-                console.error("Error deleting room:", error);
-                alert('Ошибка при удалении расположения!');
-            });
-    }
-};
+            }
+        };
 
-
-        document.getElementById('openAddStandard')?.addEventListener('click', () => {
+        document.getElementById('openAddStandard').addEventListener('click', () => {
             if (rooms.length === 0) {
                 alert('Сначала создайте расположение!');
                 return;
             }
-            (document.getElementById('overlay') as HTMLElement).style.display = 'block';
-            (document.getElementById('addStandardModal') as HTMLElement).style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('addStandardModal').style.display = 'block';
         });
 
-        document.getElementById('closeModal')?.addEventListener('click', () => {
-            (document.getElementById('overlay') as HTMLElement).style.display = 'none';
-            (document.getElementById('addStandardModal') as HTMLElement).style.display = 'none';
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('addStandardModal').style.display = 'none';
         });
 
-        document.getElementById('closeRoomsModal')?.addEventListener('click', () => {
-            (document.getElementById('overlay') as HTMLElement).style.display = 'none';
-            (document.getElementById('manageRoomsModal') as HTMLElement).style.display = 'none';
+        document.getElementById('closeRoomsModal').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('manageRoomsModal').style.display = 'none';
         });
 
-        document.getElementById('addStandard')?.addEventListener('click', () => {
-            const roomSelect = document.getElementById('roomSelect') as HTMLSelectElement;
-            const roomKey = roomSelect.value;
-            const name = (document.getElementById('standardName') as HTMLInputElement).value.trim();
-            const number = (document.getElementById('standardNumber') as HTMLInputElement).value.trim();
-            const dateValue = (document.getElementById('standardDate') as HTMLInputElement).value;
-            const interval = parseInt((document.getElementById('interval') as HTMLInputElement).value);
-            const type = (document.getElementById('type') as HTMLSelectElement).value;
+        document.getElementById('addStandard').addEventListener('click', () => {
+            const roomIndex = document.getElementById('roomSelect').value;
+            const name = document.getElementById('standardName').value.trim();
+            const number = document.getElementById('standardNumber').value.trim();
+            const dateInput = new Date(document.getElementById('standardDate').value);
+            const interval = parseInt(document.getElementById('interval').value);
+            const type = document.getElementById('type').value;
 
-            if (!name || !number || isNaN(interval) || !dateValue || roomKey === "") {
+            if (!name || !number || isNaN(interval) || !dateInput || roomIndex === "") {
                 alert('Пожалуйста, заполните все поля!');
                 return;
             }
 
-            const dateInput = new Date(dateValue);
             const expirationDate = new Date(dateInput);
             expirationDate.setMonth(expirationDate.getMonth() + interval);
-            const daysLeft = Math.ceil((expirationDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
 
-            const standard: Standard = {
+            const standard = {
                 name,
                 number,
                 date: dateInput.toISOString(),
                 type,
-                room: roomKey, // Сохраняем ключ расположения
+                room: rooms[roomIndex],
                 expirationDate: expirationDate.toISOString(),
                 daysLeft
             };
 
-            push(ref(database, 'standards'), standard)
-                .then(() => {
-                    (document.getElementById('overlay') as HTMLElement).style.display = 'none';
-                    (document.getElementById('addStandardModal') as HTMLElement).style.display = 'none';
-                })
-                .catch((error) => {
-                    console.error("Error adding standard:", error);
-                    alert('Ошибка при добавлении эталона!');
-                });
+            standards.push(standard);
+            database.ref('standards').set(standards);
+            renderStandards();
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('addStandardModal').style.display = 'none';
         });
 
-        function renderStandards(): void {
-            const tbody = document.querySelector('#items tbody') as HTMLTableSectionElement;
+        function renderStandards() {
+            const tbody = document.querySelector('#items tbody');
             tbody.innerHTML = '';
-            standards.forEach((standard, index) => {
+            standards.forEach((standard) => {
                 const row = document.createElement('tr');
                 if (standard.daysLeft < 0) {
                     row.classList.add('expired');
@@ -302,59 +278,37 @@
                     <td>${standard.number}</td>
                     <td>${new Date(standard.date).toLocaleDateString()}</td>
                     <td>${standard.type}</td>
-                    <td>${getRoomName(standard.room)}</td>
+                    <td>${standard.room}</td>
                     <td>${standard.daysLeft}</td>
                     <td class="actions">
-                        <button onclick="editStandard('${index}')">Изменить</button>
-                        <button onclick="deleteStandard('${index}')">Удалить</button>
+                        <button onclick="editStandard(${standards.indexOf(standard)})">Изменить</button>
+                        <button onclick="deleteStandard(${standards.indexOf(standard)})">Удалить</button>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
         }
 
-        function getRoomName(roomKey: string): string {
-            const index = roomKeys.indexOf(roomKey);
-            return rooms[index] || 'Неизвестно';
+        function saveData() {
+            // Сохранение данных в Firebase уже реализовано
         }
 
-        function loadData(): void {
-    const roomsRef = ref(database, 'rooms');
-    onValue(roomsRef, (snapshot) => {
-        rooms = [];
-        roomKeys = [];
-        snapshot.forEach(childSnapshot => {
-            const key = childSnapshot.key;
-            const value = childSnapshot.val();
-            rooms.push(value);
-            roomKeys.push(key || '');
-        });
-        updateRoomSelect();
-        renderRoomList();
-    });
-
-    const standardsRef = ref(database, 'standards');
-    onValue(standardsRef, (snapshot) => {
-        standards = [];
-        snapshot.forEach(childSnapshot => {
-            standards.push(childSnapshot.val());
-        });
-        renderStandards();
-    });
-}
-
-
-        (window as any).editStandard = function(index: string): void {
+        window.editStandard = function(index) {
             // Логика редактирования эталона
         };
 
-        (window as any).deleteStandard = function(index: string): void {
+        window.deleteStandard = function(index) {
             if (confirm('Вы уверены, что хотите удалить эталон?')) {
-                // Логика удаления эталона
+                standards.splice(index, 1);
+                database.ref('standards').set(standards);
+                renderStandards();
             }
         };
 
-        loadData();
+        // Инициализация данных
+        fetchRooms();
+        fetchStandards();
+
     </script>
 
 </body>

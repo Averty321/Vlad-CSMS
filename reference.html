@@ -58,8 +58,6 @@
             background-color: #ffcccc; /* Красный цвет для просроченных эталонов */
         }
     </style>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -84,7 +82,7 @@
 
     <div class="overlay" id="overlay"></div>
     <div class="modal" id="addStandardModal">
-        <h3>Добавить/Изменить эталон</h3>
+        <h3>Добавить эталон</h3>
         <label for="roomSelect">Расположение:</label>
         <select id="roomSelect" required></select>
         <label for="standardName">Наименование:</label>
@@ -110,24 +108,43 @@
         <button id="closeRoomsModal">Закрыть</button>
     </div>
 
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
-        let standards = [];
+    <script>
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "",
+  authDomain: "vlad-csms-af6df.firebaseapp.com",
+  databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
+  projectId: "vlad-csms-af6df",
+  storageBucket: "vlad-csms-af6df.firebasestorage.app",
+  messagingSenderId: "417297799117",
+  appId: "",
+  measurementId: ""
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+
         let rooms = [];
-        let editingStandardIndex = null;
+        let standards = [];
+
+        function fetchRooms() {
+            database.ref('rooms').on('value', (snapshot) => {
+                rooms = snapshot.val() || [];
+                updateRoomSelect();
+                renderRoomList();
+            });
+        }
+
+        function fetchStandards() {
+            database.ref('standards').on('value', (snapshot) => {
+                standards = snapshot.val() || [];
+                renderStandards();
+            });
+        }
 
         function updateRoomSelect() {
             const roomSelect = document.getElementById('roomSelect');
@@ -140,26 +157,12 @@
             });
         }
 
-        function fetchRooms() {
-            database.ref('rooms').on('value', snapshot => {
-                rooms = snapshot.val() || [];
-                updateRoomSelect();
-                renderRoomList();
-            });
-        }
-
-        function fetchStandards() {
-            database.ref('standards').on('value', snapshot => {
-                standards = snapshot.val() || [];
-                renderStandards();
-            });
-        }
-
         document.getElementById('createRoom').addEventListener('click', () => {
             const roomName = prompt('Введите название расположения:');
             if (roomName && roomName.trim() !== '') {
                 rooms.push(roomName);
                 database.ref('rooms').set(rooms);
+                updateRoomSelect();
                 alert(`Расположение "${roomName}" создано!`);
             } else {
                 alert('Название расположения не может быть пустым!');
@@ -217,7 +220,6 @@
                 alert('Сначала создайте расположение!');
                 return;
             }
-            editingStandardIndex = null; // Сбросить индекс редактируемого эталона
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('addStandardModal').style.display = 'block';
         });
@@ -259,16 +261,7 @@
                 daysLeft
             };
 
-            if (editingStandardIndex !== null) {
-                // Изменение существующего эталона
-                standards[editingStandardIndex] = standard;
-                alert('Эталон изменен!');
-            } else {
-                // Добавление нового эталона
-                standards.push(standard);
-                alert('Эталон добавлен!');
-            }
-
+            standards.push(standard);
             database.ref('standards').set(standards);
             renderStandards();
             document.getElementById('overlay').style.display = 'none';
@@ -291,7 +284,7 @@
                     <td>${standard.room}</td>
                     <td>${standard.daysLeft}</td>
                     <td class="actions">
-                        <button onclick="editStandard(${index})">Изменить</button>
+                        <button onclick="openEditStandard(${index})">Изменить</button>
                         <button onclick="deleteStandard(${index})">Удалить</button>
                     </td>
                 `;
@@ -299,20 +292,81 @@
             });
         }
 
-        window.editStandard = function(index) {
-            const standard = standards[index];
-            document.getElementById('standardName').value = standard.name;
-            document.getElementById('standardNumber').value = standard.number;
-            document.getElementById('standardDate').value = new Date(standard.date).toISOString().split('T')[0];
-            document.getElementById('interval').value = (new Date(standard.expirationDate).getMonth() - new Date(standard.date).getMonth());
-            document.getElementById('type').value = standard.type;
-            document.getElementById('roomSelect').value = rooms.indexOf(standard.room);
-            editingStandardIndex = index; // Установить индекс редактируемого эталона
+        window.openEditStandard = function(index) {
+    // Отображение модального окна для редактирования эталона
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('addStandardModal').style.display = 'block';
 
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('addStandardModal').style.display = 'block';
-        };
+    // Заполнение полей модального окна данными выбранного эталона
+    const standard = standards[index];
+    document.getElementById('roomSelect').value = rooms.indexOf(standard.room);
+    document.getElementById('standardName').value = standard.name;
+    document.getElementById('standardNumber').value = standard.number;
+    document.getElementById('standardDate').value = new Date(standard.date).toISOString().split('T')[0];
+    document.getElementById('interval').value = calculateInterval(standard.date, standard.expirationDate);
+    document.getElementById('type').value = standard.type;
 
+    // Изменяем текст кнопки "Добавить" на "Сохранить изменения"
+    const addButton = document.getElementById('addStandard');
+    addButton.textContent = 'Сохранить изменения';
+
+    // Добавляем обработчик события для сохранения изменений
+    addButton.onclick = function() {
+        saveEditedStandard(index);
+    };
+};
+
+function calculateInterval(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    let months = (end.getFullYear() - start.getFullYear()) * 12;
+    months -= start.getMonth();
+    months += end.getMonth();
+    return months <= 0 ? 0 : months;
+}
+
+function saveEditedStandard(index) {
+    const roomIndex = document.getElementById('roomSelect').value;
+    const name = document.getElementById('standardName').value.trim();
+    const number = document.getElementById('standardNumber').value.trim();
+    const dateInput = new Date(document.getElementById('standardDate').value);
+    const interval = parseInt(document.getElementById('interval').value);
+    const type = document.getElementById('type').value;
+
+    if (!name || !number || isNaN(interval) || !dateInput || roomIndex === "") {
+        alert('Пожалуйста, заполните все поля!');
+        return;
+    }
+
+    const expirationDate = new Date(dateInput);
+    expirationDate.setMonth(expirationDate.getMonth() + interval);
+    const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
+
+    const standard = {
+        name,
+        number,
+        date: dateInput.toISOString(),
+        type,
+        room: rooms[roomIndex],
+        expirationDate: expirationDate.toISOString(),
+        daysLeft
+    };
+
+    standards[index] = standard;
+    database.ref('standards').set(standards);
+    renderStandards();
+    closeModal();
+}
+
+function closeModal() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('addStandardModal').style.display = 'none';
+     const addButton = document.getElementById('addStandard');
+    addButton.textContent = 'Добавить';
+    addButton.onclick = function() {
+        addStandard();
+    };
+}
         window.deleteStandard = function(index) {
             if (confirm('Вы уверены, что хотите удалить эталон?')) {
                 standards.splice(index, 1);
@@ -321,10 +375,42 @@
             }
         };
 
+         function addStandard() {
+            const roomIndex = document.getElementById('roomSelect').value;
+            const name = document.getElementById('standardName').value.trim();
+            const number = document.getElementById('standardNumber').value.trim();
+            const dateInput = new Date(document.getElementById('standardDate').value);
+            const interval = parseInt(document.getElementById('interval').value);
+            const type = document.getElementById('type').value;
+
+            if (!name || !number || isNaN(interval) || !dateInput || roomIndex === "") {
+                alert('Пожалуйста, заполните все поля!');
+                return;
+            }
+
+            const expirationDate = new Date(dateInput);
+            expirationDate.setMonth(expirationDate.getMonth() + interval);
+            const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
+
+            const standard = {
+                name,
+                number,
+                date: dateInput.toISOString(),
+                type,
+                room: rooms[roomIndex],
+                expirationDate: expirationDate.toISOString(),
+                daysLeft
+            };
+
+            standards.push(standard);
+            database.ref('standards').set(standards);
+            renderStandards();
+            closeModal();
+        }
+
         // Инициализация данных
         fetchRooms();
         fetchStandards();
-
     </script>
 
 </body>

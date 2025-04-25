@@ -58,16 +58,11 @@
             background-color: #ffcccc; /* Красный цвет для просроченных эталонов */
         }
     </style>
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
 </head>
 <body>
 
-    <button id="createRoom">Создать комнату</button>
+    <button id="createLocation">Создать расположение</button>
+    <button id="manageLocations">Управление расположениями</button>
     <button id="openAddStandard">Добавить эталон</button>
 
     <table id="items">
@@ -76,8 +71,8 @@
                 <th>Наименование</th>
                 <th>Номер</th>
                 <th>Дата</th>
-                <th>Тип</th>
-                <th>Комната</th>
+                <th>Вид метрологической оценки</th>
+                <th>Расположение</th>
                 <th>Осталось дней</th>
                 <th>Действия</th>
             </tr>
@@ -88,8 +83,8 @@
     <div class="overlay" id="overlay"></div>
     <div class="modal" id="addStandardModal">
         <h3>Добавить эталон</h3>
-        <label for="roomSelect">Комната:</label>
-        <select id="roomSelect" required></select>
+        <label for="locationSelect">Расположение:</label>
+        <select id="locationSelect" required></select>
         <label for="standardName">Наименование:</label>
         <input type="text" id="standardName" required>
         <label for="standardNumber">Номер:</label>
@@ -98,8 +93,8 @@
         <input type="date" id="standardDate" required>
         <label for="interval">Межповерочный интервал (месяцы):</label>
         <input type="number" id="interval" required>
-        <label for="type">Тип:</label>
-        <select id="type">
+        <label for="measurementType">Вид метрологической оценки:</label>
+        <select id="measurementType">
             <option value="поверка">Поверка</option>
             <option value="калибровка">Калибровка</option>
         </select>
@@ -107,77 +102,81 @@
         <button id="closeModal">Закрыть</button>
     </div>
 
+    <div class="modal" id="manageLocationsModal">
+        <h3>Управление расположениями</h3>
+        <ul id="locationList"></ul>
+        <input type="text" id="newLocationName" placeholder="Название расположения" required>
+        <button id="addLocation">Добавить расположение</button>
+        <button id="closeLocationsModal">Закрыть</button>
+    </div>
+
     <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
-  authDomain: "vlad-csms-af6df.firebaseapp.com",
-  databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
-  projectId: "vlad-csms-af6df",
-  storageBucket: "vlad-csms-af6df.firebasestorage.app",
-  messagingSenderId: "417297799117",
-  appId: "1:417297799117:web:0a93dce429cd37db499684",
-  measurementId: "G-MD79ZVT24Z"
-  };
-
-  // Initialize Firebase
-  const app = firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
         let standards = [];
-        let rooms = [];
+        let locations = [];
 
-        // Загружаем данные с сервера при загрузке страницы
-        window.onload = function() {
-            const standardsRef = firebase.database().ref('standards');
-
-            standardsRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                standards = data || [];
-                renderStandards();
-            }, (error) => {
-                console.error('Ошибка при загрузке данных из Firebase:', error);
-            });
-
-            // Fetch rooms only once and store in the database under a separate path
-            const roomsRef = firebase.database().ref('rooms');
-            roomsRef.once('value', (snapshot) => {
-                const data = snapshot.val();
-                rooms = data || [];
-                updateRoomSelect();
-            });
-        };
-
-        document.getElementById('createRoom').addEventListener('click', () => {
-            const roomName = prompt('Введите название комнаты (можно текст):');
-            if (roomName) {
-                rooms.push(roomName);
-                updateRoomSelect();
-
-                // Save rooms to Firebase
-                const roomsRef = firebase.database().ref('rooms');
-                roomsRef.set(rooms)
-                    .then(() => {
-                        console.log('Комнаты успешно сохранены в Firebase');
-                    })
-                    .catch((error) => {
-                        console.error('Ошибка при сохранении комнат в Firebase:', error);
-                    });
-            }
-        });
-
-        function updateRoomSelect() {
-            const roomSelect = document.getElementById('roomSelect');
-            roomSelect.innerHTML = '';
-            rooms.forEach((room, index) => {
+        function updateLocationSelect() {
+            const locationSelect = document.getElementById('locationSelect');
+            locationSelect.innerHTML = '';
+            locations.forEach((location, index) => {
                 const option = document.createElement('option');
                 option.value = index;
-                option.textContent = room;
-                roomSelect.appendChild(option);
+                option.textContent = location;
+                locationSelect.appendChild(option);
             });
         }
 
+        document.getElementById('createLocation').addEventListener('click', () => {
+            const locationName = document.getElementById('newLocationName').value.trim();
+            if (locationName) {
+                locations.push(locationName);
+                updateLocationSelect();
+                alert(`Расположение "${locationName}" создано!`);
+                document.getElementById('newLocationName').value = ''; // Очистить поле
+            } else {
+                alert('Название расположения не может быть пустым!');
+            }
+        });
+
+        document.getElementById('manageLocations').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('manageLocationsModal').style.display = 'block';
+            renderLocationList();
+        });
+
+        function renderLocationList() {
+            const locationList = document.getElementById('locationList');
+            locationList.innerHTML = '';
+            locations.forEach((location, index) => {
+                const li = document.createElement('li');
+                li.textContent = location;
+                li.innerHTML += `
+                    <button onclick="editLocation(${index})">Изменить</button>
+                    <button onclick="deleteLocation(${index})">Удалить</button>
+                `;
+                locationList.appendChild(li);
+            });
+        }
+
+        window.editLocation = function(index) {
+            const newName = prompt('Введите новое название расположения:', locations[index]);
+            if (newName) {
+                locations[index] = newName;
+                renderLocationList();
+                updateLocationSelect();
+            }
+        };
+
+        window.deleteLocation = function(index) {
+            if (confirm('Вы уверены, что хотите удалить расположение?')) {
+                locations.splice(index, 1);
+                renderLocationList();
+                updateLocationSelect();
+            }
+        };
+
         document.getElementById('openAddStandard').addEventListener('click', () => {
-            if (rooms.length === 0) {
-                alert('Сначала создайте комнату!');
+            if (locations.length === 0) {
+                alert('Сначала создайте расположение!');
                 return;
             }
             document.getElementById('overlay').style.display = 'block';
@@ -189,25 +188,34 @@
             document.getElementById('addStandardModal').style.display = 'none';
         });
 
+        document.getElementById('closeLocationsModal').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('manageLocationsModal').style.display = 'none';
+        });
+
         document.getElementById('addStandard').addEventListener('click', () => {
-            const roomIndex = document.getElementById('roomSelect').value;
-            const name = document.getElementById('standardName').value;
-            const number = document.getElementById('standardNumber').value;
+            const locationIndex = document.getElementById('locationSelect').value;
+            const name = document.getElementById('standardName').value.trim();
+            const number = document.getElementById('standardNumber').value.trim();
             const dateInput = new Date(document.getElementById('standardDate').value);
             const interval = parseInt(document.getElementById('interval').value);
-            const type = document.getElementById('type').value;
+            const measurementType = document.getElementById('measurementType').value;
+
+            if (!name || !number || isNaN(interval) || !dateInput || locationIndex === "") {
+                alert('Пожалуйста, заполните все поля!');
+                return;
+            }
 
             const expirationDate = new Date(dateInput);
             expirationDate.setMonth(expirationDate.getMonth() + interval);
-
             const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
 
             const standard = {
                 name,
                 number,
                 date: dateInput.toISOString(),
-                type,
-                room: rooms[roomIndex],
+                measurementType,
+                location: locations[locationIndex],
                 expirationDate: expirationDate.toISOString(),
                 daysLeft
             };
@@ -230,8 +238,8 @@
                     <td>${standard.name}</td>
                     <td>${standard.number}</td>
                     <td>${new Date(standard.date).toLocaleDateString()}</td>
-                    <td>${standard.type}</td>
-                    <td>${standard.room}</td>
+                    <td>${standard.measurementType}</td>
+                    <td>${standard.location}</td>
                     <td>${standard.daysLeft}</td>
                     <td class="actions">
                         <button onclick="editStandard(${standards.indexOf(standard)})">Изменить</button>
@@ -243,38 +251,11 @@
         }
 
         function saveData() {
-            const standardsRef = firebase.database().ref('standards');
-            standardsRef.set(standards)
-            .then(() => {
-                console.log('Данные успешно сохранены в Firebase');
-            })
-            .catch((error) => {
-                console.error('Ошибка при сохранении данных в Firebase:', error);
-            });
+            // Сохранение данных в Firebase или локально
         }
 
         window.editStandard = function(index) {
-            const standard = standards[index];
-            const name = prompt('Введите новое наименование эталона:', standard.name);
-            const number = prompt('Введите новый номер эталона:', standard.number);
-            const dateInput = prompt('Введите новую дату (ГГГГ-ММ-ДД):', new Date(standard.date).toISOString().split('T')[0]);
-            const date = new Date(dateInput);
-            const interval = parseInt(prompt('Введите новый межповерочный интервал в месяцах:', (new Date(standard.expirationDate).getMonth() - date.getMonth())));
-            const type = prompt('Введите новый тип (поверка/калибровка):', standard.type);
-
-            const expirationDate = new Date(date);
-            expirationDate.setMonth(expirationDate.getMonth() + interval);
-            const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
-
-            standard.name = name;
-            standard.number = number;
-            standard.date = date.toISOString();
-            standard.type = type;
-            standard.expirationDate = expirationDate.toISOString();
-            standard.daysLeft = daysLeft;
-
-            saveData();
-            renderStandards();
+            // Логика редактирования эталона
         };
 
         window.deleteStandard = function(index) {

@@ -65,10 +65,32 @@
     </style>
 </head>
 <body>
+    
     <header>
         <div class="logo">Полезная информация</div>
     </header>
+<a href="Reestrs.html" class="long-button">Ссылки</a>
 
+<style>
+    .long-button {
+        position: fixed;
+        top: 70px; /* Отступ от верхней части страницы */
+        right: 25px; /* Отступ от правого края */
+        width: 2300px; /* Ширина кнопки */
+        padding: 15px;
+        background-color: #003366; /* Синий фон */
+        color: #ffffff; /* Белый текст */
+        text-align: center;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 18px;
+        transition: background-color 0.3s;
+    }
+    .long-button:hover {
+        background-color: #005599; /* Более светлый синий при наведении */
+    }
+</style>
     <nav class="sidebar" role="navigation">
         <a href="#" onclick="toggleDropdown('certificateList')">Примеры свидетельств и заключений</a>
         <div id="certificateList" class="dropdown" aria-hidden="true">
@@ -117,5 +139,6 @@
             });
         }
     </script>
+    
 </body>
 </html>

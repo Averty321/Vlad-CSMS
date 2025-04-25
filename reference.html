@@ -61,8 +61,8 @@
 </head>
 <body>
 
-    <button id="createLocation">Создать расположение</button>
-    <button id="manageLocations">Управление расположениями</button>
+    <button id="createRoom">Создать расположение</button>
+    <button id="manageRooms">Управление расположениями</button>
     <button id="openAddStandard">Добавить эталон</button>
 
     <table id="items">
@@ -83,8 +83,8 @@
     <div class="overlay" id="overlay"></div>
     <div class="modal" id="addStandardModal">
         <h3>Добавить эталон</h3>
-        <label for="locationSelect">Расположение:</label>
-        <select id="locationSelect" required></select>
+        <label for="roomSelect">Расположение:</label>
+        <select id="roomSelect" required></select>
         <label for="standardName">Наименование:</label>
         <input type="text" id="standardName" required>
         <label for="standardNumber">Номер:</label>
@@ -93,94 +93,95 @@
         <input type="date" id="standardDate" required>
         <label for="interval">Межповерочный интервал (месяцы):</label>
         <input type="number" id="interval" required>
-        <label for="measurementType">Вид метрологической оценки:</label>
-        <select id="measurementType">
+        <label for="type">Вид метрологической оценки:</label>
+        <select id="type">
             <option value="поверка">Поверка</option>
             <option value="калибровка">Калибровка</option>
         </select>
         <button id="addStandard">Добавить</button>
-        <button id="closeStandardModal">Закрыть</button>
+        <button id="closeModal">Закрыть</button>
     </div>
 
-    <div class="modal" id="manageLocationsModal">
+    <div class="modal" id="manageRoomsModal">
         <h3>Управление расположениями</h3>
-        <ul id="locationList"></ul>
-        <input type="text" id="newLocationName" placeholder="Название расположения" required>
-        <button id="addLocation">Добавить расположение</button>
-        <button id="closeLocationsModal">Закрыть</button>
+        <ul id="roomList"></ul>
+        <input type="text" id="newRoomName" placeholder="Название расположения" required>
+        <button id="addRoom">Добавить расположение</button>
+        <button id="closeRoomsModal">Закрыть</button>
     </div>
 
     <script>
         let standards = [];
-        let locations = [];
+        let rooms = [];
 
-        function updateLocationSelect() {
-            const locationSelect = document.getElementById('locationSelect');
-            locationSelect.innerHTML = '';
-            locations.forEach((location, index) => {
+        function updateRoomSelect() {
+            const roomSelect = document.getElementById('roomSelect');
+            roomSelect.innerHTML = '';
+            rooms.forEach((room, index) => {
                 const option = document.createElement('option');
                 option.value = index;
-                option.textContent = location;
-                locationSelect.appendChild(option);
+                option.textContent = room;
+                roomSelect.appendChild(option);
             });
         }
 
-        document.getElementById('createLocation').addEventListener('click', () => {
-            const locationName = document.getElementById('newLocationName').value.trim();
-            if (locationName) {
-                locations.push(locationName);
-                updateLocationSelect();
-                alert(`Расположение "${locationName}" создано!`);
-                document.getElementById('newLocationName').value = ''; // Очистить поле
+        document.getElementById('createRoom').addEventListener('click', () => {
+            const roomName = prompt('Введите название расположения:');
+            if (roomName && roomName.trim() !== '') {
+                rooms.push(roomName);
+                updateRoomSelect();
+                alert(`Расположение "${roomName}" создано!`);
             } else {
                 alert('Название расположения не может быть пустым!');
             }
         });
 
-        document.getElementById('manageLocations').addEventListener('click', () => {
+        document.getElementById('manageRooms').addEventListener('click', () => {
             document.getElementById('overlay').style.display = 'block';
-            document.getElementById('manageLocationsModal').style.display = 'block';
-            renderLocationList();
+            document.getElementById('manageRoomsModal').style.display = 'block';
+            renderRoomList();
         });
 
-        function renderLocationList() {
-            const locationList = document.getElementById('locationList');
-            locationList.innerHTML = '';
-            locations.forEach((location, index) => {
+        function renderRoomList() {
+            const roomList = document.getElementById('roomList');
+            roomList.innerHTML = '';
+            rooms.forEach((room, index) => {
                 const li = document.createElement('li');
-                li.textContent = location;
+                li.textContent = room;
                 li.innerHTML += `
-                    <button onclick="editLocation(${index})">Изменить</button>
-                    <button onclick="deleteLocation(${index})">Удалить</button>
+                    <button onclick="editRoom(${index})">Изменить</button>
+                    <button onclick="deleteRoom(${index})">Удалить</button>
                 `;
-                locationList.appendChild(li);
+                roomList.appendChild(li);
             });
         }
 
-        window.editLocation = function(index) {
-            const newName = prompt('Введите новое название расположения:', locations[index]);
-            if (newName) {
-                locations[index] = newName;
-                renderLocationList();
-                updateLocationSelect();
+        window.editRoom = function(index) {
+            const newName = prompt('Введите новое название расположения:', rooms[index]);
+            if (newName && newName.trim() !== '') {
+                rooms[index] = newName;
+                renderRoomList();
+                updateRoomSelect();
+            } else {
+                alert('Название расположения не может быть пустым!');
             }
         };
 
-        window.deleteLocation = function(index) {
-            const isUsed = standards.some(standard => standard.location === locations[index]);
+        window.deleteRoom = function(index) {
+            const isUsed = standards.some(standard => standard.room === rooms[index]);
             if (isUsed) {
                 alert('Нельзя удалить расположение, так как оно используется в эталонах!');
                 return;
             }
             if (confirm('Вы уверены, что хотите удалить расположение?')) {
-                locations.splice(index, 1);
-                renderLocationList();
-                updateLocationSelect();
+                rooms.splice(index, 1);
+                renderRoomList();
+                updateRoomSelect();
             }
         };
 
         document.getElementById('openAddStandard').addEventListener('click', () => {
-            if (locations.length === 0) {
+            if (rooms.length === 0) {
                 alert('Сначала создайте расположение!');
                 return;
             }
@@ -188,25 +189,25 @@
             document.getElementById('addStandardModal').style.display = 'block';
         });
 
-        document.getElementById('closeStandardModal').addEventListener('click', () => {
+        document.getElementById('closeModal').addEventListener('click', () => {
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('addStandardModal').style.display = 'none';
         });
 
-        document.getElementById('closeLocationsModal').addEventListener('click', () => {
+        document.getElementById('closeRoomsModal').addEventListener('click', () => {
             document.getElementById('overlay').style.display = 'none';
-            document.getElementById('manageLocationsModal').style.display = 'none';
+            document.getElementById('manageRoomsModal').style.display = 'none';
         });
 
         document.getElementById('addStandard').addEventListener('click', () => {
-            const locationIndex = document.getElementById('locationSelect').value;
+            const roomIndex = document.getElementById('roomSelect').value;
             const name = document.getElementById('standardName').value.trim();
             const number = document.getElementById('standardNumber').value.trim();
             const dateInput = new Date(document.getElementById('standardDate').value);
             const interval = parseInt(document.getElementById('interval').value);
-            const measurementType = document.getElementById('measurementType').value;
+            const type = document.getElementById('type').value;
 
-            if (!name || !number || isNaN(interval) || !dateInput || locationIndex === "") {
+            if (!name || !number || isNaN(interval) || !dateInput || roomIndex === "") {
                 alert('Пожалуйста, заполните все поля!');
                 return;
             }
@@ -219,8 +220,8 @@
                 name,
                 number,
                 date: dateInput.toISOString(),
-                measurementType,
-                location: locations[locationIndex],
+                type,
+                room: rooms[roomIndex],
                 expirationDate: expirationDate.toISOString(),
                 daysLeft
             };
@@ -228,7 +229,8 @@
             standards.push(standard);
             renderStandards();
             saveData();
-            closeModal();
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('addStandardModal').style.display = 'none';
         });
 
         function renderStandards() {
@@ -243,8 +245,8 @@
                     <td>${standard.name}</td>
                     <td>${standard.number}</td>
                     <td>${new Date(standard.date).toLocaleDateString()}</td>
-                    <td>${standard.measurementType}</td>
-                    <td>${standard.location}</td>
+                    <td>${standard.type}</td>
+                    <td>${standard.room}</td>
                     <td>${standard.daysLeft}</td>
                     <td class="actions">
                         <button onclick="editStandard(${standards.indexOf(standard)})">Изменить</button>

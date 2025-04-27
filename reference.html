@@ -93,8 +93,8 @@
         <input type="text" id="standardNumber" required>
         <label for="standardDate">Дата:</label>
         <input type="date" id="standardDate" required>
-        <label for="expirationDate">Дата окончания действия метрологической оценки:</label>
-        <input type="date" id="expirationDate" required>
+        <label for="interval">Межповерочный интервал (в годах):</label>
+        <input type="number" id="interval" required min="1">
         <label for="type">Вид метрологической оценки:</label>
         <select id="type">
             <option value="поверка">Поверка</option>
@@ -221,7 +221,7 @@
             document.getElementById('standardName').value = '';
             document.getElementById('standardNumber').value = '';
             document.getElementById('standardDate').value = '';
-            document.getElementById('expirationDate').value = '';
+            document.getElementById('interval').value = '';
             document.getElementById('type').value = 'поверка';
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('addStandardModal').style.display = 'block';
@@ -242,14 +242,16 @@
             const name = document.getElementById('standardName').value.trim();
             const number = document.getElementById('standardNumber').value.trim();
             const dateInput = new Date(document.getElementById('standardDate').value);
-            const expirationDateInput = new Date(document.getElementById('expirationDate').value);
+            const interval = parseInt(document.getElementById('interval').value);
             const type = document.getElementById('type').value;
 
-            if (!name || !number || !dateInput || !expirationDateInput || roomIndex === "") {
+            if (!name || !number || isNaN(interval) || !dateInput || roomIndex === "") {
                 alert('Пожалуйста, заполните все поля!');
                 return;
             }
 
+            const expirationDateInput = new Date(dateInput);
+            expirationDateInput.setFullYear(expirationDateInput.getFullYear() + interval);
             const daysLeft = Math.ceil((expirationDateInput - new Date()) / (1000 * 60 * 60 * 24));
 
             const standard = {
@@ -306,7 +308,7 @@
             document.getElementById('standardName').value = standard.name;
             document.getElementById('standardNumber').value = standard.number;
             document.getElementById('standardDate').value = new Date(standard.date).toISOString().split('T')[0];
-            document.getElementById('expirationDate').value = new Date(standard.expirationDate).toISOString().split('T')[0];
+            document.getElementById('interval').value = (new Date(standard.expirationDate).getFullYear() - new Date(standard.date).getFullYear());
             document.getElementById('type').value = standard.type;
             document.getElementById('roomSelect').value = rooms.indexOf(standard.room);
             editingStandardIndex = index;

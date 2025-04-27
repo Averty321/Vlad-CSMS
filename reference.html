@@ -75,7 +75,7 @@
                 <th>Дата метрологической оценки</th>
                 <th>Вид метрологической оценки</th>
                 <th>Расположение</th>
-                <th>Дата окончания действия</th>
+                <th>Количество дней до окончания действия</th>
                 <th>Действия</th>
             </tr>
         </thead>
@@ -91,9 +91,9 @@
         <input type="text" id="standardName" required>
         <label for="standardNumber">Номер:</label>
         <input type="text" id="standardNumber" required>
-        <label for="standardDate">Дата проведения метрологической оценки:</label>
+        <label for="standardDate">Дата:</label>
         <input type="date" id="standardDate" required>
-        <label for="expirationDate">Дата окончания действия метрологическлой оценки:</label>
+        <label for="expirationDate">Дата окончания действия:</label>
         <input type="date" id="expirationDate" required>
         <label for="type">Вид метрологической оценки:</label>
         <select id="type">
@@ -290,7 +290,7 @@
                     <td>${new Date(standard.date).toLocaleDateString()}</td>
                     <td>${standard.type}</td>
                     <td>${standard.room}</td>
-                    <td>${new Date(standard.expirationDate).toLocaleDateString()}</td>
+                    <td>${standard.daysLeft}</td>
                     <td class="actions">
                         <button onclick="editStandard(${index})">Изменить</button>
                         <button onclick="deleteStandard(${index})">Удалить</button>

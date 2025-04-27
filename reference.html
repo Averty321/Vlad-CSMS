@@ -16,16 +16,16 @@
             margin-top: 20px;
             width: 100%;
             border-collapse: collapse;
-            background-color: #f0f8ff; /* Цвет фона таблицы */
+            background-color: #f0f8ff;
         }
         th, td {
-            border: 1px solid #007bff; /* Цвет границы */
+            border: 1px solid #007bff;
             padding: 10px;
             text-align: left;
         }
         th {
-            background-color: #007bff; /* Синяя заливка заголовков */
-            color: white; /* Цвет текста заголовков */
+            background-color: #007bff;
+            color: white;
         }
         .actions {
             display: flex;
@@ -55,7 +55,7 @@
             width: 300px;
         }
         .expired {
-            background-color: #ffcccc; /* Красный цвет для просроченных эталонов */
+            background-color: #ffcccc;
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -75,7 +75,7 @@
                 <th>Дата метрологической оценки</th>
                 <th>Вид метрологической оценки</th>
                 <th>Расположение</th>
-                <th>Количество дней действия метрологической оценки</th>
+                <th>Дата окончания действия</th>
                 <th>Действия</th>
             </tr>
         </thead>
@@ -93,8 +93,8 @@
         <input type="text" id="standardNumber" required>
         <label for="standardDate">Дата:</label>
         <input type="date" id="standardDate" required>
-        <label for="interval">Межповерочный интервал (месяцы):</label>
-        <input type="number" id="interval" required>
+        <label for="expirationDate">дней до окончания действия метр. оценки:</label>
+        <input type="date" id="expirationDate" required>
         <label for="type">Вид метрологической оценки:</label>
         <select id="type">
             <option value="поверка">Поверка</option>
@@ -111,18 +111,16 @@
     </div>
 
     <script>
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
-  authDomain: "vlad-csms-af6df.firebaseapp.com",
-  databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
-  projectId: "vlad-csms-af6df",
-  storageBucket: "vlad-csms-af6df.firebasestorage.app",
-  messagingSenderId: "417297799117",
-  appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
-  measurementId: "G-0EMQB4HYSQ"
+            authDomain: "vlad-csms-af6df.firebaseapp.com",
+            databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
+            projectId: "vlad-csms-af6df",
+            storageBucket: "vlad-csms-af6df.firebasestorage.app",
+            messagingSenderId: "417297799117",
+            appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
+            measurementId: "G-0EMQB4HYSQ"
         };
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -218,12 +216,12 @@
                 alert('Сначала создайте расположение!');
                 return;
             }
-            editingStandardIndex = null; // Сбросить индекс редактируемого эталона
+            editingStandardIndex = null;
             document.getElementById('modalTitle').textContent = 'Добавить эталон';
             document.getElementById('standardName').value = '';
             document.getElementById('standardNumber').value = '';
             document.getElementById('standardDate').value = '';
-            document.getElementById('interval').value = '';
+            document.getElementById('expirationDate').value = '';
             document.getElementById('type').value = 'поверка';
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('addStandardModal').style.display = 'block';
@@ -244,17 +242,15 @@
             const name = document.getElementById('standardName').value.trim();
             const number = document.getElementById('standardNumber').value.trim();
             const dateInput = new Date(document.getElementById('standardDate').value);
-            const interval = parseInt(document.getElementById('interval').value);
+            const expirationDateInput = new Date(document.getElementById('expirationDate').value);
             const type = document.getElementById('type').value;
 
-            if (!name || !number || isNaN(interval) || !dateInput || roomIndex === "") {
+            if (!name || !number || !dateInput || !expirationDateInput || roomIndex === "") {
                 alert('Пожалуйста, заполните все поля!');
                 return;
             }
 
-            const expirationDate = new Date(dateInput);
-            expirationDate.setMonth(expirationDate.getMonth() + interval);
-            const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
+            const daysLeft = Math.ceil((expirationDateInput - new Date()) / (1000 * 60 * 60 * 24));
 
             const standard = {
                 name,
@@ -262,16 +258,14 @@
                 date: dateInput.toISOString(),
                 type,
                 room: rooms[roomIndex],
-                expirationDate: expirationDate.toISOString(),
+                expirationDate: expirationDateInput.toISOString(),
                 daysLeft
             };
 
             if (editingStandardIndex !== null) {
-                // Изменение существующего эталона
                 standards[editingStandardIndex] = standard;
                 alert('Эталон изменен!');
             } else {
-                // Добавление нового эталона
                 standards.push(standard);
                 alert('Эталон добавлен!');
             }
@@ -296,7 +290,7 @@
                     <td>${new Date(standard.date).toLocaleDateString()}</td>
                     <td>${standard.type}</td>
                     <td>${standard.room}</td>
-                    <td>${standard.daysLeft}</td>
+                    <td>${new Date(standard.expirationDate).toLocaleDateString()}</td>
                     <td class="actions">
                         <button onclick="editStandard(${index})">Изменить</button>
                         <button onclick="deleteStandard(${index})">Удалить</button>
@@ -312,10 +306,10 @@
             document.getElementById('standardName').value = standard.name;
             document.getElementById('standardNumber').value = standard.number;
             document.getElementById('standardDate').value = new Date(standard.date).toISOString().split('T')[0];
-            document.getElementById('interval').value = (new Date(standard.expirationDate).getMonth() - new Date(standard.date).getMonth());
+            document.getElementById('expirationDate').value = new Date(standard.expirationDate).toISOString().split('T')[0];
             document.getElementById('type').value = standard.type;
             document.getElementById('roomSelect').value = rooms.indexOf(standard.room);
-            editingStandardIndex = index; // Установить индекс редактируемого эталона
+            editingStandardIndex = index;
 
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('addStandardModal').style.display = 'block';
@@ -329,7 +323,6 @@
             }
         };
 
-        // Инициализация данных
         fetchRooms();
         fetchStandards();
 

@@ -73,6 +73,7 @@
                 <th>Наименование</th>
                 <th>Номер</th>
                 <th>Дата метрологической оценки</th>
+                <th>Дата окончания метрологической оценки</th>
                 <th>Вид метрологической оценки</th>
                 <th>Расположение</th>
                 <th>Количество дней до окончания действия</th>
@@ -290,6 +291,7 @@
                     <td>${standard.name}</td>
                     <td>${standard.number}</td>
                     <td>${new Date(standard.date).toLocaleDateString()}</td>
+                    <td>${new Date(standard.expirationDate).toLocaleDateString()}</td>
                     <td>${standard.type}</td>
                     <td>${standard.room}</td>
                     <td>${standard.daysLeft}</td>

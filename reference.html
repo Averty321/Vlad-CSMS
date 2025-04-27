@@ -151,6 +151,7 @@
         function fetchStandards() {
             database.ref('standards').on('value', snapshot => {
                 standards = snapshot.val() || [];
+                calculateDaysLeft(); // Обновляем количество дней до окончания действия
                 renderStandards();
             });
         }
@@ -254,7 +255,6 @@
             const expirationDateInput = new Date(dateInput);
             expirationDateInput.setFullYear(expirationDateInput.getFullYear() + interval);
             expirationDateInput.setDate(expirationDateInput.getDate() - 1); // Уменьшение на 1 день
-            const daysLeft = Math.ceil((expirationDateInput - new Date()) / (1000 * 60 * 60 * 24));
 
             const standard = {
                 name,
@@ -262,8 +262,7 @@
                 date: dateInput.toISOString(),
                 type,
                 room: rooms[roomIndex],
-                expirationDate: expirationDateInput.toISOString(),
-                daysLeft
+                expirationDate: expirationDateInput.toISOString()
             };
 
             if (editingStandardIndex !== null) {
@@ -275,10 +274,19 @@
             }
 
             database.ref('standards').set(standards);
+            calculateDaysLeft(); // Обновляем количество дней до окончания действия
             renderStandards();
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('addStandardModal').style.display = 'none';
         });
+
+        function calculateDaysLeft() {
+            standards.forEach(standard => {
+                const expirationDate = new Date(standard.expirationDate);
+                const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
+                standard.daysLeft = daysLeft;
+            });
+        }
 
         function renderStandards() {
             const tbody = document.querySelector('#items tbody');
@@ -316,25 +324,9 @@
             document.getElementById('roomSelect').value = rooms.indexOf(standard.room);
             editingStandardIndex = index;
 
-            // Динамическое обновление количества дней
-            updateDaysLeft();
-
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('addStandardModal').style.display = 'block';
         };
-
-        function updateDaysLeft() {
-            const dateInput = new Date(document.getElementById('standardDate').value);
-            const interval = parseInt(document.getElementById('interval').value);
-
-            if (!isNaN(interval) && dateInput) {
-                const expirationDateInput = new Date(dateInput);
-                expirationDateInput.setFullYear(expirationDateInput.getFullYear() + interval);
-                expirationDateInput.setDate(expirationDateInput.getDate() - 1); // Уменьшение на 1 день
-                const daysLeft = Math.ceil((expirationDateInput - new Date()) / (1000 * 60 * 60 * 24));
-                document.querySelector('#items tbody tr:nth-child(' + (editingStandardIndex + 1) + ') td:nth-child(7)').textContent = daysLeft;
-            }
-        }
 
         window.deleteStandard = function(index) {
             if (confirm('Вы уверены, что хотите удалить эталон?')) {
@@ -344,9 +336,9 @@
             }
         };
 
+        // Инициализация данных
         fetchRooms();
         fetchStandards();
-
     </script>
 
 </body>

@@ -152,6 +152,7 @@
         function fetchStandards() {
             database.ref('standards').on('value', snapshot => {
                 standards = snapshot.val() || [];
+                calculateDaysLeft(); // Обновляем количество дней до окончания действия
                 renderStandards();
             });
         }
@@ -265,6 +266,7 @@
                 room: rooms[roomIndex],
                 expirationDate: expirationDateInput.toISOString(),
                 daysLeft
+                expirationDate: expirationDateInput.toISOString()
             };
 
             if (editingStandardIndex !== null) {
@@ -276,10 +278,19 @@
             }
 
             database.ref('standards').set(standards);
+            calculateDaysLeft(); // Обновляем количество дней до окончания действия
             renderStandards();
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('addStandardModal').style.display = 'none';
         });
+
+        function calculateDaysLeft() {
+            standards.forEach(standard => {
+                const expirationDate = new Date(standard.expirationDate);
+                const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
+                standard.daysLeft = daysLeft;
+            });
+        }
 
         function renderStandards() {
             const tbody = document.querySelector('#items tbody');
@@ -345,6 +356,7 @@
             }
         };
 
+        // Инициализация данных
         fetchRooms();
         fetchStandards();
 

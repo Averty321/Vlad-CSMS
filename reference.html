@@ -115,13 +115,13 @@
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
-  authDomain: "vlad-csms-af6df.firebaseapp.com",
-  databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
-  projectId: "vlad-csms-af6df",
-  storageBucket: "vlad-csms-af6df.firebasestorage.app",
-  messagingSenderId: "417297799117",
-  appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
-  measurementId: "G-0EMQB4HYSQ"
+            authDomain: "vlad-csms-af6df.firebaseapp.com",
+            databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
+            projectId: "vlad-csms-af6df",
+            storageBucket: "vlad-csms-af6df.firebasestorage.app",
+            messagingSenderId: "417297799117",
+            appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
+            measurementId: "G-0EMQB4HYSQ"
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
@@ -266,7 +266,6 @@
                 room: rooms[roomIndex],
                 expirationDate: expirationDateInput.toISOString(),
                 daysLeft
-                expirationDate: expirationDateInput.toISOString()
             };
 
             if (editingStandardIndex !== null) {
@@ -287,8 +286,7 @@
         function calculateDaysLeft() {
             standards.forEach(standard => {
                 const expirationDate = new Date(standard.expirationDate);
-                const daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
-                standard.daysLeft = daysLeft;
+                standard.daysLeft = Math.ceil((expirationDate - new Date()) / (1000 * 60 * 60 * 24));
             });
         }
 
@@ -328,25 +326,9 @@
             document.getElementById('roomSelect').value = rooms.indexOf(standard.room);
             editingStandardIndex = index;
 
-            // Динамическое обновление количества дней
-            updateDaysLeft();
-
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('addStandardModal').style.display = 'block';
         };
-
-        function updateDaysLeft() {
-            const dateInput = new Date(document.getElementById('standardDate').value);
-            const interval = parseInt(document.getElementById('interval').value);
-
-            if (!isNaN(interval) && dateInput) {
-                const expirationDateInput = new Date(dateInput);
-                expirationDateInput.setFullYear(expirationDateInput.getFullYear() + interval);
-                expirationDateInput.setDate(expirationDateInput.getDate() - 1); // Уменьшение на 1 день
-                const daysLeft = Math.ceil((expirationDateInput - new Date()) / (1000 * 60 * 60 * 24));
-                document.querySelector('#items tbody tr:nth-child(' + (editingStandardIndex + 1) + ') td:nth-child(7)').textContent = daysLeft;
-            }
-        }
 
         window.deleteStandard = function(index) {
             if (confirm('Вы уверены, что хотите удалить эталон?')) {

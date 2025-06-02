@@ -45,7 +45,7 @@
 <script>
     let isGrouped = false; // Флаг для отслеживания, сгруппированы ли данные
 
-    document.getElementById('createTable').addEventListener('click', function() {
+    document.getElementById('createTable').addEventListener('click', function () {
         const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
         const size = parseInt(document.getElementById('size').value);
         const totalColumns = size === 16 ? 64 : 144; // Определяем количество столбиков
@@ -72,7 +72,7 @@
         document.getElementById('groupData').style.display = 'block'; // Показываем кнопку для группировки
     });
 
-    document.getElementById('groupData').addEventListener('click', function() {
+    document.getElementById('groupData').addEventListener('click', function () {
         const table = document.getElementById('outputTable');
         const groupedData = {};
 
@@ -95,14 +95,14 @@
         // Создаем новые таблицы для каждого типа прибора
         const newTablesContainer = document.createElement('div');
         for (let deviceType in groupedData) {
-            let newTableHTML = `<table><tr><th>Номер наклейки</th><th>Номер прибора</th></tr>`;
+            let newTableHTML = `<table class="deviceTable"><tr><th>Номер наклейки</th><th>Номер прибора</th></tr>`;
             for (let record of groupedData[deviceType]) {
                 newTableHTML += `<tr><td>${record[0]}</td><td>${record[1]}</td></tr>`;
             }
             newTableHTML += `</table>`;
             
             // Добавляем кнопку для сохранения таблицы
-            newTableHTML += `<button onclick="saveTable('${deviceType}')">Сохранить ${deviceType}</button>`;
+            newTableHTML += `<button onclick="saveTable(this, '${deviceType}')">Сохранить ${deviceType}</button>`;
             newTablesContainer.innerHTML += `<h2>${deviceType}</h2>` + newTableHTML;
         }
 
@@ -110,19 +110,22 @@
         isGrouped = true; // Устанавливаем флаг в true
     });
 
-    function saveTable(deviceType) {
-        const table = event.target.previousElementSibling; // Получаем соответствующую таблицу
-        let csv = 'Номер наклейки,Номер прибора\n';
+    function saveTable(button, deviceType) {
+        const table = button.previousElementSibling; // Получаем таблицу, которая идет перед кнопкой
+        let csv = '';
 
         const rows = table.querySelectorAll('tr');
         rows.forEach((row, index) => {
             if (index > 0) { // Пропускаем заголовок
                 const cells = row.querySelectorAll('td');
-                csv += `${cells[0].innerText},${cells[1].innerText}\n`;
+                const stickerNumber = cells[0].innerText; // Номер наклейки
+                const deviceNumber = cells[1].innerText; // Номер прибора
+
+                csv += `${stickerNumber}\t${deviceNumber}\n`; // Разделяем номера табуляцией
             }
         });
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csv], { type: 'application/vnd.ms-excel;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.setAttribute('download', `${deviceType}.xls`); // Название файла
@@ -131,7 +134,7 @@
         document.body.removeChild(link);
     }
 
-    document.getElementById('clearData').addEventListener('click', function() {
+    document.getElementById('clearData').addEventListener('click', function () {
         localStorage.removeItem('stickerData'); // Очищаем данные из локальной памяти
         document.getElementById('tableContainer').innerHTML = ''; // Очищаем таблицу на странице
         document.getElementById('clearData').style.display = 'none'; // Скрываем кнопку очистки
@@ -140,7 +143,7 @@
     });
 
     // Загрузка данных из локальной памяти при загрузке страницы
-    window.onload = function() {
+    window.onload = function () {
         const savedData = localStorage.getItem('stickerData');
         if (savedData) {
             document.getElementById('tableContainer').innerHTML = savedData;

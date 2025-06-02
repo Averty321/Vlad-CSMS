@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройка наклеек</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Настройка наклеек</h1>
+<label for="stickerNumber">Номер наклейки:</label>
+<input type="number" id="stickerNumber" required>
+<br>
+<label for="quantity">Количество:</label>
+<input type="number" id="quantity" required>
+<br>
+<label for="deviceType">Тип прибора:</label>
+<select id="deviceType">
+    <option value="мп-100">мп-100</option>
+    <option value="мт-100">мт-100</option>
+</select>
+<br>
+<button id="createTable">Создать таблицу</button>
+
+<table id="outputTable"></table>
+
+<button id="saveFile" style="display:none;">Сохранить в .xls</button>
+
+<script>
+    let deviceType = '';
+
+    document.getElementById('createTable').addEventListener('click', function() {
+        const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
+        const quantity = parseInt(document.getElementById('quantity').value);
+        deviceType = document.getElementById('deviceType').value;
+        const table = document.getElementById('outputTable');
+        
+        table.innerHTML = `<tr><th>Номер наклейки</th><th>Номер прибора</th></tr>`;
+        
+        for (let i = 0; i < quantity; i++) {
+            const row = table.insertRow();
+            const cell1 = row.insertCell(0);
+            const cell2 = row.insertCell(1);
+            cell1.innerHTML = stickerNumber + i;
+            cell2.contentEditable = true; // Делаем ячейку редактируемой
+            cell2.innerHTML = ''; // Задаем пустое значение
+        }
+
+        document.getElementById('saveFile').style.display = 'block';
+    });
+
+    document.getElementById('saveFile').addEventListener('click', function() {
+        const table = document.getElementById('outputTable');
+        let csv = 'Номер наклейки,Тип прибора,Номер прибора\n'; // Заголовки для файла
+        
+        for (let row of table.rows) {
+            let cols = Array.from(row.cells).map(cell => cell.innerText);
+            // Добавляем тип прибора в CSV
+            csv += `${cols[0]},${deviceType},${cols[1]}\n`;
+        }
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', 'stickers.xls');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+</script>
+
+</body>
+</html>

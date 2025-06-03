@@ -42,6 +42,9 @@
 
 <div id="tableContainer"></div>
 
+<!-- Подключение библиотеки SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <script>
     let isGrouped = false; // Флаг для отслеживания, сгруппированы ли данные
 
@@ -92,15 +95,15 @@
             }
         }
 
-        // Создаем новые таблицы для каждого типа прибора
+           // Создаем новые таблицы для каждого типа прибора
         const newTablesContainer = document.createElement('div');
         for (let deviceType in groupedData) {
-            let newTableHTML = `<table class="deviceTable"><tr><th>Номер наклейки</th><th>Номер прибора</th></tr>`;
+            let newTableHTML = `<table class="deviceTable"><tr><th></th><th></th></tr>`;
             for (let record of groupedData[deviceType]) {
                 newTableHTML += `<tr><td>${record[0]}</td><td>${record[1]}</td></tr>`;
             }
             newTableHTML += `</table>`;
-            
+
             // Добавляем кнопку для сохранения таблицы
             newTableHTML += `<button onclick="saveTable(this, '${deviceType}')">Сохранить ${deviceType}</button>`;
             newTablesContainer.innerHTML += `<h2>${deviceType}</h2>` + newTableHTML;
@@ -112,26 +115,24 @@
 
     function saveTable(button, deviceType) {
         const table = button.previousElementSibling; // Получаем таблицу, которая идет перед кнопкой
-        let csv = '';
-
         const rows = table.querySelectorAll('tr');
-        rows.forEach((row, index) => {
-            if (index > 0) { // Пропускаем заголовок
-                const cells = row.querySelectorAll('td');
-                const stickerNumber = cells[0].innerText; // Номер наклейки
-                const deviceNumber = cells[1].innerText; // Номер прибора
+        const data = [];
 
-                csv += `${stickerNumber}\t${deviceNumber}\n`; // Разделяем номера табуляцией
-            }
+        // Преобразуем HTML-таблицу в массив для Excel
+        rows.forEach((row, index) => {
+            const cells = row.querySelectorAll('td, th');
+            const rowData = [];
+            cells.forEach(cell => rowData.push(cell.innerText));
+            data.push(rowData);
         });
 
-        const blob = new Blob([csv], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', `${deviceType}.xls`); // Название файла
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Создаем файл Excel
+        const ws = XLSX.utils.aoa_to_sheet(data); // Преобразуем массив данных в лист
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, deviceType);
+
+        // Сохраняем Excel-файл
+        XLSX.writeFile(wb, `${deviceType}.xls`); // Сохраняем с расширением .xls
     }
 
     document.getElementById('clearData').addEventListener('click', function () {

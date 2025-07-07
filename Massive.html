@@ -51,6 +51,7 @@
     let isGrouped = false;
     let deviceTypes = new Set();
     let accountNumbers = new Set();
+    let ranges = new Set();
 
     document.getElementById('createTable').addEventListener('click', function() {
         const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
@@ -58,7 +59,7 @@
         const totalColumns = size === 16 ? 64 : 144;
         const tableContainer = document.getElementById('tableContainer');
 
-        let tableHTML = `<table id="outputTable"><tr><th>#</th><th>Номер наклейки</th><th>Номер квитанции/счёта</th><th>Тип прибора</th><th>Номер прибора</th></tr>`;
+        let tableHTML = `<table id="outputTable"><tr><th>#</th><th>Номер наклейки</th><th>Номер квитанции/счёта</th><th>Тип прибора</th><th>Диапазон</th><th>Номер прибора</th></tr>`;
         
         for (let i = 0; i < totalColumns; i++) {
             const stickerNum = stickerNumber + i;
@@ -67,6 +68,7 @@
                 <td>${stickerNum}</td>
                 <td contenteditable="true" class="account-number"></td>
                 <td contenteditable="true" class="device-type"></td>
+                <td contenteditable="true" class="range"></td>
                 <td contenteditable="true" class="device-number"></td>
             </tr>`;
         }
@@ -110,6 +112,16 @@
                     }
                 });
             }
+            
+            // Сохраняем введенные диапазоны
+            if (cell.classList.contains('range')) {
+                cell.addEventListener('blur', function() {
+                    const value = cell.textContent.trim();
+                    if (value) {
+                        ranges.add(value);
+                    }
+                });
+            }
         });
 
         localStorage.setItem('stickerData', tableHTML);
@@ -129,6 +141,9 @@
         
         // Заполняем типы приборов (столбец 3)
         fillEmptyCells(table, 3);
+        
+        // Заполняем диапазоны (столбец 4)
+        fillEmptyCells(table, 4);
     });
 
     function fillEmptyCells(table, columnIndex) {
@@ -163,7 +178,8 @@
                 const accountNumber = row.cells[2].innerText;
                 const stickerNumber = row.cells[1].innerText;
                 const deviceType = row.cells[3].innerText;
-                const deviceNumber = row.cells[4].innerText;
+                const range = row.cells[4].innerText;
+                const deviceNumber = row.cells[5].innerText;
 
                 if (deviceType) {
                     const key = deviceType;
@@ -173,6 +189,7 @@
                     groupedData[key].push({
                         account: accountNumber,
                         sticker: stickerNumber,
+                        range: range,
                         number: deviceNumber
                     });
                 }
@@ -183,13 +200,14 @@
         newTablesContainer.id = 'groupedTables';
         
         for (let deviceType in groupedData) {
-            let newTableHTML = `<h3>Тип: ${deviceType}</h3><table class="grouped-table"><tr><th>Номер счёта</th><th>Номер наклейки</th><th>Номер прибора</th></tr>`;
+            let newTableHTML = `<h3>Тип: ${deviceType}</h3><table class="grouped-table"><tr><th>Номер счёта</th><th>Номер наклейки</th><th>Диапазон</th><th>Номер прибора</th></tr>`;
             
             groupedData[deviceType].forEach(device => {
                 newTableHTML += `
                     <tr>
                         <td>${device.account}</td>
                         <td>${device.sticker}</td>
+                        <td>${device.range}</td>
                         <td>${device.number}</td>
                     </tr>`;
             });
@@ -241,6 +259,7 @@
         isGrouped = false;
         deviceTypes.clear();
         accountNumbers.clear();
+        ranges.clear();
     });
 
     window.onload = function() {
@@ -256,7 +275,7 @@
             if (stickerNumber) document.getElementById('stickerNumber').value = stickerNumber;
             if (size) document.getElementById('size').value = size;
             
-            // Восстанавливаем accountNumbers и deviceTypes из таблицы
+            // Восстанавливаем accountNumbers, deviceTypes и ranges из таблицы
             const table = document.getElementById('outputTable');
             if (table) {
                 const accountCells = table.querySelectorAll('.account-number');
@@ -269,6 +288,12 @@
                 typeCells.forEach(cell => {
                     const value = cell.textContent.trim();
                     if (value) deviceTypes.add(value);
+                });
+                
+                const rangeCells = table.querySelectorAll('.range');
+                rangeCells.forEach(cell => {
+                    const value = cell.textContent.trim();
+                    if (value) ranges.add(value);
                 });
                 
                 // Настраиваем обработчики событий

@@ -21,6 +21,8 @@
         }
         button {
             margin-top: 10px;
+            padding: 8px 16px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -39,117 +41,253 @@
 <button id="createTable">Создать таблицу</button>
 <button id="clearData" style="display:none;">Очистить страницу</button>
 <button id="groupData" style="display:none;">Сгруппировать</button>
+<button id="fillTypes" style="display:none;">Заполнить пустые ячейки</button>
 
 <div id="tableContainer"></div>
 
-<!-- Подключение библиотеки SheetJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
-    let isGrouped = false; // Флаг для отслеживания, сгруппированы ли данные
+    let isGrouped = false;
+    let deviceTypes = new Set();
+    let accountNumbers = new Set();
 
-    document.getElementById('createTable').addEventListener('click', function () {
+    document.getElementById('createTable').addEventListener('click', function() {
         const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
         const size = parseInt(document.getElementById('size').value);
-        const totalColumns = size === 16 ? 64 : 144; // Определяем количество столбиков
+        const totalColumns = size === 16 ? 64 : 144;
         const tableContainer = document.getElementById('tableContainer');
 
-        // Создаем таблицу
-        let tableHTML = `<table id="outputTable"><tr><th>#</th><th>Номер наклейки</th><th>Тип прибора</th><th>Номер прибора</th></tr>`;
+        let tableHTML = `<table id="outputTable"><tr><th>#</th><th>Номер наклейки</th><th>Номер квитанции/счёта</th><th>Тип прибора</th><th>Номер прибора</th></tr>`;
         
         for (let i = 0; i < totalColumns; i++) {
             const stickerNum = stickerNumber + i;
             tableHTML += `<tr>
-                <td>${i + 1}</td> <!-- Порядковый номер -->
+                <td>${i + 1}</td>
                 <td>${stickerNum}</td>
-                <td contenteditable="true"></td>
-                <td contenteditable="true"></td>
+                <td contenteditable="true" class="account-number"></td>
+                <td contenteditable="true" class="device-type"></td>
+                <td contenteditable="true" class="device-number"></td>
             </tr>`;
         }
         tableHTML += `</table>`;
         tableContainer.innerHTML = tableHTML;
 
-        // Сохраняем в локальную память
+        // Добавляем обработчики событий для ячеек
+        const table = document.getElementById('outputTable');
+        const cells = table.querySelectorAll('td[contenteditable="true"]');
+        
+        cells.forEach(cell => {
+            cell.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const row = cell.parentNode;
+                    const nextRow = row.nextElementSibling;
+                    
+                    if (nextRow) {
+                        const cellIndex = Array.from(row.cells).indexOf(cell);
+                        nextRow.cells[cellIndex].focus();
+                    }
+                }
+            });
+
+            // Сохраняем введенные номера счетов
+            if (cell.classList.contains('account-number')) {
+                cell.addEventListener('blur', function() {
+                    const value = cell.textContent.trim();
+                    if (value) {
+                        accountNumbers.add(value);
+                    }
+                });
+            }
+
+            // Сохраняем введенные типы приборов
+            if (cell.classList.contains('device-type')) {
+                cell.addEventListener('blur', function() {
+                    const value = cell.textContent.trim();
+                    if (value) {
+                        deviceTypes.add(value);
+                    }
+                });
+            }
+        });
+
         localStorage.setItem('stickerData', tableHTML);
-        document.getElementById('clearData').style.display = 'block'; // Показываем кнопку для очистки
-        document.getElementById('groupData').style.display = 'block'; // Показываем кнопку для группировки
+        localStorage.setItem('stickerNumber', stickerNumber);
+        localStorage.setItem('size', size);
+        document.getElementById('clearData').style.display = 'block';
+        document.getElementById('groupData').style.display = 'block';
+        document.getElementById('fillTypes').style.display = 'block';
     });
 
-    document.getElementById('groupData').addEventListener('click', function () {
+    document.getElementById('fillTypes').addEventListener('click', function() {
+        const table = document.getElementById('outputTable');
+        if (!table) return;
+
+        // Заполняем номера счетов (столбец 2)
+        fillEmptyCells(table, 2);
+        
+        // Заполняем типы приборов (столбец 3)
+        fillEmptyCells(table, 3);
+    });
+
+    function fillEmptyCells(table, columnIndex) {
+        const rows = table.rows;
+        let lastValue = '';
+        let lastIndex = -1;
+        
+        // Проходим по всем строкам таблицы (начиная с 1, пропускаем заголовок)
+        for (let i = 1; i < rows.length; i++) {
+            const cell = rows[i].cells[columnIndex];
+            const currentValue = cell.textContent.trim();
+            
+            if (currentValue) {
+                // Если текущая ячейка не пустая, заполняем все пустые ячейки от lastIndex до текущей
+                if (lastValue && lastValue === currentValue) {
+                    for (let j = lastIndex + 1; j < i; j++) {
+                        rows[j].cells[columnIndex].textContent = lastValue;
+                    }
+                }
+                lastValue = currentValue;
+                lastIndex = i;
+            }
+        }
+    }
+
+    document.getElementById('groupData').addEventListener('click', function() {
         const table = document.getElementById('outputTable');
         const groupedData = {};
 
-        // Группируем данные по типам приборов
         for (let row of table.rows) {
-            if (row.rowIndex > 0) { // Пропускаем заголовок
-                const stickerNumber = row.cells[1].innerText; // Номер наклейки
-                const deviceType = row.cells[2].innerText; // Тип прибора
-                const deviceNumber = row.cells[3].innerText; // Номер прибора
+            if (row.rowIndex > 0) {
+                const accountNumber = row.cells[2].innerText;
+                const stickerNumber = row.cells[1].innerText;
+                const deviceType = row.cells[3].innerText;
+                const deviceNumber = row.cells[4].innerText;
 
                 if (deviceType) {
-                    if (!groupedData[deviceType]) {
-                        groupedData[deviceType] = [];
+                    const key = deviceType;
+                    if (!groupedData[key]) {
+                        groupedData[key] = [];
                     }
-                    groupedData[deviceType].push([stickerNumber, deviceNumber]);
+                    groupedData[key].push({
+                        account: accountNumber,
+                        sticker: stickerNumber,
+                        number: deviceNumber
+                    });
                 }
             }
         }
 
-           // Создаем новые таблицы для каждого типа прибора
         const newTablesContainer = document.createElement('div');
+        newTablesContainer.id = 'groupedTables';
+        
         for (let deviceType in groupedData) {
-            let newTableHTML = `<table class="deviceTable"><tr><th></th><th></th></tr>`;
-            for (let record of groupedData[deviceType]) {
-                newTableHTML += `<tr><td>${record[0]}</td><td>${record[1]}</td></tr>`;
-            }
-            newTableHTML += `</table>`;
-
-            // Добавляем кнопку для сохранения таблицы
-            newTableHTML += `<button onclick="saveTable(this, '${deviceType}')">Сохранить ${deviceType}</button>`;
-            newTablesContainer.innerHTML += `<h2>${deviceType}</h2>` + newTableHTML;
+            let newTableHTML = `<h3>Тип: ${deviceType}</h3><table class="grouped-table"><tr><th>Номер счёта</th><th>Номер наклейки</th><th>Номер прибора</th></tr>`;
+            
+            groupedData[deviceType].forEach(device => {
+                newTableHTML += `
+                    <tr>
+                        <td>${device.account}</td>
+                        <td>${device.sticker}</td>
+                        <td>${device.number}</td>
+                    </tr>`;
+            });
+            
+            newTableHTML += `</table>
+                <button onclick="saveTable(this, '${deviceType.replace(/"/g, '&quot;')}')">
+                    Сохранить ${deviceType}
+                </button>`;
+            
+            newTablesContainer.innerHTML += newTableHTML;
         }
 
-        tableContainer.appendChild(newTablesContainer);
-        isGrouped = true; // Устанавливаем флаг в true
+        const existingGrouped = document.getElementById('groupedTables');
+        if (existingGrouped) {
+            existingGrouped.remove();
+        }
+        
+        document.getElementById('tableContainer').appendChild(newTablesContainer);
+        isGrouped = true;
     });
 
-    function saveTable(button, deviceType) {
-        const table = button.previousElementSibling; // Получаем таблицу, которая идет перед кнопкой
+    window.saveTable = function(button, deviceType) {
+        const table = button.previousElementSibling;
         const rows = table.querySelectorAll('tr');
         const data = [];
-
-        // Преобразуем HTML-таблицу в массив для Excel
-        rows.forEach((row, index) => {
-            const cells = row.querySelectorAll('td, th');
+        
+        rows.forEach(row => {
             const rowData = [];
-            cells.forEach(cell => rowData.push(cell.innerText));
+            row.querySelectorAll('td, th').forEach(cell => {
+                rowData.push(cell.innerText);
+            });
             data.push(rowData);
         });
-
-        // Создаем файл Excel
-        const ws = XLSX.utils.aoa_to_sheet(data); // Преобразуем массив данных в лист
+        
+        const ws = XLSX.utils.aoa_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, deviceType);
+        XLSX.writeFile(wb, `${deviceType}.xlsx`);
+    };
 
-        // Сохраняем Excel-файл
-        XLSX.writeFile(wb, `${deviceType}.xls`); // Сохраняем с расширением .xls
-    }
-
-    document.getElementById('clearData').addEventListener('click', function () {
-        localStorage.removeItem('stickerData'); // Очищаем данные из локальной памяти
-        document.getElementById('tableContainer').innerHTML = ''; // Очищаем таблицу на странице
-        document.getElementById('clearData').style.display = 'none'; // Скрываем кнопку очистки
-        document.getElementById('groupData').style.display = 'none'; // Скрываем кнопку группировки
-        isGrouped = false; // Сбрасываем флаг
+    document.getElementById('clearData').addEventListener('click', function() {
+        localStorage.removeItem('stickerData');
+        localStorage.removeItem('stickerNumber');
+        localStorage.removeItem('size');
+        document.getElementById('tableContainer').innerHTML = '';
+        document.getElementById('clearData').style.display = 'none';
+        document.getElementById('groupData').style.display = 'none';
+        document.getElementById('fillTypes').style.display = 'none';
+        isGrouped = false;
+        deviceTypes.clear();
+        accountNumbers.clear();
     });
 
-    // Загрузка данных из локальной памяти при загрузке страницы
-    window.onload = function () {
+    window.onload = function() {
         const savedData = localStorage.getItem('stickerData');
         if (savedData) {
             document.getElementById('tableContainer').innerHTML = savedData;
-            document.getElementById('clearData').style.display = 'block'; // Показываем кнопку для очистки
-            document.getElementById('groupData').style.display = 'block'; // Показываем кнопку для группировки
+            document.getElementById('clearData').style.display = 'block';
+            document.getElementById('groupData').style.display = 'block';
+            document.getElementById('fillTypes').style.display = 'block';
+            
+            const stickerNumber = localStorage.getItem('stickerNumber');
+            const size = localStorage.getItem('size');
+            if (stickerNumber) document.getElementById('stickerNumber').value = stickerNumber;
+            if (size) document.getElementById('size').value = size;
+            
+            // Восстанавливаем accountNumbers и deviceTypes из таблицы
+            const table = document.getElementById('outputTable');
+            if (table) {
+                const accountCells = table.querySelectorAll('.account-number');
+                accountCells.forEach(cell => {
+                    const value = cell.textContent.trim();
+                    if (value) accountNumbers.add(value);
+                });
+                
+                const typeCells = table.querySelectorAll('.device-type');
+                typeCells.forEach(cell => {
+                    const value = cell.textContent.trim();
+                    if (value) deviceTypes.add(value);
+                });
+                
+                // Настраиваем обработчики событий
+                const cells = table.querySelectorAll('td[contenteditable="true"]');
+                cells.forEach(cell => {
+                    cell.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const row = cell.parentNode;
+                            const nextRow = row.nextElementSibling;
+                            
+                            if (nextRow) {
+                                const cellIndex = Array.from(row.cells).indexOf(cell);
+                                nextRow.cells[cellIndex].focus();
+                            }
+                        }
+                    });
+                });
+            }
         }
     };
 </script>

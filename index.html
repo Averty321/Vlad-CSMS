@@ -10,6 +10,8 @@
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
+            overflow-y: auto; /* Разрешаем вертикальный скролл для всей страницы */
+            min-height: 100vh; /* Минимальная высота - весь экран */
         }
         header {
             background-color: #003366;
@@ -19,6 +21,9 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         .logo {
             font-size: 28px;
@@ -32,7 +37,8 @@
             position: fixed;
             top: 60px;
             left: 0;
-            height: calc(100% - 60px);
+            bottom: 0;
+            overflow-y: auto; /* Добавляем скролл для сайдбара, если контент не помещается */
         }
         .sidebar a {
             display: block;
@@ -52,11 +58,18 @@
             padding-left: 15px;
             border-left: 2px solid #003366;
         }
+        main {
+            margin-left: 220px;
+            padding: 20px;
+            min-height: calc(100vh - 60px); /* Минимальная высота - весь экран минус высота header */
+            box-sizing: border-box;
+        }
         @media (max-width: 600px) {
             .sidebar {
                 width: 100%;
                 height: auto;
                 position: relative;
+                top: 0;
             }
             main {
                 margin-left: 0;
@@ -86,6 +99,7 @@
         text-decoration: none;
         font-size: 18px;
         transition: background-color 0.3s;
+        z-index: 101; /* Чтобы кнопка была над другими элементами */
     }
     .long-button:hover {
         background-color: #005599; /* Более светлый синий при наведении */
@@ -120,7 +134,7 @@
         </div>
     </nav>
 
-    <main style="margin-left: 220px; padding: 20px;">
+    <main>
         <!-- Основное содержимое страницы -->
     </main>
 

@@ -100,7 +100,6 @@
         <thead>
             <tr>
                 <th>Номер</th>
-                <th>Дата добавления</th>
                 <th>Действия</th>
             </tr>
         </thead>
@@ -112,8 +111,6 @@
         <thead>
             <tr>
                 <th>Номер</th>
-                <th>Дата добавления</th>
-                <th>Дата завершения</th>
                 <th>Действия</th>
             </tr>
         </thead>
@@ -159,6 +156,13 @@
             return prefix + number;
         }
         
+        // Функция для извлечения числовой части номера для сортировки
+        function getSortableNumber(receiptNumber) {
+            // Удаляем все нецифровые символы и преобразуем в число
+            const num = receiptNumber.replace(/\D/g, '');
+            return parseInt(num, 10) || 0;
+        }
+        
         // Добавление новой квитанции
         addBtn.addEventListener('click', () => {
             let receiptNumber = receiptInput.value.trim();
@@ -170,7 +174,8 @@
                     number: receiptNumber,
                     status: 'active',
                     dateAdded: new Date().toISOString(),
-                    dateCompleted: null
+                    dateCompleted: null,
+                    sortKey: getSortableNumber(receiptNumber) // Добавляем ключ для сортировки
                 };
                 
                 database.ref('receipts').push(newReceipt);
@@ -185,15 +190,28 @@
             }
         });
         
-        // Отображение квитанций
+        // Отображение квитанций с сортировкой
         function renderReceipts(snapshot) {
+            const receipts = [];
+            
+            // Собираем все квитанции в массив
+            snapshot.forEach((childSnapshot) => {
+                const receipt = childSnapshot.val();
+                receipt.id = childSnapshot.key;
+                receipts.push(receipt);
+            });
+            
+            // Сортируем квитанции по числовому значению
+            receipts.sort((a, b) => {
+                return (a.sortKey || getSortableNumber(a.number)) - (b.sortKey || getSortableNumber(b.number));
+            });
+            
+            // Очищаем таблицы
             activeReceiptsTbody.innerHTML = '';
             completedReceiptsTbody.innerHTML = '';
             
-            snapshot.forEach((childSnapshot) => {
-                const receipt = childSnapshot.val();
-                const receiptId = childSnapshot.key;
-                
+            // Рендерим отсортированные квитанции
+            receipts.forEach((receipt) => {
                 const row = document.createElement('tr');
                 if (receipt.status === 'partial') {
                     row.classList.add('partial');
@@ -201,9 +219,6 @@
                 
                 const numberCell = document.createElement('td');
                 numberCell.textContent = receipt.number;
-                
-                const dateAddedCell = document.createElement('td');
-                dateAddedCell.textContent = new Date(receipt.dateAdded).toLocaleString();
                 
                 const actionsCell = document.createElement('td');
                 
@@ -213,14 +228,14 @@
                     partialBtn.textContent = 'Частично выполнен';
                     partialBtn.classList.add('action-btn', 'partial-btn');
                     partialBtn.addEventListener('click', () => {
-                        database.ref(`receipts/${receiptId}`).update({ status: 'partial' });
+                        database.ref(`receipts/${receipt.id}`).update({ status: 'partial' });
                     });
                     
                     const completeBtn = document.createElement('button');
                     completeBtn.textContent = 'Выполнен';
                     completeBtn.classList.add('action-btn', 'complete-btn');
                     completeBtn.addEventListener('click', () => {
-                        database.ref(`receipts/${receiptId}`).update({ 
+                        database.ref(`receipts/${receipt.id}`).update({ 
                             status: 'completed',
                             dateCompleted: new Date().toISOString()
                         });
@@ -231,12 +246,12 @@
                     deleteBtn.classList.add('action-btn', 'delete-btn');
                     deleteBtn.addEventListener('click', () => {
                         if (confirm('Удалить эту квитанцию?')) {
-                            database.ref(`receipts/${receiptId}`).remove();
+                            database.ref(`receipts/${receipt.id}`).remove();
                         }
                     });
                     
                     actionsCell.append(partialBtn, completeBtn, deleteBtn);
-                    row.append(numberCell, dateAddedCell, actionsCell);
+                    row.append(numberCell, actionsCell);
                     activeReceiptsTbody.appendChild(row);
                 } 
                 else if (receipt.status === 'partial') {
@@ -245,14 +260,14 @@
                     cancelBtn.textContent = 'Отменить';
                     cancelBtn.classList.add('action-btn', 'cancel-btn');
                     cancelBtn.addEventListener('click', () => {
-                        database.ref(`receipts/${receiptId}`).update({ status: 'active' });
+                        database.ref(`receipts/${receipt.id}`).update({ status: 'active' });
                     });
                     
                     const completeBtn = document.createElement('button');
                     completeBtn.textContent = 'Выполнен';
                     completeBtn.classList.add('action-btn', 'complete-btn');
                     completeBtn.addEventListener('click', () => {
-                        database.ref(`receipts/${receiptId}`).update({ 
+                        database.ref(`receipts/${receipt.id}`).update({ 
                             status: 'completed',
                             dateCompleted: new Date().toISOString()
                         });
@@ -263,24 +278,21 @@
                     deleteBtn.classList.add('action-btn', 'delete-btn');
                     deleteBtn.addEventListener('click', () => {
                         if (confirm('Удалить эту квитанцию?')) {
-                            database.ref(`receipts/${receiptId}`).remove();
+                            database.ref(`receipts/${receipt.id}`).remove();
                         }
                     });
                     
                     actionsCell.append(cancelBtn, completeBtn, deleteBtn);
-                    row.append(numberCell, dateAddedCell, actionsCell);
+                    row.append(numberCell, actionsCell);
                     activeReceiptsTbody.appendChild(row);
                 } 
                 else if (receipt.status === 'completed') {
                     // Кнопки для завершенных квитанций
-                    const dateCompletedCell = document.createElement('td');
-                    dateCompletedCell.textContent = new Date(receipt.dateCompleted).toLocaleString();
-                    
                     const cancelBtn = document.createElement('button');
                     cancelBtn.textContent = 'Вернуть в активные';
                     cancelBtn.classList.add('action-btn', 'cancel-btn');
                     cancelBtn.addEventListener('click', () => {
-                        database.ref(`receipts/${receiptId}`).update({ 
+                        database.ref(`receipts/${receipt.id}`).update({ 
                             status: 'active',
                             dateCompleted: null
                         });
@@ -291,12 +303,12 @@
                     deleteBtn.classList.add('action-btn', 'delete-btn');
                     deleteBtn.addEventListener('click', () => {
                         if (confirm('Удалить эту квитанцию?')) {
-                            database.ref(`receipts/${receiptId}`).remove();
+                            database.ref(`receipts/${receipt.id}`).remove();
                         }
                     });
                     
                     actionsCell.append(cancelBtn, deleteBtn);
-                    row.append(numberCell, dateAddedCell, dateCompletedCell, actionsCell);
+                    row.append(numberCell, actionsCell);
                     completedReceiptsTbody.appendChild(row);
                 }
             });

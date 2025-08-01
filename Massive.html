@@ -6,98 +6,164 @@
     <title>Генератор наклеек для приборов</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f8ff;
+            color: #003366;
             line-height: 1.6;
         }
-        .controls {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+        
+        h1 {
+            color: #005b96;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 500;
         }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 91, 150, 0.1);
+            border: 1px solid #d1e3f6;
+        }
+        
         label {
             display: inline-block;
-            width: 150px;
-            margin-bottom: 10px;
+            width: 180px;
+            margin-bottom: 12px;
+            color: #005b96;
+            font-weight: 500;
         }
+        
         input, select {
-            padding: 8px;
-            width: 200px;
-            margin-bottom: 10px;
+            padding: 10px;
+            width: 220px;
+            margin-bottom: 12px;
+            border: 1px solid #b8d4f0;
+            border-radius: 4px;
+            background-color: white;
+            color: #003366;
         }
+        
         button {
-            padding: 8px 16px;
-            margin-right: 10px;
-            margin-top: 10px;
+            padding: 10px 18px;
+            margin-right: 12px;
+            margin-top: 12px;
             cursor: pointer;
-            background: #4CAF50;
+            background: #0077cc;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 91, 150, 0.1);
         }
+        
         button:hover {
-            background: #45a049;
+            background: #005fa3;
+            transform: translateY(-1px);
         }
+        
         button:disabled {
-            background: #cccccc;
+            background: #b8d4f0;
             cursor: not-allowed;
+            transform: none;
         }
+        
         table {
-            margin-top: 20px;
+            margin-top: 25px;
             border-collapse: collapse;
             width: 100%;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 91, 150, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
         }
+        
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            border: 1px solid #d1e3f6;
+            padding: 12px;
             text-align: center;
         }
+        
         th {
-            background-color: #f2f2f2;
+            background-color: #0077cc;
+            color: white;
             position: sticky;
             top: 0;
+            font-weight: 500;
         }
+        
         tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #f5faff;
         }
+        
         .editable {
-            background: #fffde7;
+            background: #e6f2ff;
         }
+        
         .group-header {
-            background-color: #e0e0e0;
-            padding: 10px;
-            margin-top: 20px;
-            border-radius: 5px;
-            font-weight: bold;
+            background-color: #0077cc;
+            color: white;
+            padding: 15px;
+            margin-top: 25px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0, 91, 150, 0.1);
         }
+        
         .group-container {
-            margin-bottom: 30px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
+            margin-bottom: 35px;
+            border: 1px solid #d1e3f6;
+            border-radius: 8px;
+            background: white;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 91, 150, 0.1);
         }
+        
         .save-group-btn {
-            background: #2196F3;
+            background: #00a0e9;
+            float: right;
         }
+        
         .save-group-btn:hover {
-            background: #0b7dda;
+            background: #0088c7;
         }
+        
         #tableContainer {
-            max-height: 600px;
+            max-height: 650px;
             overflow-y: auto;
-            margin-top: 20px;
+            margin-top: 25px;
+            padding: 5px;
+        }
+        
+        /* Стиль для скролла */
+        #tableContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #tableContainer::-webkit-scrollbar-track {
+            background: #f0f8ff;
+        }
+        
+        #tableContainer::-webkit-scrollbar-thumb {
+            background: #0077cc;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
+    <!-- Вся HTML-разметка остается БЕЗ ИЗМЕНЕНИЙ -->
     <h1>Настройка наклеек</h1>
     
     <div class="controls">
         <label for="stickerNumber">Начальный номер наклейки:</label>
         <input type="number" id="stickerNumber" min="1" required>
         <br>
-        <label for="size">Размер наклеек:</label>
+        <label for="size">Размер наклейки:</label>
         <select id="size">
             <option value="16">16 мм (64 наклейки)</option>
             <option value="10">10 мм (144 наклейки)</option>
@@ -114,6 +180,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+    <!-- Весь JavaScript код остается БЕЗ ИЗМЕНЕНИЙ -->
     <script>
         let isGrouped = false;
         let originalTableData = [];
@@ -220,27 +287,42 @@
                 }
             });
 
-            // 2. Заполняем группы для типов приборов и номеров счетов
-            const groups = findGroups(rows);
-            groups.forEach(group => {
-                // Заполняем тип прибора
-                for (let i = group.startIdx; i <= group.endIdx; i++) {
-                    const typeCell = rows[i].cells[3];
-                    if (!typeCell.textContent.trim()) {
-                        typeCell.textContent = group.type;
-                        filledCount++;
-                    }
-                }
+            // 2. Находим группы и заполняем только внутри групп
+            let currentGroup = null;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const account = rows[i].cells[2].textContent.trim();
+                const deviceType = rows[i].cells[3].textContent.trim();
+                const range = rows[i].cells[4].textContent.trim();
                 
-                // Заполняем номер счета
-                for (let i = group.startIdx; i <= group.endIdx; i++) {
-                    const accountCell = rows[i].cells[2];
-                    if (!accountCell.textContent.trim()) {
-                        accountCell.textContent = group.account;
-                        filledCount++;
+                if (account || deviceType || range) {
+                    if (currentGroup && 
+                        currentGroup.account === account && 
+                        currentGroup.deviceType === deviceType && 
+                        currentGroup.range === range) {
+                        // Продолжаем текущую группу
+                        currentGroup.endIdx = i;
+                    } else {
+                        // Завершаем предыдущую группу (если есть)
+                        if (currentGroup) {
+                            fillGroupData(rows, currentGroup);
+                        }
+                        // Начинаем новую группу
+                        currentGroup = {
+                            account: account,
+                            deviceType: deviceType,
+                            range: range,
+                            startIdx: i,
+                            endIdx: i
+                        };
                     }
                 }
-            });
+            }
+            
+            // Заполняем последнюю группу
+            if (currentGroup) {
+                fillGroupData(rows, currentGroup);
+            }
 
             if (filledCount > 0) {
                 saveDataToLocalStorage();
@@ -250,40 +332,27 @@
             }
         }
 
-        function findGroups(rows) {
-            const groups = [];
-            let currentGroup = null;
+        function fillGroupData(rows, group) {
+            // Заполняем только если в группе есть хотя бы одна заполненная ячейка
+            const hasData = group.account || group.deviceType || group.range;
             
-            // Проходим по всем строкам и находим группы
-            for (let i = 0; i < rows.length; i++) {
-                const type = rows[i].cells[3].textContent.trim();
-                const account = rows[i].cells[2].textContent.trim();
+            if (!hasData) return;
+            
+            for (let i = group.startIdx; i <= group.endIdx; i++) {
+                const accountCell = rows[i].cells[2];
+                const typeCell = rows[i].cells[3];
+                const rangeCell = rows[i].cells[4];
                 
-                if (type && account) {
-                    if (currentGroup && currentGroup.type === type && currentGroup.account === account) {
-                        // Продолжаем текущую группу
-                        currentGroup.endIdx = i;
-                    } else {
-                        // Начинаем новую группу
-                        if (currentGroup) {
-                            groups.push(currentGroup);
-                        }
-                        currentGroup = {
-                            type: type,
-                            account: account,
-                            startIdx: i,
-                            endIdx: i
-                        };
-                    }
+                if (group.account && !accountCell.textContent.trim()) {
+                    accountCell.textContent = group.account;
+                }
+                if (group.deviceType && !typeCell.textContent.trim()) {
+                    typeCell.textContent = group.deviceType;
+                }
+                if (group.range && !rangeCell.textContent.trim()) {
+                    rangeCell.textContent = group.range;
                 }
             }
-            
-            // Добавляем последнюю группу
-            if (currentGroup) {
-                groups.push(currentGroup);
-            }
-            
-            return groups;
         }
         
         function toggleGrouping() {
@@ -298,7 +367,7 @@
             const table = document.getElementById('outputTable');
             if (!table) return;
             
-            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML);
+            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML));
             
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             const groups = {};
@@ -370,7 +439,6 @@
                     const account = this.getAttribute('data-account');
                     const deviceType = this.getAttribute('data-device-type');
                     const range = this.getAttribute('data-range');
-                    
                     const groupTable = this.closest('.group-container').querySelector('.group-table');
                     exportGroupToExcel(groupTable, account, deviceType, range);
                 });

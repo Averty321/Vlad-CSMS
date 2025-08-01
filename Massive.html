@@ -3,110 +3,744 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Настройка наклеек</title>
+    <title>Генератор наклеек для приборов</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
         }
-        .controls {
-            background: #f5f5f5;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .control-panel {
+            background: #ecf0f1;
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 8px;
             margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
         }
         label {
-            display: inline-block;
-            width: 150px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #34495e;
         }
         input, select {
-            padding: 8px;
-            width: 200px;
-            margin-bottom: 10px;
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 14px;
         }
         button {
             padding: 8px 16px;
-            margin-right: 10px;
-            margin-top: 10px;
-            cursor: pointer;
-            background: #4CAF50;
+            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            height: 36px;
         }
         button:hover {
-            background: #45a049;
+            background-color: #2980b9;
         }
         button:disabled {
-            background: #cccccc;
+            background-color: #95a5a6;
             cursor: not-allowed;
         }
-        table {
+        .button-danger {
+            background-color: #e74c3c;
+        }
+        .button-danger:hover {
+            background-color: #c0392b;
+        }
+        .button-success {
+            background-color: #2ecc71;
+        }
+        .button-success:hover {
+            background-color: #27ae60;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        #tableContainer {
             margin-top: 20px;
-            border-collapse: collapse;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 600px;
+        }
+        table {
             width: 100%;
+            border-collapse: collapse;
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 10px;
             text-align: center;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #3498db;
+            color: white;
             position: sticky;
             top: 0;
         }
         tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #f2f2f2;
         }
         .editable {
-            background: #fffde7;
+            background-color: #fffde7;
         }
-        .group-header {
-            background-color: #e0e0e0;
-            padding: 10px;
-            margin-top: 20px;
-            border-radius: 5px;
-            font-weight: bold;
+        .editable:focus {
+            background-color: #fff9c4;
+            outline: 2px solid #3498db;
         }
         .group-container {
             margin-bottom: 30px;
             border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
+            border-radius: 8px;
+            overflow: hidden;
         }
-        .save-group-btn {
-            background: #2196F3;
+        .group-header {
+            background-color: #2980b9;
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .save-group-btn:hover {
-            background: #0b7dda;
+        .group-title {
+            font-weight: bold;
         }
-        #tableContainer {
-            max-height: 600px;
-            overflow-y: auto;
-            margin-top: 20px;
-        }
-        .progress-bar {
+        .progress-container {
             width: 100%;
-            background-color: #f1f1f1;
-            border-radius: 5px;
-            margin: 10px 0;
+            margin: 15px 0;
             display: none;
         }
-        .progress {
+        .progress-bar {
             height: 20px;
-            border-radius: 5px;
-            background-color: #4CAF50;
-            text-align: center;
-            line-height: 20px;
-            color: white;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background-color: #3498db;
             width: 0%;
+            transition: width 0.3s;
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            line-height: 20px;
+        }
+        .status-message {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
 <body>
-    <h1>Настройка наклеек</h1>
-    
-    <div class="controls">
+    <div class="container">
+        <h1>Генератор наклеек для приборов учета</h1>
+        
+        <div class="control-panel">
+            <div class="input-group">
+                <label for="stickerNumber">Начальный номер наклейки:</label>
+                <input type="number" id="stickerNumber" min="1" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="size">Размер наклеек:</label>
+                <select id="size">
+                    <option value="16">16 мм (64 наклейки)</option>
+                    <option value="10">10 мм (144 наклейки)</option>
+                </select>
+            </div>
+            
+            <div class="button-group">
+                <button id="createTable" class="button-success">Создать таблицу</button>
+                <button id="clearData" class="button-danger" disabled>Очистить</button>
+            </div>
+            
+            <div class="button-group">
+                <button id="groupData" disabled>Сгруппировать</button>
+                <button id="fillTypes" disabled>Заполнить пустые</button>
+                <button id="saveAll" disabled>Экспорт в Excel</button>
+            </div>
+        </div>
+        
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress" id="progress">0%</div>
+            </div>
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+        
+        <div id="tableContainer"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        // Основные переменные
+        let isGrouped = false;
+        let originalTableData = [];
+        let originalTableOrder = [];
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Назначение обработчиков событий
+            document.getElementById('createTable').addEventListener('click', createTable);
+            document.getElementById('clearData').addEventListener('click', clearData);
+            document.getElementById('groupData').addEventListener('click', toggleGrouping);
+            document.getElementById('fillTypes').addEventListener('click', fillEmptyCells);
+            document.getElementById('saveAll').addEventListener('click', exportAllToExcel);
+            
+            // Загрузка сохраненных данных
+            loadSavedData();
+        });
+        
+        // ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
+        
+        function createTable() {
+            const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
+            const size = document.getElementById('size').value;
+            
+            // Валидация ввода
+            if (isNaN(stickerNumber) || stickerNumber <= 0) {
+                showStatus('Пожалуйста, введите корректный номер наклейки', 'error');
+                return;
+            }
+            
+            showProgress('Создание таблицы...');
+            
+            const totalRows = size === "16" ? 64 : 144;
+            const tableContainer = document.getElementById('tableContainer');
+            
+            // Очищаем контейнер
+            tableContainer.innerHTML = '';
+            
+            // Создаем элементы таблицы
+            const table = document.createElement('table');
+            table.id = 'outputTable';
+            
+            // Создаем заголовок таблицы
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>#</th>
+                    <th>Номер наклейки</th>
+                    <th>Номер квитанции</th>
+                    <th>Тип прибора</th>
+                    <th>Диапазон</th>
+                    <th>Номер прибора</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+            
+            // Создаем тело таблицы
+            const tbody = document.createElement('tbody');
+            
+            // Оптимизация: создаем все строки за один раз
+            let rowsHTML = '';
+            for (let i = 0; i < totalRows; i++) {
+                // Обновляем прогресс каждые 10 строк
+                if (i % 10 === 0) {
+                    updateProgress(i / totalRows * 50);
+                }
+                
+                rowsHTML += `
+                    <tr data-original-index="${i}">
+                        <td>${i + 1}</td>
+                        <td>${stickerNumber + i}</td>
+                        <td class="editable account-number" contenteditable="true"></td>
+                        <td class="editable device-type" contenteditable="true"></td>
+                        <td class="editable range" contenteditable="true"></td>
+                        <td class="editable device-number" contenteditable="true"></td>
+                    </tr>
+                `;
+            }
+            
+            tbody.innerHTML = rowsHTML;
+            table.appendChild(tbody);
+            tableContainer.appendChild(table);
+            
+            // Сохраняем порядок строк
+            originalTableOrder = Array.from({length: totalRows}, (_, i) => i);
+            
+            // Активируем кнопки
+            enableControls(true);
+            
+            // Настраиваем редактируемые ячейки
+            setupEditableCells();
+            
+            // Сохраняем данные
+            saveDataToLocalStorage();
+            
+            showStatus(`Таблица успешно создана: ${totalRows} наклеек`, 'success');
+            hideProgress();
+        }
+        
+        function toggleGrouping() {
+            if (isGrouped) {
+                restoreOriginalTable();
+            } else {
+                groupData();
+            }
+        }
+        
+        function groupData() {
+            const table = document.getElementById('outputTable');
+            if (!table) return;
+            
+            showProgress('Группировка данных...');
+            
+            // Сохраняем оригинальную таблицу
+            originalTableData = Array.from(table.querySelectorAll('tbody tr')).map(row => ({
+                html: row.outerHTML,
+                originalIndex: parseInt(row.getAttribute('data-original-index'))
+            }));
+            
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const groups = new Map();
+            
+            // Группируем данные
+            rows.forEach((row, index) => {
+                // Обновляем прогресс
+                if (index % 10 === 0) {
+                    updateProgress(50 + (index / rows.length * 50));
+                }
+                
+                const account = row.cells[2].textContent.trim();
+                const deviceType = row.cells[3].textContent.trim();
+                const range = row.cells[4].textContent.trim();
+                
+                // Пропускаем полностью пустые строки
+                if (!account && !deviceType && !range) return;
+                
+                const groupKey = `${account}|${deviceType}|${range}`;
+                
+                if (!groups.has(groupKey)) {
+                    groups.set(groupKey, {
+                        account: account || 'Не указан',
+                        deviceType: deviceType || 'Не указан',
+                        range: range || 'Не указан',
+                        rows: []
+                    });
+                }
+                
+                groups.get(groupKey).rows.push({
+                    html: row.outerHTML,
+                    originalIndex: parseInt(row.getAttribute('data-original-index'))
+                });
+            });
+            
+            // Очищаем контейнер
+            const tableContainer = document.getElementById('tableContainer');
+            tableContainer.innerHTML = '';
+            
+            // Создаем группы
+            groups.forEach((group, key) => {
+                const groupContainer = document.createElement('div');
+                groupContainer.className = 'group-container';
+                
+                // Сортируем строки по оригинальному порядку
+                group.rows.sort((a, b) => a.originalIndex - b.originalIndex);
+                
+                groupContainer.innerHTML = `
+                    <div class="group-header">
+                        <div class="group-title">
+                            Квитанция: ${group.account} | 
+                            Тип: ${group.deviceType} | 
+                            Диапазон: ${group.range}
+                        </div>
+                        <button class="save-group-btn" 
+                                data-account="${group.account}" 
+                                data-device-type="${group.deviceType}" 
+                                data-range="${group.range}">
+                            Экспорт группы
+                        </button>
+                    </div>
+                    <table class="group-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Номер наклейки</th>
+                                <th>Номер квитанции</th>
+                                <th>Тип прибора</th>
+                                <th>Диапазон</th>
+                                <th>Номер прибора</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${group.rows.map(row => row.html).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                tableContainer.appendChild(groupContainer);
+            });
+            
+            // Добавляем обработчики для кнопок экспорта групп
+            document.querySelectorAll('.save-group-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const account = this.getAttribute('data-account');
+                    const deviceType = this.getAttribute('data-device-type');
+                    const range = this.getAttribute('data-range');
+                    
+                    const groupTable = this.closest('.group-container').querySelector('.group-table');
+                    exportGroupToExcel(groupTable, account, deviceType, range);
+                });
+            });
+            
+            isGrouped = true;
+            document.getElementById('groupData').textContent = 'Вернуться к таблице';
+            enableControls(false, true);
+            
+            showStatus(`Данные сгруппированы: ${groups.size} групп`, 'success');
+            hideProgress();
+        }
+        
+        function restoreOriginalTable() {
+            if (!originalTableData.length) return;
+            
+            showProgress('Восстановление таблицы...');
+            
+            const tableContainer = document.getElementById('tableContainer');
+            
+            // Сортируем данные по оригинальному порядку
+            const sortedData = [...originalTableData].sort((a, b) => a.originalIndex - b.originalIndex);
+            
+            // Создаем таблицу
+            tableContainer.innerHTML = `
+                <table id="outputTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Номер наклейки</th>
+                            <th>Номер квитанции</th>
+                            <th>Тип прибора</th>
+                            <th>Диапазон</th>
+                            <th>Номер прибора</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sortedData.map(row => row.html).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            // Восстанавливаем порядок
+            const rows = tableContainer.querySelectorAll('#outputTable tbody tr');
+            rows.forEach((row, index) => {
+                row.setAttribute('data-original-index', originalTableData[index].originalIndex);
+            });
+            
+            // Настраиваем редактируемые ячейки
+            setupEditableCells();
+            
+            isGrouped = false;
+            document.getElementById('groupData').textContent = 'Сгруппировать';
+            enableControls(true);
+            
+            showStatus('Таблица успешно восстановлена', 'success');
+            hideProgress();
+        }
+        
+        function fillEmptyCells() {
+            const table = document.getElementById('outputTable');
+            if (!table) return;
+            
+            showProgress('Заполнение пустых ячеек...');
+            
+            const columnsToFill = [2, 3, 4, 5]; // Индексы столбцов
+            const rows = table.querySelectorAll('tbody tr');
+            let filledCells = 0;
+            const totalCells = rows.length * columnsToFill.length;
+            
+            // Функция для заполнения столбца
+            const fillColumn = (columnIndex) => {
+                let lastValue = '';
+                
+                // Проход сверху вниз
+                rows.forEach(row => {
+                    const cell = row.cells[columnIndex];
+                    const currentValue = cell.textContent.trim();
+                    
+                    if (currentValue) {
+                        lastValue = currentValue;
+                    } else if (lastValue) {
+                        cell.textContent = lastValue;
+                        filledCells++;
+                    }
+                });
+                
+                // Проход снизу вверх
+                lastValue = '';
+                for (let i = rows.length - 1; i >= 0; i--) {
+                    const cell = rows[i].cells[columnIndex];
+                    const currentValue = cell.textContent.trim();
+                    
+                    if (currentValue) {
+                        lastValue = currentValue;
+                    } else if (lastValue) {
+                        cell.textContent = lastValue;
+                        filledCells++;
+                    }
+                    
+                    // Обновляем прогресс
+                    updateProgress(filledCells / totalCells * 100);
+                }
+            };
+            
+            // Заполняем каждый столбец
+            columnsToFill.forEach(fillColumn);
+            
+            saveDataToLocalStorage();
+            
+            showStatus(`Заполнено ${filledCells} пустых ячеек`, 'success');
+            hideProgress();
+        }
+        
+        // ==================== ЭКСПОРТ В EXCEL ====================
+        
+        function exportGroupToExcel(table, account, deviceType, range) {
+            try {
+                // Создаем книгу Excel
+                const wb = XLSX.utils.book_new();
+                
+                // Метаданные
+                const metaData = [
+                    ['Группировка данных'],
+                    ['Номер квитанции:', account],
+                    ['Тип прибора:', deviceType],
+                    ['Диапазон:', range],
+                    [],
+                    ['Данные приборов']
+                ];
+                
+                // Конвертируем таблицу
+                const ws = XLSX.utils.table_to_sheet(table);
+                
+                // Добавляем метаданные
+                XLSX.utils.sheet_add_aoa(ws, metaData, { origin: 'A1' });
+                
+                // Добавляем данные таблицы
+                const tableStart = metaData.length + 1;
+                const tableData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                XLSX.utils.sheet_add_json(ws, tableData, { origin: `A${tableStart}` });
+                
+                // Добавляем лист в книгу
+                XLSX.utils.book_append_sheet(wb, ws, 'Наклейки');
+                
+                // Генерируем имя файла
+                const fileName = generateFileName(account, deviceType, range);
+                
+                // Сохраняем файл
+                XLSX.writeFile(wb, fileName);
+                
+                showStatus(`Группа экспортирована: ${fileName}`, 'success');
+            } catch (error) {
+                showStatus('Ошибка при экспорте группы: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        function exportAllToExcel() {
+            const table = document.getElementById('outputTable');
+            if (!table) return;
+            
+            try {
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.table_to_sheet(table);
+                XLSX.utils.book_append_sheet(wb, ws, 'Все наклейки');
+                
+                const stickerNumber = document.getElementById('stickerNumber').value;
+                const size = document.getElementById('size').value;
+                const fileName = `Наклейки_${stickerNumber}_${size}мм.xlsx`;
+                
+                XLSX.writeFile(wb, fileName);
+                
+                showStatus(`Все данные экспортированы: ${fileName}`, 'success');
+            } catch (error) {
+                showStatus('Ошибка при экспорте: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+        
+        function generateFileName(account, deviceType, range) {
+            return `Наклейки_${sanitize(account)}_${sanitize(deviceType)}_${sanitize(range)}.xlsx`
+                .replace(/_+/g, '_')
+                .substring(0, 100);
+        }
+        
+        function sanitize(str) {
+            return (str || '')
+                .replace(/[^\wа-яА-Я\s-]/gi, '_')
+                .replace(/\s+/g, '_');
+        }
+        
+        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+        
+        function setupEditableCells() {
+            const cells = document.querySelectorAll('td[contenteditable="true"]');
+            
+            cells.forEach(cell => {
+                // Обработчик Enter для перехода между ячейками
+                cell.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const row = cell.parentNode;
+                        const nextRow = row.nextElementSibling;
+                        
+                        if (nextRow) {
+                            const cellIndex = Array.from(row.cells).indexOf(cell);
+                            nextRow.cells[cellIndex].focus();
+                        }
+                    }
+                });
+                
+                // Сохраняем данные при изменении
+                cell.addEventListener('blur', function() {
+                    saveDataToLocalStorage();
+                });
+            });
+        }
+        
+        function saveDataToLocalStorage() {
+            const table = document.getElementById('outputTable');
+            if (!table) return;
+            
+            try {
+                const stickerNumber = document.getElementById('stickerNumber').value;
+                const size = document.getElementById('size').value;
+                
+                localStorage.setItem('stickerNumber', stickerNumber);
+                localStorage.setItem('size', size);
+                localStorage.setItem('stickerData', table.outerHTML);
+                
+                // Сохраняем порядок строк
+                const rows = Array.from(table.querySelectorAll('tbody tr'));
+                const order = rows.map(row => row.getAttribute('data-original-index'));
+                localStorage.setItem('stickerOrder', JSON.stringify(order));
+            } catch (error) {
+                console.error('Ошибка при сохранении:', error);
+            }
+        }
+        
+        function loadSavedData() {
+            try {
+                const savedData = localStorage.getItem('stickerData');
+                if (savedData) {
+                    document.getElementById('tableContainer').innerHTML = savedData;
+                    document.getElementById('stickerNumber').value = localStorage.getItem('stickerNumber') || '';
+                    document.getElementById('size').value = localStorage.getItem('size') || '16';
+                    
+                    // Восстанавливаем порядок строк
+                    const savedOrder = JSON.parse(localStorage.getItem('stickerOrder') || '[]');
+                    const rows = document.querySelectorAll('#outputTable tbody tr');
+                    rows.forEach((row, index) => {
+                        row.setAttribute('data-original-index', savedOrder[index] || index);
+                    });
+                    
+                    enableControls(true);
+                    setupEditableCells();
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке:', error);
+                clearStorage();
+            }
+        }
+        
+        function clearData() {
+            if (!confirm('Вы уверены, что хотите удалить все данные?')) return;
+            
+            clearStorage();
+            document.getElementById('tableContainer').innerHTML = '';
+            enableControls(false);
+            isGrouped = false;
+            
+            showStatus('Все данные очищены', 'success');
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem('stickerData');
+            localStorage.removeItem('stickerNumber');
+            localStorage.removeItem('size');
+            localStorage.removeItem('stickerOrder');
+        }
+        
+        function enableControls(enable, isGroupView = false) {
+            document.getElementById('clearData').disabled = !enable;
+            document.getElementById('groupData').disabled = !enable;
+            document.getElementById('fillTypes').disabled = !enable || isGroupView;
+            document.getElementById('saveAll').disabled = !enable || isGroupView;
+        }
+        
+        // ==================== УТИЛИТЫ ИНТЕРФЕЙСА ====================
+        
+        function showProgress(message) {
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('progress').style.width = '0%';
+            document.getElementById('progress').textContent = '0%';
+            showStatus(message, 'info');
+        }
+        
+        function updateProgress(percent) {
+            const progress = document.getElementById('progress');
+            progress.style.width = `${percent}%`;
+            progress.textContent = `${Math.round(percent)}%`;
+        }
+        
+        function hideProgress() {
+            setTimeout(() => {
+                document.getElementById('progressContainer').style.display = 'none';
+            }, 500);
+        }
+        
+        function showStatus(message, type = 'info') {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = `status-message status-${type}`;
+            statusElement.style.display = 'block';
+            
+            // Автоматически скрываем через 5 секунд
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

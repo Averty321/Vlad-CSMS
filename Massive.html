@@ -209,22 +209,31 @@
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             let filledCount = 0;
 
-            // Находим группы с одинаковыми типами и счетами
-            const groups = findFillingGroups(rows);
+            // 1. Заполняем номера приборов (если пустые - номером наклейки)
+            rows.forEach(row => {
+                const stickerNum = row.cells[1].textContent;
+                const deviceNumCell = row.cells[5];
+                
+                if (!deviceNumCell.textContent.trim()) {
+                    deviceNumCell.textContent = stickerNum;
+                    filledCount++;
+                }
+            });
 
-            // Заполняем только внутри групп
+            // 2. Заполняем группы для типов приборов и номеров счетов
+            const groups = findGroups(rows);
             groups.forEach(group => {
                 // Заполняем тип прибора
-                for (let i = group.startIndex + 1; i < group.endIndex; i++) {
+                for (let i = group.startIdx; i <= group.endIdx; i++) {
                     const typeCell = rows[i].cells[3];
                     if (!typeCell.textContent.trim()) {
                         typeCell.textContent = group.type;
                         filledCount++;
                     }
                 }
-
+                
                 // Заполняем номер счета
-                for (let i = group.startIndex + 1; i < group.endIndex; i++) {
+                for (let i = group.startIdx; i <= group.endIdx; i++) {
                     const accountCell = rows[i].cells[2];
                     if (!accountCell.textContent.trim()) {
                         accountCell.textContent = group.account;
@@ -235,44 +244,45 @@
 
             if (filledCount > 0) {
                 saveDataToLocalStorage();
-                alert(`Заполнено ${filledCount} ячеек между одинаковыми типами приборов`);
+                alert(`Заполнено ${filledCount} ячеек:\n- Номера приборов заменены на номера клеймов\n- Типы и счета заполнены по группам`);
             } else {
-                alert("Не найдено подходящих групп для заполнения (нужно минимум 2 строки с одинаковым типом и номером счета)");
+                alert("Нет ячеек для заполнения по заданным правилам");
             }
         }
 
-        function findFillingGroups(rows) {
+        function findGroups(rows) {
             const groups = [];
             let currentGroup = null;
-
-            rows.forEach((row, index) => {
-                const type = row.cells[3].textContent.trim();
-                const account = row.cells[2].textContent.trim();
-
+            
+            // Проходим по всем строкам и находим группы
+            for (let i = 0; i < rows.length; i++) {
+                const type = rows[i].cells[3].textContent.trim();
+                const account = rows[i].cells[2].textContent.trim();
+                
                 if (type && account) {
                     if (currentGroup && currentGroup.type === type && currentGroup.account === account) {
                         // Продолжаем текущую группу
-                        currentGroup.endIndex = index;
+                        currentGroup.endIdx = i;
                     } else {
                         // Начинаем новую группу
-                        if (currentGroup && currentGroup.endIndex > currentGroup.startIndex) {
+                        if (currentGroup) {
                             groups.push(currentGroup);
                         }
                         currentGroup = {
                             type: type,
                             account: account,
-                            startIndex: index,
-                            endIndex: index
+                            startIdx: i,
+                            endIdx: i
                         };
                     }
                 }
-            });
-
-            // Добавляем последнюю группу, если она подходит
-            if (currentGroup && currentGroup.endIndex > currentGroup.startIndex) {
+            }
+            
+            // Добавляем последнюю группу
+            if (currentGroup) {
                 groups.push(currentGroup);
             }
-
+            
             return groups;
         }
         

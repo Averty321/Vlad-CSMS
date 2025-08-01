@@ -156,7 +156,6 @@
     </style>
 </head>
 <body>
-    <!-- Вся HTML-разметка остается БЕЗ ИЗМЕНЕНИЙ -->
     <h1>Настройка наклеек</h1>
     
     <div class="controls">
@@ -180,7 +179,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <!-- Весь JavaScript код остается БЕЗ ИЗМЕНЕНИЙ -->
     <script>
         let isGrouped = false;
         let originalTableData = [];
@@ -486,22 +484,31 @@
         
         function exportGroupToExcel(table, account, deviceType, range) {
             const wb = XLSX.utils.book_new();
-            const metaData = [
-                ['Группировка данных'],
-                ['Номер квитанции:', account],
-                ['Тип прибора:', deviceType],
-                ['Диапазон:', range],
-                [],
-                ['Данные приборов']
+            
+            // Создаем массив только с нужными колонками
+            const data = [
+                ['Номер наклейки', 'Номер прибора'] // Заголовки
             ];
             
-            const ws = XLSX.utils.table_to_sheet(table);
-            XLSX.utils.sheet_add_aoa(ws, metaData, { origin: 'A1' });
+            // Собираем данные только из нужных столбцов
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.cells;
+                data.push([
+                    cells[1].textContent, // Номер наклейки
+                    cells[5].textContent  // Номер прибора
+                ]);
+            });
+            
+            // Создаем лист из массива данных
+            const ws = XLSX.utils.aoa_to_sheet(data);
             XLSX.utils.book_append_sheet(wb, ws, 'Наклейки');
             
-            const fileName = `Наклейки_${account || 'Без номера'}_${deviceType || 'Без типа'}_${range || 'Без диапазона'}.xlsx`
-                .replace(/[^\wа-яА-Я\s-]/gi, '_')
-                .substring(0, 100);
+            // Исправляем имя файла (убираем спецсимволы)
+            const fileName = `Наклейки_${account || 'Без номера'}_${deviceType || 'Без типа'}_${range || 'Без диапазона'}`
+                .replace(/[\/\\:*?"<>|]/g, '') // Удаляем запрещенные символы
+                .replace(/\s+/g, '_')          // Заменяем пробелы на подчеркивания
+                .substring(0, 100) + '.xlsx';  // Ограничиваем длину
             
             XLSX.writeFile(wb, fileName);
         }
@@ -516,7 +523,11 @@
             
             const stickerNumber = document.getElementById('stickerNumber').value;
             const size = document.getElementById('size').value;
-            const fileName = `Наклейки_${stickerNumber}_${size}мм.xlsx`;
+            
+            // Исправляем имя файла
+            const fileName = `Наклейки_${stickerNumber}_${size}мм.xlsx`
+                .replace(/[\/\\:*?"<>|]/g, '')
+                .replace(/\s+/g, '_');
             
             XLSX.writeFile(wb, fileName);
         }

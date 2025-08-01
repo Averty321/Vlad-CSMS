@@ -140,7 +140,6 @@
             padding: 5px;
         }
         
-        /* Стиль для скролла */
         #tableContainer::-webkit-scrollbar {
             width: 8px;
         }
@@ -156,7 +155,6 @@
     </style>
 </head>
 <body>
-    <!-- Вся HTML-разметка остается БЕЗ ИЗМЕНЕНИЙ -->
     <h1>Настройка наклеек</h1>
     
     <div class="controls">
@@ -180,7 +178,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <!-- Весь JavaScript код остается БЕЗ ИЗМЕНЕНИЙ -->
     <script>
         let isGrouped = false;
         let originalTableData = [];
@@ -276,12 +273,13 @@
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             let filledCount = 0;
 
-            // 1. Заполняем номера приборов (если пустые - номером наклейки)
+            // 1. Заполняем номера приборов (если пустые И указан тип прибора - номером наклейки)
             rows.forEach(row => {
                 const stickerNum = row.cells[1].textContent;
                 const deviceNumCell = row.cells[5];
+                const deviceTypeCell = row.cells[3];
                 
-                if (!deviceNumCell.textContent.trim()) {
+                if (!deviceNumCell.textContent.trim() && deviceTypeCell.textContent.trim()) {
                     deviceNumCell.textContent = stickerNum;
                     filledCount++;
                 }
@@ -326,7 +324,7 @@
 
             if (filledCount > 0) {
                 saveDataToLocalStorage();
-                alert(`Заполнено ${filledCount} ячеек:\n- Номера приборов заменены на номера клеймов\n- Типы и счета заполнены по группам`);
+                alert(`Заполнено ${filledCount} ячеек:\n- Номера приборов заменены на номера клеймов (только где указан тип прибора)\n- Типы и счета заполнены по группам`);
             } else {
                 alert("Нет ячеек для заполнения по заданным правилам");
             }
@@ -485,25 +483,31 @@
         }
         
         function exportGroupToExcel(table, account, deviceType, range) {
-            const wb = XLSX.utils.book_new();
-            const metaData = [
-                ['Группировка данных'],
-                ['Номер квитанции:', account],
-                ['Тип прибора:', deviceType],
-                ['Диапазон:', range],
-                [],
-                ['Данные приборов']
-            ];
-            
-            const ws = XLSX.utils.table_to_sheet(table);
-            XLSX.utils.sheet_add_aoa(ws, metaData, { origin: 'A1' });
-            XLSX.utils.book_append_sheet(wb, ws, 'Наклейки');
-            
-            const fileName = `Наклейки_${account || 'Без номера'}_${deviceType || 'Без типа'}_${range || 'Без диапазона'}.xlsx`
-                .replace(/[^\wа-яА-Я\s-]/gi, '_')
-                .substring(0, 100);
-            
-            XLSX.writeFile(wb, fileName);
+            try {
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.table_to_sheet(table);
+                
+                const metaData = [
+                    ['Группировка данных'],
+                    ['Номер квитанции:', account],
+                    ['Тип прибора:', deviceType],
+                    ['Диапазон:', range],
+                    [],
+                    ['Данные приборов']
+                ];
+                
+                XLSX.utils.sheet_add_aoa(ws, metaData, { origin: 'A1' });
+                XLSX.utils.book_append_sheet(wb, ws, 'Наклейки');
+                
+                const fileName = `Наклейки_${account || 'Без номера'}_${deviceType || 'Без типа'}_${range || 'Без диапазона'}.xlsx`
+                    .replace(/[^\wа-яА-Я\s-]/gi, '_')
+                    .substring(0, 100);
+                
+                XLSX.writeFile(wb, fileName);
+            } catch (e) {
+                console.error('Ошибка экспорта:', e);
+                alert('Ошибка при создании Excel файла');
+            }
         }
         
         function exportAllToExcel() {

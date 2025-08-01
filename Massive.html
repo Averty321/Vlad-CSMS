@@ -106,7 +106,7 @@
         <button id="createTable">Создать таблицу</button>
         <button id="clearData" disabled>Очистить страницу</button>
         <button id="groupData" disabled>Сгруппировать</button>
-        <button id="fillTypes" disabled>Заполнить пустые ячейки</button>
+        <button id="fillEmpty" disabled>Заполнить пустые ячейки</button>
         <button id="saveAll" disabled>Сохранить все данные</button>
     </div>
 
@@ -123,9 +123,9 @@
             
             document.getElementById('createTable').addEventListener('click', createTable);
             document.getElementById('clearData').addEventListener('click', clearData);
-            document.getElementById('groupData').addEventListener('click', groupData);
-            document.getElementById('fillTypes').addEventListener('click', fillEmptyCells);
-            document.getElementById('saveAll').addEventListener('click', saveAllData);
+            document.getElementById('groupData').addEventListener('click', toggleGrouping);
+            document.getElementById('fillEmpty').addEventListener('click', fillEmptyCells);
+            document.getElementById('saveAll').addEventListener('click', exportAllToExcel);
         });
         
         function createTable() {
@@ -147,7 +147,7 @@
                         <tr>
                             <th>#</th>
                             <th>Номер наклейки</th>
-                            <th>Номер квитанции/счета</th>
+                            <th>Номер квитанции</th>
                             <th>Тип прибора</th>
                             <th>Диапазон</th>
                             <th>Номер прибора</th>
@@ -174,7 +174,7 @@
             
             document.getElementById('clearData').disabled = false;
             document.getElementById('groupData').disabled = false;
-            document.getElementById('fillTypes').disabled = false;
+            document.getElementById('fillEmpty').disabled = false;
             document.getElementById('saveAll').disabled = false;
             
             saveDataToLocalStorage();
@@ -208,79 +208,86 @@
 
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             let filledCount = 0;
-            let hasChanges = false;
 
-            // 1. Находим группы для заполнения (тип прибора + номер счета)
-            const groups = [];
-            let currentGroup = null;
-
-            rows.forEach((row, index) => {
-                const typeValue = row.cells[3].textContent.trim();
-                const accountValue = row.cells[2].textContent.trim();
-
-                if (typeValue && accountValue) {
-                    if (currentGroup) groups.push(currentGroup);
-                    currentGroup = {
-                        start: index,
-                        end: index,
-                        type: typeValue,
-                        account: accountValue
-                    };
-                } else if (currentGroup) {
-                    currentGroup.end = index;
-                }
-            });
-
-            if (currentGroup) groups.push(currentGroup);
-
-            // 2. Заполняем группы
-            groups.forEach(group => {
-                for (let i = group.start; i <= group.end; i++) {
-                    const row = rows[i];
-                    
-                    // Заполняем тип прибора
-                    if (!row.cells[3].textContent.trim()) {
-                        row.cells[3].textContent = group.type;
-                        filledCount++;
-                        hasChanges = true;
-                    }
-                    
-                    // Заполняем номер счета
-                    if (!row.cells[2].textContent.trim()) {
-                        row.cells[2].textContent = group.account;
-                        filledCount++;
-                        hasChanges = true;
-                    }
-                }
-            });
-
-            // 3. Заполняем номера приборов (номером наклейки если пусто)
+            // 1. Заполняем номера приборов (если пустые - номером наклейки)
             rows.forEach(row => {
-                if (!row.cells[5].textContent.trim()) {
-                    row.cells[5].textContent = row.cells[1].textContent;
+                const stickerNum = row.cells[1].textContent;
+                const deviceNumCell = row.cells[5];
+                
+                if (!deviceNumCell.textContent.trim()) {
+                    deviceNumCell.textContent = stickerNum;
                     filledCount++;
-                    hasChanges = true;
                 }
             });
 
-            if (hasChanges) {
+            // 2. Заполняем группы для типов приборов и номеров счетов
+            const groups = findGroups(rows);
+            groups.forEach(group => {
+                // Заполняем тип прибора
+                for (let i = group.startIdx; i <= group.endIdx; i++) {
+                    const typeCell = rows[i].cells[3];
+                    if (!typeCell.textContent.trim()) {
+                        typeCell.textContent = group.type;
+                        filledCount++;
+                    }
+                }
+                
+                // Заполняем номер счета
+                for (let i = group.startIdx; i <= group.endIdx; i++) {
+                    const accountCell = rows[i].cells[2];
+                    if (!accountCell.textContent.trim()) {
+                        accountCell.textContent = group.account;
+                        filledCount++;
+                    }
+                }
+            });
+
+            if (filledCount > 0) {
                 saveDataToLocalStorage();
-                alert(`Заполнено ${filledCount} ячеек по правилам:\n- Типы приборов и номера счетов заполняются группами\n- Пустые номера приборов заменены номерами наклеек`);
+                alert(`Заполнено ${filledCount} ячеек:\n- Номера приборов заменены на номера клеймов\n- Типы и счета заполнены по группам`);
             } else {
                 alert("Нет ячеек для заполнения по заданным правилам");
             }
         }
+
+        function findGroups(rows) {
+            const groups = [];
+            let currentGroup = null;
+            
+            rows.forEach((row, idx) => {
+                const type = row.cells[3].textContent.trim();
+                const account = row.cells[2].textContent.trim();
+                
+                if (type && account) {
+                    if (currentGroup) groups.push(currentGroup);
+                    currentGroup = {
+                        startIdx: idx,
+                        endIdx: idx,
+                        type: type,
+                        account: account
+                    };
+                } else if (currentGroup) {
+                    currentGroup.endIdx = idx;
+                }
+            });
+            
+            if (currentGroup) groups.push(currentGroup);
+            return groups;
+        }
         
-        function groupData() {
+        function toggleGrouping() {
             if (isGrouped) {
                 restoreOriginalTable();
-                return;
+            } else {
+                groupData();
             }
-            
+        }
+        
+        function groupData() {
             const table = document.getElementById('outputTable');
             if (!table) return;
             
-            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML);
+            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML));
             
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             const groups = {};
@@ -332,7 +339,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>Номер наклейки</th>
-                                <th>Номер квитанции/счета</th>
+                                <th>Номер квитанции</th>
                                 <th>Тип прибора</th>
                                 <th>Диапазон</th>
                                 <th>Номер прибора</th>
@@ -354,12 +361,13 @@
                     const range = this.getAttribute('data-range');
                     
                     const groupTable = this.closest('.group-container').querySelector('.group-table');
-                    saveGroupToExcel(groupTable, account, deviceType, range);
+                    exportGroupToExcel(groupTable, account, deviceType, range);
                 });
             });
             
             isGrouped = true;
             document.getElementById('groupData').textContent = 'Вернуться к таблице';
+            document.getElementById('fillEmpty').disabled = true;
         }
         
         function restoreOriginalTable() {
@@ -372,7 +380,7 @@
                         <tr>
                             <th>#</th>
                             <th>Номер наклейки</th>
-                            <th>Номер квитанции/счета</th>
+                            <th>Номер квитанции</th>
                             <th>Тип прибора</th>
                             <th>Диапазон</th>
                             <th>Номер прибора</th>
@@ -394,13 +402,14 @@
             setupEditableCells();
             isGrouped = false;
             document.getElementById('groupData').textContent = 'Сгруппировать';
+            document.getElementById('fillEmpty').disabled = false;
         }
         
-        function saveGroupToExcel(table, account, deviceType, range) {
+        function exportGroupToExcel(table, account, deviceType, range) {
             const wb = XLSX.utils.book_new();
             const metaData = [
                 ['Группировка данных'],
-                ['Номер квитанции/счета:', account],
+                ['Номер квитанции:', account],
                 ['Тип прибора:', deviceType],
                 ['Диапазон:', range],
                 [],
@@ -418,7 +427,7 @@
             XLSX.writeFile(wb, fileName);
         }
         
-        function saveAllData() {
+        function exportAllToExcel() {
             const table = document.getElementById('outputTable');
             if (!table) return;
             
@@ -454,7 +463,7 @@
                 
                 document.getElementById('clearData').disabled = false;
                 document.getElementById('groupData').disabled = false;
-                document.getElementById('fillTypes').disabled = false;
+                document.getElementById('fillEmpty').disabled = false;
                 document.getElementById('saveAll').disabled = false;
                 
                 setupEditableCells();
@@ -470,7 +479,7 @@
             document.getElementById('tableContainer').innerHTML = '';
             document.getElementById('clearData').disabled = true;
             document.getElementById('groupData').disabled = true;
-            document.getElementById('fillTypes').disabled = true;
+            document.getElementById('fillEmpty').disabled = true;
             document.getElementById('saveAll').disabled = true;
             document.getElementById('groupData').textContent = 'Сгруппировать';
             isGrouped = false;

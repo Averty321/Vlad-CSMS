@@ -485,7 +485,10 @@
         function exportGroupToExcel(table, account, deviceType, range) {
             const wb = XLSX.utils.book_new();
             
-          
+            // Создаем массив только с нужными колонками
+            const data = [
+                ['', ''] // Заголовки
+            ];
             
             // Собираем данные только из нужных столбцов
             const rows = table.querySelectorAll('tbody tr');

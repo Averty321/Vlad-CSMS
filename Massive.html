@@ -3,512 +3,453 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Настройка наклеек</title>
+    <title>Генератор наклеек для приборов</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f5f5f5;
-            color: #333;
+            line-height: 1.6;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
+        .controls {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
         }
         label {
-            display: block;
-            margin: 15px 0 5px;
-            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+            margin-bottom: 10px;
         }
         input, select {
             padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
             width: 200px;
+            margin-bottom: 10px;
         }
         button {
-            background-color: #3498db;
+            padding: 8px 16px;
+            margin-right: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            background: #4CAF50;
             color: white;
             border: none;
-            padding: 10px 20px;
-            margin: 10px 5px 10px 0;
             border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #2980b9;
+            background: #45a049;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
         }
         table {
             margin-top: 20px;
             border-collapse: collapse;
             width: 100%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
         }
         th {
-            background-color: #3498db;
-            color: white;
-            padding: 12px;
-            text-align: center;
-        }
-        td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
         }
         tr:nth-child(even) {
-            background-color: #f2f2f2;
+            background-color: #f9f9f9;
+        }
+        .editable {
+            background: #fffde7;
         }
         .group-header {
-            background-color: #ecf0f1;
-            padding: 15px;
-            margin: 25px 0 10px;
+            background-color: #e0e0e0;
+            padding: 10px;
+            margin-top: 20px;
             border-radius: 5px;
-            border-left: 5px solid #3498db;
-        }
-        .account-block {
-            background-color: #e8f4fc;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-            border: 1px solid #d6eaf8;
-        }
-        .account-title {
-            font-size: 18px;
             font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 10px;
         }
-        [contenteditable="true"] {
-            background-color: #fff;
-            min-width: 100px;
-            position: relative;
-        }
-        [contenteditable="true"]:focus {
-            outline: 2px solid #3498db;
-            background-color: #f0f8ff;
-        }
-        .button-group {
-            margin: 20px 0;
-        }
-        .suggestions {
-            position: absolute;
-            background: white;
+        .group-container {
+            margin-bottom: 30px;
             border: 1px solid #ddd;
-            max-height: 150px;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .save-group-btn {
+            background: #2196F3;
+        }
+        .save-group-btn:hover {
+            background: #0b7dda;
+        }
+        #tableContainer {
+            max-height: 600px;
             overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .suggestion-item {
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        .suggestion-item:hover {
-            background-color: #f0f0f0;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-<div class="container">
     <h1>Настройка наклеек</h1>
     
-    <label for="stickerNumber">Номер наклейки:</label>
-    <input type="number" id="stickerNumber" required>
-    
-    <label for="size">Размер наклеек:</label>
-    <select id="size">
-        <option value="16">16 мм</option>
-        <option value="10">10 мм</option>
-    </select>
-    
-    <div class="button-group">
+    <div class="controls">
+        <label for="stickerNumber">Начальный номер наклейки:</label>
+        <input type="number" id="stickerNumber" min="1" required>
+        <br>
+        <label for="size">Размер наклеек:</label>
+        <select id="size">
+            <option value="16">16 мм (64 наклейки)</option>
+            <option value="10">10 мм (144 наклейки)</option>
+        </select>
+        <br>
         <button id="createTable">Создать таблицу</button>
-        <button id="clearData" style="display:none;">Очистить страницу</button>
-        <button id="groupData" style="display:none;">Сгруппировать</button>
-        <button id="fillTypes" style="display:none;">Заполнить пустые ячейки</button>
+        <button id="clearData" disabled>Очистить страницу</button>
+        <button id="groupData" disabled>Сгруппировать</button>
+        <button id="fillTypes" disabled>Заполнить пустые ячейки</button>
+        <button id="saveAll" disabled>Сохранить все данные</button>
     </div>
 
     <div id="tableContainer"></div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<script>
-    let isGrouped = false;
-    let deviceTypes = new Set();
-    let accountNumbers = new Set();
-    let ranges = new Set();
-
-    function safeFileName(name) {
-        return name.replace(/[^\wа-яА-Я\s-]/gi, '_').substring(0, 100);
-    }
-
-    function showSuggestions(inputElement, suggestions) {
-        // Удаляем старые подсказки, если они есть
-        const oldSuggestions = inputElement.parentNode.querySelector('.suggestions');
-        if (oldSuggestions) {
-            oldSuggestions.remove();
-        }
-
-        if (suggestions.size === 0) return;
-
-        const suggestionsList = document.createElement('div');
-        suggestionsList.className = 'suggestions';
+    <script>
+        let isGrouped = false;
+        let originalTableData = [];
         
-        Array.from(suggestions).forEach(suggestion => {
-            if (!suggestion) return;
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedData();
             
-            const suggestionItem = document.createElement('div');
-            suggestionItem.className = 'suggestion-item';
-            suggestionItem.textContent = suggestion;
-            suggestionItem.addEventListener('click', function() {
-                inputElement.textContent = suggestion;
-                suggestionsList.remove();
-                // Перемещаем фокус на следующую ячейку
-                const row = inputElement.parentNode;
-                const nextCell = inputElement.nextElementSibling || 
-                                row.nextElementSibling?.cells[2];
-                if (nextCell) {
-                    nextCell.focus();
-                }
-            });
-            suggestionsList.appendChild(suggestionItem);
+            document.getElementById('createTable').addEventListener('click', createTable);
+            document.getElementById('clearData').addEventListener('click', clearData);
+            document.getElementById('groupData').addEventListener('click', groupData);
+            document.getElementById('fillTypes').addEventListener('click', fillEmptyCells);
+            document.getElementById('saveAll').addEventListener('click', saveAllData);
         });
         
-        inputElement.parentNode.appendChild(suggestionsList);
-        
-        // Позиционируем подсказки
-        const rect = inputElement.getBoundingClientRect();
-        suggestionsList.style.top = `${rect.bottom}px`;
-        suggestionsList.style.left = `${rect.left}px`;
-        suggestionsList.style.width = `${rect.width}px`;
-    }
-
-    function setupAutocomplete() {
-        const accountCells = document.querySelectorAll('.account-number');
-        const typeCells = document.querySelectorAll('.device-type');
-        const rangeCells = document.querySelectorAll('.range');
-        
-        accountCells.forEach(cell => {
-            cell.addEventListener('focus', function() {
-                showSuggestions(this, accountNumbers);
-            });
+        function createTable() {
+            const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
+            const size = document.getElementById('size').value;
             
-            cell.addEventListener('blur', function() {
-                setTimeout(() => {
-                    const suggestions = this.parentNode.querySelector('.suggestions');
-                    if (suggestions) suggestions.remove();
-                }, 200);
-            });
-            
-            cell.addEventListener('input', function() {
-                const value = this.textContent.trim();
-                if (value) {
-                    accountNumbers.add(value);
-                }
-            });
-        });
-        
-        typeCells.forEach(cell => {
-            cell.addEventListener('focus', function() {
-                showSuggestions(this, deviceTypes);
-            });
-            
-            cell.addEventListener('blur', function() {
-                setTimeout(() => {
-                    const suggestions = this.parentNode.querySelector('.suggestions');
-                    if (suggestions) suggestions.remove();
-                }, 200);
-            });
-            
-            cell.addEventListener('input', function() {
-                const value = this.textContent.trim();
-                if (value) {
-                    deviceTypes.add(value);
-                }
-            });
-        });
-        
-        rangeCells.forEach(cell => {
-            cell.addEventListener('focus', function() {
-                showSuggestions(this, ranges);
-            });
-            
-            cell.addEventListener('blur', function() {
-                setTimeout(() => {
-                    const suggestions = this.parentNode.querySelector('.suggestions');
-                    if (suggestions) suggestions.remove();
-                }, 200);
-            });
-            
-            cell.addEventListener('input', function() {
-                const value = this.textContent.trim();
-                if (value) {
-                    ranges.add(value);
-                }
-            });
-        });
-    }
-
-    document.getElementById('createTable').addEventListener('click', function() {
-        const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
-        const size = parseInt(document.getElementById('size').value);
-        const totalColumns = size === 16 ? 64 : 144;
-        const tableContainer = document.getElementById('tableContainer');
-
-        let tableHTML = `
-        <table id="outputTable">
-            <tr>
-                <th>#</th>
-                <th>Номер наклейки</th>
-                <th>Номер квитанции/счета</th>
-                <th>Тип прибора</th>
-                <th>Диапазон</th>
-                <th>Номер прибора</th>
-            </tr>`;
-        
-        for (let i = 0; i < totalColumns; i++) {
-            const stickerNum = stickerNumber + i;
-            tableHTML += `
-            <tr>
-                <td>${i + 1}</td>
-                <td>${stickerNum}</td>
-                <td contenteditable="true" class="account-number"></td>
-                <td contenteditable="true" class="device-type"></td>
-                <td contenteditable="true" class="range"></td>
-                <td contenteditable="true" class="device-number"></td>
-            </tr>`;
-        }
-        tableHTML += `</table>
-            <button id="saveMainTable">Скачать основную таблицу</button>`;
-        
-        tableContainer.innerHTML = tableHTML;
-        document.getElementById('clearData').style.display = 'inline-block';
-        document.getElementById('groupData').style.display = 'inline-block';
-        document.getElementById('fillTypes').style.display = 'inline-block';
-        
-        localStorage.setItem('stickerNumber', stickerNumber);
-        localStorage.setItem('size', size);
-        
-        document.getElementById('saveMainTable').addEventListener('click', function() {
-            const table = document.getElementById('outputTable');
-            const wb = XLSX.utils.table_to_book(table, {sheet: "Основная таблица"});
-            XLSX.writeFile(wb, `Основная_таблица.xlsx`);
-        });
-        
-        const cells = tableContainer.querySelectorAll('td[contenteditable="true"]');
-        cells.forEach(cell => {
-            cell.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const row = cell.parentNode;
-                    const nextRow = row.nextElementSibling;
-                    
-                    if (nextRow) {
-                        const cellIndex = Array.from(row.cells).indexOf(cell);
-                        nextRow.cells[cellIndex].focus();
-                    }
-                }
-            });
-        });
-        
-        // Настраиваем автодополнение
-        setupAutocomplete();
-    });
-
-    document.getElementById('fillTypes').addEventListener('click', function() {
-        const table = document.getElementById('outputTable');
-        if (!table) return;
-        
-        const rows = table.rows;
-        let currentAccount = null;
-        let currentDeviceType = null;
-        let currentRange = null;
-        let groupStart = 1;
-        
-        for (let i = 1; i < rows.length; i++) {
-            const account = rows[i].cells[2].textContent.trim();
-            const deviceType = rows[i].cells[3].textContent.trim();
-            const range = rows[i].cells[4].textContent.trim();
-            
-            if (account && deviceType && range) {
-                // Заполняем предыдущую группу
-                if (currentAccount !== null && i > groupStart) {
-                    for (let j = groupStart; j < i; j++) {
-                        if (!rows[j].cells[2].textContent.trim()) {
-                            rows[j].cells[2].textContent = currentAccount;
-                        }
-                        if (!rows[j].cells[3].textContent.trim()) {
-                            rows[j].cells[3].textContent = currentDeviceType;
-                        }
-                        if (!rows[j].cells[4].textContent.trim()) {
-                            rows[j].cells[4].textContent = currentRange;
-                        }
-                    }
-                }
-                
-                // Начинаем новую группу
-                currentAccount = account;
-                currentDeviceType = deviceType;
-                currentRange = range;
-                groupStart = i;
-            }
-        }
-        
-        // Заполняем последнюю группу
-        if (currentAccount !== null && groupStart < rows.length - 1) {
-            for (let j = groupStart; j < rows.length; j++) {
-                if (!rows[j].cells[2].textContent.trim()) {
-                    rows[j].cells[2].textContent = currentAccount;
-                }
-                if (!rows[j].cells[3].textContent.trim()) {
-                    rows[j].cells[3].textContent = currentDeviceType;
-                }
-                if (!rows[j].cells[4].textContent.trim()) {
-                    rows[j].cells[4].textContent = currentRange;
-                }
-            }
-        }
-    });
-
-    document.getElementById('groupData').addEventListener('click', function() {
-        if (isGrouped) return;
-        
-        const table = document.getElementById('outputTable');
-        if (!table) return;
-        
-        const rows = table.querySelectorAll('tr');
-        let accountsData = {};
-        
-        // Собираем данные с группировкой по счетам
-        for (let i = 1; i < rows.length; i++) {
-            const cells = rows[i].cells;
-            const sticker = cells[1].textContent.trim();
-            const account = cells[2].textContent.trim() || "Без номера";
-            const deviceType = cells[3].textContent.trim() || "Без типа";
-            const range = cells[4].textContent.trim() || "Без диапазона";
-            const deviceNumber = cells[5].textContent.trim();
-            
-            if (!accountsData[account]) {
-                accountsData[account] = {};
+            if (isNaN(stickerNumber)) {
+                alert('Пожалуйста, введите начальный номер наклейки');
+                return;
             }
             
-            const groupKey = `${deviceType}_${range}`;
+            const totalRows = size === "16" ? 64 : 144;
+            const tableContainer = document.getElementById('tableContainer');
+            tableContainer.innerHTML = '';
             
-            if (!accountsData[account][groupKey]) {
-                accountsData[account][groupKey] = {
-                    deviceType: deviceType,
-                    range: range,
-                    items: []
-                };
-            }
-            
-            accountsData[account][groupKey].items.push({
-                sticker: sticker,
-                deviceNumber: deviceNumber
-            });
-        }
-        
-        // Создаем контейнер для группированных таблиц
-        const newTablesContainer = document.createElement('div');
-        newTablesContainer.id = 'groupedTables';
-        
-        // Генерируем блоки для каждого счета
-        for (const account in accountsData) {
-            const accountBlock = document.createElement('div');
-            accountBlock.className = 'account-block';
-            
-            const accountTitle = document.createElement('div');
-            accountTitle.className = 'account-title';
-            accountTitle.textContent = `Номер квитанции/счета: ${account}`;
-            accountBlock.appendChild(accountTitle);
-            
-            // Генерируем таблицы для каждой группы в этом счете
-            for (const groupKey in accountsData[account]) {
-                const group = accountsData[account][groupKey];
-                
-                const fileName = `${safeFileName(account)}_${safeFileName(group.deviceType)}_${safeFileName(group.range)}`;
-                
-                const groupHeader = document.createElement('div');
-                groupHeader.className = 'group-header';
-                groupHeader.innerHTML = `
-                    <h3>Тип прибора: ${group.deviceType} | Диапазон: ${group.range}</h3>
-                    <p>Количество приборов: ${group.items.length}</p>
-                `;
-                accountBlock.appendChild(groupHeader);
-                
-                let tableHTML = `<table class="group-table" data-group="${fileName}">
-                    <tr>
-                        <th>Номер наклейки</th>
-                        <th>Номер прибора</th>
-                    </tr>`;
-                
-                group.items.forEach(item => {
-                    tableHTML += `
+            let tableHTML = `
+                <table id="outputTable">
+                    <thead>
                         <tr>
-                            <td>${item.sticker}</td>
-                            <td>${item.deviceNumber}</td>
-                        </tr>`;
+                            <th>#</th>
+                            <th>Номер наклейки</th>
+                            <th>Номер квитанции/счета</th>
+                            <th>Тип прибора</th>
+                            <th>Диапазон</th>
+                            <th>Номер прибора</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            for (let i = 0; i < totalRows; i++) {
+                tableHTML += `
+                    <tr data-original-index="${i}">
+                        <td>${i + 1}</td>
+                        <td>${stickerNumber + i}</td>
+                        <td class="editable account-number" contenteditable="true"></td>
+                        <td class="editable device-type" contenteditable="true"></td>
+                        <td class="editable range" contenteditable="true"></td>
+                        <td class="editable device-number" contenteditable="true"></td>
+                    </tr>
+                `;
+            }
+            
+            tableHTML += `</tbody></table>`;
+            tableContainer.innerHTML = tableHTML;
+            
+            document.getElementById('clearData').disabled = false;
+            document.getElementById('groupData').disabled = false;
+            document.getElementById('fillTypes').disabled = false;
+            document.getElementById('saveAll').disabled = false;
+            
+            saveDataToLocalStorage();
+            setupEditableCells();
+        }
+        
+        function setupEditableCells() {
+            const cells = document.querySelectorAll('td[contenteditable="true"]');
+            
+            cells.forEach(cell => {
+                cell.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const row = cell.parentNode;
+                        const nextRow = row.nextElementSibling;
+                        
+                        if (nextRow) {
+                            const cellIndex = Array.from(row.cells).indexOf(cell);
+                            nextRow.cells[cellIndex].focus();
+                        }
+                    }
                 });
                 
-                tableHTML += `</table>
-                    <button class="save-group-btn" data-group="${fileName}">
-                        Скачать эту группу
-                    </button><br><br>`;
-                
-                accountBlock.innerHTML += tableHTML;
-            }
-            
-            newTablesContainer.appendChild(accountBlock);
+                cell.addEventListener('blur', saveDataToLocalStorage);
+            });
         }
         
-        document.getElementById('tableContainer').appendChild(newTablesContainer);
-        isGrouped = true;
-        
-        document.querySelectorAll('.save-group-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const groupKey = this.getAttribute('data-group');
-                const table = document.querySelector(`.group-table[data-group="${groupKey}"]`);
-                
-                const wb = XLSX.utils.book_new();
-                const tableData = XLSX.utils.table_to_sheet(table);
-                XLSX.utils.book_append_sheet(wb, tableData, groupKey.substring(0, 31));
-                XLSX.writeFile(wb, `${groupKey}.xlsx`);
-            });
-        });
-    });
-
-    document.getElementById('clearData').addEventListener('click', function() {
-        localStorage.removeItem('stickerData');
-        localStorage.removeItem('stickerNumber');
-        localStorage.removeItem('size');
-        document.getElementById('tableContainer').innerHTML = '';
-        document.getElementById('clearData').style.display = 'none';
-        document.getElementById('groupData').style.display = 'none';
-        document.getElementById('fillTypes').style.display = 'none';
-        isGrouped = false;
-        deviceTypes.clear();
-        accountNumbers.clear();
-        ranges.clear();
-    });
-
-    window.onload = function() {
-        const savedData = localStorage.getItem('stickerData');
-        if (savedData) {
-            document.getElementById('tableContainer').innerHTML = savedData;
-            document.getElementById('clearData').style.display = 'inline-block';
-            document.getElementById('groupData').style.display = 'inline-block';
-            document.getElementById('fillTypes').style.display = 'inline-block';
+        function fillEmptyCells() {
+            const table = document.getElementById('outputTable');
+            if (!table) return;
             
-            const stickerNumber
+            const columnsToFill = [2, 3, 4, 5]; // Индексы столбцов
+            const rows = table.querySelectorAll('tbody tr');
+            let filledCells = 0;
+            
+            columnsToFill.forEach(columnIndex => {
+                let lastValue = '';
+                
+                // Сверху вниз
+                rows.forEach(row => {
+                    const cell = row.cells[columnIndex];
+                    const currentValue = cell.textContent.trim();
+                    
+                    if (currentValue) {
+                        lastValue = currentValue;
+                    } else if (lastValue) {
+                        cell.textContent = lastValue;
+                        filledCells++;
+                    }
+                });
+                
+                // Снизу вверх
+                lastValue = '';
+                for (let i = rows.length - 1; i >= 0; i--) {
+                    const cell = rows[i].cells[columnIndex];
+                    const currentValue = cell.textContent.trim();
+                    
+                    if (currentValue) {
+                        lastValue = currentValue;
+                    } else if (lastValue) {
+                        cell.textContent = lastValue;
+                        filledCells++;
+                    }
+                }
+            });
+            
+            saveDataToLocalStorage();
+            alert(`Заполнено ${filledCells} пустых ячеек!`);
+        }
+        
+        function groupData() {
+            if (isGrouped) {
+                restoreOriginalTable();
+                return;
+            }
+            
+            const table = document.getElementById('outputTable');
+            if (!table) return;
+            
+            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML));
+            
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            const groups = {};
+            
+            rows.forEach(row => {
+                const account = row.cells[2].textContent.trim();
+                const deviceType = row.cells[3].textContent.trim();
+                const range = row.cells[4].textContent.trim();
+                
+                if (!account && !deviceType && !range) return;
+                
+                const groupKey = `${account || 'Без номера'}|${deviceType || 'Без типа'}|${range || 'Без диапазона'}`;
+                
+                if (!groups[groupKey]) {
+                    groups[groupKey] = {
+                        account: account,
+                        deviceType: deviceType,
+                        range: range,
+                        rows: []
+                    };
+                }
+                
+                groups[groupKey].rows.push(row.outerHTML);
+            });
+            
+            const tableContainer = document.getElementById('tableContainer');
+            tableContainer.innerHTML = '';
+            
+            for (const [key, group] of Object.entries(groups)) {
+                const groupContainer = document.createElement('div');
+                groupContainer.className = 'group-container';
+                
+                const [account, deviceType, range] = key.split('|');
+                
+                groupContainer.innerHTML = `
+                    <div class="group-header">
+                        Номер квитанции: ${account} | 
+                        Тип прибора: ${deviceType} | 
+                        Диапазон: ${range}
+                        <button class="save-group-btn" 
+                                data-account="${account}" 
+                                data-device-type="${deviceType}" 
+                                data-range="${range}">
+                            Сохранить группу
+                        </button>
+                    </div>
+                    <table class="group-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Номер наклейки</th>
+                                <th>Номер квитанции/счета</th>
+                                <th>Тип прибора</th>
+                                <th>Диапазон</th>
+                                <th>Номер прибора</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${group.rows.join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                tableContainer.appendChild(groupContainer);
+            }
+            
+            document.querySelectorAll('.save-group-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const account = this.getAttribute('data-account');
+                    const deviceType = this.getAttribute('data-device-type');
+                    const range = this.getAttribute('data-range');
+                    
+                    const groupTable = this.closest('.group-container').querySelector('.group-table');
+                    saveGroupToExcel(groupTable, account, deviceType, range);
+                });
+            });
+            
+            isGrouped = true;
+            document.getElementById('groupData').textContent = 'Вернуться к таблице';
+        }
+        
+        function restoreOriginalTable() {
+            if (!originalTableData.length) return;
+            
+            const tableContainer = document.getElementById('tableContainer');
+            tableContainer.innerHTML = `
+                <table id="outputTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Номер наклейки</th>
+                            <th>Номер квитанции/счета</th>
+                            <th>Тип прибора</th>
+                            <th>Диапазон</th>
+                            <th>Номер прибора</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${originalTableData.slice(1).map(row => `
+                            <tr>
+                                ${row.map((cell, i) => 
+                                    i > 0 ? `<td class="${i === 2 ? 'account-number' : i === 3 ? 'device-type' : i === 4 ? 'range' : i === 5 ? 'device-number' : ''} ${i > 1 ? 'editable' : ''}" ${i > 1 ? 'contenteditable="true"' : ''}>${cell}</td>` 
+                                    : `<td>${cell}</td>`
+                                ).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            setupEditableCells();
+            isGrouped = false;
+            document.getElementById('groupData').textContent = 'Сгруппировать';
+        }
+        
+        function saveGroupToExcel(table, account, deviceType, range) {
+            const wb = XLSX.utils.book_new();
+            const metaData = [
+                ['Группировка данных'],
+                ['Номер квитанции/счета:', account],
+                ['Тип прибора:', deviceType],
+                ['Диапазон:', range],
+                [],
+                ['Данные приборов']
+            ];
+            
+            const ws = XLSX.utils.table_to_sheet(table);
+            XLSX.utils.sheet_add_aoa(ws, metaData, { origin: 'A1' });
+            XLSX.utils.book_append_sheet(wb, ws, 'Наклейки');
+            
+            const fileName = `Наклейки_${account || 'Без номера'}_${deviceType || 'Без типа'}_${range || 'Без диапазона'}.xlsx`
+                .replace(/[^\wа-яА-Я\s-]/gi, '_')
+                .substring(0, 100);
+            
+            XLSX.writeFile(wb, fileName);
+        }
+        
+        function saveAllData() {
+            const table = document.getElementById('outputTable');
+            if (!table) return;
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.table_to_sheet(table);
+            XLSX.utils.book_append_sheet(wb, ws, 'Все наклейки');
+            
+            const stickerNumber = document.getElementById('stickerNumber').value;
+            const size = document.getElementById('size').value;
+            const fileName = `Наклейки_${stickerNumber}_${size}мм.xlsx`;
+            
+            XLSX.writeFile(wb, fileName);
+        }
+        
+        function saveDataToLocalStorage() {
+            const table = document.getElementById('outputTable');
+            if (!table) return;
+            
+            const stickerNumber = document.getElementById('stickerNumber').value;
+            const size = document.getElementById('size').value;
+            
+            localStorage.setItem('stickerNumber', stickerNumber);
+            localStorage.setItem('size', size);
+            localStorage.setItem('stickerData', table.outerHTML);
+        }
+        
+        function loadSavedData() {
+            const savedData = localStorage.getItem('stickerData');
+            if (savedData) {
+                document.getElementById('tableContainer').innerHTML = savedData;
+                document.getElementById('stickerNumber').value = localStorage.getItem('stickerNumber') || '';
+                document.getElementById('size').value = localStorage.getItem('size') || '16';
+                
+                document.getElementById('clearData').disabled = false;
+                document.getElementById('groupData').disabled = false;
+                document.getElementById('fillTypes').disabled = false;
+                document.getElementById('saveAll').disabled = false;
+                
+                setupEditableCells();
+            }
+        }
+        
+        function clearData() {
+            if (!confirm('Вы уверены, что хотите очистить все данные?')) return;
+            
+            localStorage.removeItem('stickerData');
+            localStorage.removeItem('stickerNumber');
+            localStorage.removeItem('size');
+            document.getElementById('tableContainer').innerHTML = '';
+            document.getElementById('clearData').disabled = true;
+            document.getElementById('groupData').disabled = true;
+            document.getElementById('fillTypes').disabled = true;
+            document.getElementById('saveAll').disabled = true;
+            document.getElementById('groupData').textContent = 'Сгруппировать';
+            isGrouped = false;
+            originalTableData = [];
+        }
+    </script>
+</body>
+</html>

@@ -209,31 +209,22 @@
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             let filledCount = 0;
 
-            // 1. Заполняем номера приборов (если пустые - номером наклейки)
-            rows.forEach(row => {
-                const stickerNum = row.cells[1].textContent;
-                const deviceNumCell = row.cells[5];
-                
-                if (!deviceNumCell.textContent.trim()) {
-                    deviceNumCell.textContent = stickerNum;
-                    filledCount++;
-                }
-            });
+            // Находим группы с одинаковыми типами и счетами
+            const groups = findFillingGroups(rows);
 
-            // 2. Заполняем группы для типов приборов и номеров счетов
-            const groups = findGroups(rows);
+            // Заполняем только внутри групп
             groups.forEach(group => {
                 // Заполняем тип прибора
-                for (let i = group.startIdx; i <= group.endIdx; i++) {
+                for (let i = group.startIndex + 1; i < group.endIndex; i++) {
                     const typeCell = rows[i].cells[3];
                     if (!typeCell.textContent.trim()) {
                         typeCell.textContent = group.type;
                         filledCount++;
                     }
                 }
-                
+
                 // Заполняем номер счета
-                for (let i = group.startIdx; i <= group.endIdx; i++) {
+                for (let i = group.startIndex + 1; i < group.endIndex; i++) {
                     const accountCell = rows[i].cells[2];
                     if (!accountCell.textContent.trim()) {
                         accountCell.textContent = group.account;
@@ -244,34 +235,44 @@
 
             if (filledCount > 0) {
                 saveDataToLocalStorage();
-                alert(`Заполнено ${filledCount} ячеек:\n- Номера приборов заменены на номера клеймов\n- Типы и счета заполнены по группам`);
+                alert(`Заполнено ${filledCount} ячеек между одинаковыми типами приборов`);
             } else {
-                alert("Нет ячеек для заполнения по заданным правилам");
+                alert("Не найдено подходящих групп для заполнения (нужно минимум 2 строки с одинаковым типом и номером счета)");
             }
         }
 
-        function findGroups(rows) {
+        function findFillingGroups(rows) {
             const groups = [];
             let currentGroup = null;
-            
-            rows.forEach((row, idx) => {
+
+            rows.forEach((row, index) => {
                 const type = row.cells[3].textContent.trim();
                 const account = row.cells[2].textContent.trim();
-                
+
                 if (type && account) {
-                    if (currentGroup) groups.push(currentGroup);
-                    currentGroup = {
-                        startIdx: idx,
-                        endIdx: idx,
-                        type: type,
-                        account: account
-                    };
-                } else if (currentGroup) {
-                    currentGroup.endIdx = idx;
+                    if (currentGroup && currentGroup.type === type && currentGroup.account === account) {
+                        // Продолжаем текущую группу
+                        currentGroup.endIndex = index;
+                    } else {
+                        // Начинаем новую группу
+                        if (currentGroup && currentGroup.endIndex > currentGroup.startIndex) {
+                            groups.push(currentGroup);
+                        }
+                        currentGroup = {
+                            type: type,
+                            account: account,
+                            startIndex: index,
+                            endIndex: index
+                        };
+                    }
                 }
             });
-            
-            if (currentGroup) groups.push(currentGroup);
+
+            // Добавляем последнюю группу, если она подходит
+            if (currentGroup && currentGroup.endIndex > currentGroup.startIndex) {
+                groups.push(currentGroup);
+            }
+
             return groups;
         }
         
@@ -287,7 +288,7 @@
             const table = document.getElementById('outputTable');
             if (!table) return;
             
-            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML));
+            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML);
             
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             const groups = {};

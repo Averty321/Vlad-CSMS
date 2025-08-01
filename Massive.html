@@ -205,44 +205,70 @@
         function fillEmptyCells() {
             const table = document.getElementById('outputTable');
             if (!table) return;
-            
-            const columnsToFill = [2, 3, 4, 5]; // Индексы столбцов
-            const rows = table.querySelectorAll('tbody tr');
-            let filledCells = 0;
-            
-            columnsToFill.forEach(columnIndex => {
-                let lastValue = '';
-                
-                // Сверху вниз
-                rows.forEach(row => {
-                    const cell = row.cells[columnIndex];
-                    const currentValue = cell.textContent.trim();
+
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            let filledCount = 0;
+            let hasChanges = false;
+
+            // 1. Находим группы для заполнения (тип прибора + номер счета)
+            const groups = [];
+            let currentGroup = null;
+
+            rows.forEach((row, index) => {
+                const typeValue = row.cells[3].textContent.trim();
+                const accountValue = row.cells[2].textContent.trim();
+
+                if (typeValue && accountValue) {
+                    if (currentGroup) groups.push(currentGroup);
+                    currentGroup = {
+                        start: index,
+                        end: index,
+                        type: typeValue,
+                        account: accountValue
+                    };
+                } else if (currentGroup) {
+                    currentGroup.end = index;
+                }
+            });
+
+            if (currentGroup) groups.push(currentGroup);
+
+            // 2. Заполняем группы
+            groups.forEach(group => {
+                for (let i = group.start; i <= group.end; i++) {
+                    const row = rows[i];
                     
-                    if (currentValue) {
-                        lastValue = currentValue;
-                    } else if (lastValue) {
-                        cell.textContent = lastValue;
-                        filledCells++;
+                    // Заполняем тип прибора
+                    if (!row.cells[3].textContent.trim()) {
+                        row.cells[3].textContent = group.type;
+                        filledCount++;
+                        hasChanges = true;
                     }
-                });
-                
-                // Снизу вверх
-                lastValue = '';
-                for (let i = rows.length - 1; i >= 0; i--) {
-                    const cell = rows[i].cells[columnIndex];
-                    const currentValue = cell.textContent.trim();
                     
-                    if (currentValue) {
-                        lastValue = currentValue;
-                    } else if (lastValue) {
-                        cell.textContent = lastValue;
-                        filledCells++;
+                    // Заполняем номер счета
+                    if (!row.cells[2].textContent.trim()) {
+                        row.cells[2].textContent = group.account;
+                        filledCount++;
+                        hasChanges = true;
                     }
                 }
             });
-            
-            saveDataToLocalStorage();
-            alert(`Заполнено ${filledCells} пустых ячеек!`);
+
+            // 3. Заполняем номера приборов (номером наклейки если пусто)
+            rows.forEach(row => {
+                if (!row.cells[5].textContent.trim()) {
+                    row.cells[5].textContent = row.cells[1].textContent;
+                    filledCount++;
+                    hasChanges = true;
+                }
+            });
+
+            if (hasChanges) {
+                saveDataToLocalStorage();
+                alert(`Заполнено ${filledCount} ячеек по правилам:\n- Типы приборов и номера счетов заполняются группами\n- Пустые номера приборов заменены номерами наклеек`);
+            } else {
+                alert("Нет ячеек для заполнения по заданным правилам");
+            }
         }
         
         function groupData() {
@@ -254,7 +280,7 @@
             const table = document.getElementById('outputTable');
             if (!table) return;
             
-            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML));
+            originalTableData = Array.from(table.rows).map(row => Array.from(row.cells).map(cell => cell.innerHTML);
             
             const rows = Array.from(table.querySelectorAll('tbody tr'));
             const groups = {};

@@ -272,7 +272,10 @@
             if (!table) return;
 
             const rows = Array.from(table.querySelectorAll('tbody tr'));
-            let filledCount = 0;
+            let filledDeviceNumbers = 0;
+            let filledAccounts = 0;
+            let filledDeviceTypes = 0;
+            let filledRanges = 0;
 
             // 1. Заполняем номера приборов (если пустые - номером наклейки)
             rows.forEach(row => {
@@ -281,75 +284,62 @@
 
                 if (!deviceNumCell.textContent.trim()) {
                     deviceNumCell.textContent = stickerNum;
-                    filledCount++;
+                    filledDeviceNumbers++;
                 }
             });
 
-            // 2. Находим группы и заполняем только внутри групп
-            let currentGroup = null;
-
+            // 2. Заполняем пустые номера квитанций/счетов
+            let currentAccount = null;
             for (let i = 0; i < rows.length; i++) {
-                const account = rows[i].cells[2].textContent.trim();
-                const deviceType = rows[i].cells[3].textContent.trim();
-                const range = rows[i].cells[4].textContent.trim();
-
-                if (account || deviceType || range) {
-                    if (currentGroup && 
-                        currentGroup.account === account && 
-                        currentGroup.deviceType === deviceType && 
-                        currentGroup.range === range) {
-                        // Продолжаем текущую группу
-                        currentGroup.endIdx = i;
-                    } else {
-                        // Завершаем предыдущую группу (если есть)
-                        if (currentGroup) {
-                            fillGroupData(rows, currentGroup);
-                        }
-                        // Начинаем новую группу
-                        currentGroup = {
-                            account: account,
-                            deviceType: deviceType,
-                            range: range,
-                            startIdx: i,
-                            endIdx: i
-                        };
-                    }
+                const accountCell = rows[i].cells[2];
+                const account = accountCell.textContent.trim();
+                
+                if (account) {
+                    currentAccount = account;
+                } else if (currentAccount !== null) {
+                    accountCell.textContent = currentAccount;
+                    filledAccounts++;
                 }
             }
 
-            // Заполняем последнюю группу
-            if (currentGroup) {
-                fillGroupData(rows, currentGroup);
+            // 3. Заполняем пустые типы приборов
+            let currentDeviceType = null;
+            for (let i = 0; i < rows.length; i++) {
+                const deviceTypeCell = rows[i].cells[3];
+                const deviceType = deviceTypeCell.textContent.trim();
+                
+                if (deviceType) {
+                    currentDeviceType = deviceType;
+                } else if (currentDeviceType !== null) {
+                    deviceTypeCell.textContent = currentDeviceType;
+                    filledDeviceTypes++;
+                }
             }
 
-            if (filledCount > 0) {
+            // 4. Заполняем пустые диапазоны
+            let currentRange = null;
+            for (let i = 0; i < rows.length; i++) {
+                const rangeCell = rows[i].cells[4];
+                const range = rangeCell.textContent.trim();
+                
+                if (range) {
+                    currentRange = range;
+                } else if (currentRange !== null) {
+                    rangeCell.textContent = currentRange;
+                    filledRanges++;
+                }
+            }
+
+            if (filledDeviceNumbers > 0 || filledAccounts > 0 || filledDeviceTypes > 0 || filledRanges > 0) {
                 saveDataToLocalStorage();
-                alert(`Заполнено ${filledCount} ячеек:\n- Номера приборов заменены на номера клеймов\n- Типы и счета заполнены по группам`);
+                let message = "Заполнено ячеек:\n";
+                if (filledDeviceNumbers > 0) message += `- Номера приборов: ${filledDeviceNumbers}\n`;
+                if (filledAccounts > 0) message += `- Номера квитанций/счетов: ${filledAccounts}\n`;
+                if (filledDeviceTypes > 0) message += `- Типы приборов: ${filledDeviceTypes}\n`;
+                if (filledRanges > 0) message += `- Диапазоны: ${filledRanges}`;
+                alert(message);
             } else {
                 alert("Нет ячеек для заполнения по заданным правилам");
-            }
-        }
-
-        function fillGroupData(rows, group) {
-            // Заполняем только если в группе есть хотя бы одна заполненная ячейка
-            const hasData = group.account || group.deviceType || group.range;
-
-            if (!hasData) return;
-
-            for (let i = group.startIdx; i <= group.endIdx; i++) {
-                const accountCell = rows[i].cells[2];
-                const typeCell = rows[i].cells[3];
-                const rangeCell = rows[i].cells[4];
-
-                if (group.account && !accountCell.textContent.trim()) {
-                    accountCell.textContent = group.account;
-                }
-                if (group.deviceType && !typeCell.textContent.trim()) {
-                    typeCell.textContent = group.deviceType;
-                }
-                if (group.range && !rangeCell.textContent.trim()) {
-                    rangeCell.textContent = group.range;
-                }
             }
         }
 

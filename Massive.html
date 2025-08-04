@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Генератор наклеек для приборов</title>
     <style>
+        /* Стили остаются без изменений */
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
@@ -140,6 +141,7 @@
             padding: 5px;
         }
 
+        /* Стиль для скролла */
         #tableContainer::-webkit-scrollbar {
             width: 8px;
         }
@@ -152,46 +154,17 @@
             background: #0077cc;
             border-radius: 4px;
         }
-
-        /* Стили для автодополнения */
-        .autocomplete-container {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .autocomplete-list {
-            position: absolute;
-            z-index: 99;
-            top: 100%;
-            left: 0;
-            right: 0;
-            border: 1px solid #b8d4f0;
-            border-top: none;
-            background-color: white;
-            max-height: 150px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .autocomplete-item {
-            padding: 8px;
-            cursor: pointer;
-        }
-
-        .autocomplete-item:hover {
-            background-color: #e6f2ff;
-        }
     </style>
 </head>
 <body>
     <h1>Настройка наклеек</h1>
-    <p class="instructions">
-        Для заполнения пустых ячеек в столбцах таблицы (квитанции, типы приборов, диапазоны):<br>
-        1. Убедитесь, что есть две ячейки с одинаковой информацией (например: "Счетчик" ... [пусто] ... "Счетчик")<br>
-        2. Нажмите "Заполнить пустые ячейки" - все промежуточные пустые ячейки заполнятся автоматически. (можно выполнять опирацию много раз)<br>
-        Для группирования схожих по "номерам квитанции","типам", "диапазонам" необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
-    </p>
+<p class="instructions">
+    Для заполнения пустых ячеек в столбцах таблицы (квитанции, типы приборов, диапазоны):<br>
+    1. Убедитесь, что есть две ячейки с одинаковой информацией (например: "Счетчик" ... [пусто] ... "Счетчик")<br>
+    2. Нажмите "Заполнить пустые ячейки" - все промежуточные пустые ячейки заполнятся автоматически. (можно выполнять опирацию много раз)<br>
+    Для группирования схожих по номерам квитанции, типам, диапазонам необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
+    Для группирования схожих по "номерам квитанции","типам", "диапазонам" необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
+</p>
     <div class="controls">
         <label for="stickerNumber">Начальный номер наклейки:</label>
         <input type="number" id="stickerNumber" min="1" required>
@@ -216,11 +189,9 @@
     <script>
         let isGrouped = false;
         let originalTableData = [];
-        let deviceTypesHistory = new Set();
 
         document.addEventListener('DOMContentLoaded', function() {
             loadSavedData();
-            loadDeviceTypesHistory();
 
             document.getElementById('createTable').addEventListener('click', createTable);
             document.getElementById('clearData').addEventListener('click', clearData);
@@ -228,17 +199,6 @@
             document.getElementById('fillEmpty').addEventListener('click', fillEmptyCells);
             document.getElementById('saveAll').addEventListener('click', exportAllToExcel);
         });
-
-        function loadDeviceTypesHistory() {
-            const savedTypes = localStorage.getItem('deviceTypesHistory');
-            if (savedTypes) {
-                deviceTypesHistory = new Set(JSON.parse(savedTypes));
-            }
-        }
-
-        function saveDeviceTypesHistory() {
-            localStorage.setItem('deviceTypesHistory', JSON.stringify(Array.from(deviceTypesHistory)));
-        }
 
         function createTable() {
             const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
@@ -310,104 +270,7 @@
                     }
                 });
 
-                cell.addEventListener('blur', function() {
-                    saveDataToLocalStorage();
-                    
-                    if (cell.classList.contains('device-type') && cell.textContent.trim()) {
-                        deviceTypesHistory.add(cell.textContent.trim());
-                        saveDeviceTypesHistory();
-                    }
-                });
-
-                if (cell.classList.contains('device-type')) {
-                    setupAutocompleteForDeviceType(cell);
-                }
-            });
-        }
-
-        function setupAutocompleteForDeviceType(cell) {
-            const container = document.createElement('div');
-            container.className = 'autocomplete-container';
-            cell.parentNode.insertBefore(container, cell);
-            container.appendChild(cell);
-
-            const list = document.createElement('div');
-            list.className = 'autocomplete-list';
-            container.appendChild(list);
-
-            cell.addEventListener('input', function() {
-                const input = cell.textContent.trim().toLowerCase();
-                list.innerHTML = '';
-                
-                if (!input) {
-                    list.style.display = 'none';
-                    return;
-                }
-
-                const suggestions = Array.from(deviceTypesHistory)
-                    .filter(type => type.toLowerCase().includes(input))
-                    .slice(0, 5);
-
-                if (suggestions.length === 0) {
-                    list.style.display = 'none';
-                    return;
-                }
-
-                suggestions.forEach(suggestion => {
-                    const item = document.createElement('div');
-                    item.className = 'autocomplete-item';
-                    item.textContent = suggestion;
-                    item.addEventListener('click', function() {
-                        cell.textContent = suggestion;
-                        list.style.display = 'none';
-                        cell.focus();
-                    });
-                    list.appendChild(item);
-                });
-
-                list.style.display = 'block';
-            });
-
-            cell.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    list.style.display = 'none';
-                    e.preventDefault();
-                }
-            });
-
-            document.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('device-type')) {
-                    list.style.display = 'none';
-                }
-            });
-
-            list.addEventListener('keydown', function(e) {
-                const items = list.querySelectorAll('.autocomplete-item');
-                if (items.length === 0) return;
-
-                const current = document.activeElement;
-                const currentIndex = Array.from(items).indexOf(current);
-
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (currentIndex < items.length - 1) {
-                        items[currentIndex + 1].focus();
-                    }
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    if (currentIndex > 0) {
-                        items[currentIndex - 1].focus();
-                    } else {
-                        cell.focus();
-                    }
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (current) {
-                        cell.textContent = current.textContent;
-                        list.style.display = 'none';
-                        cell.focus();
-                    }
-                }
+                cell.addEventListener('blur', saveDataToLocalStorage);
             });
         }
 
@@ -421,6 +284,7 @@
             let filledDeviceTypes = 0;
             let filledRanges = 0;
 
+            // 1. Заполняем номера приборов (если пустые - номером наклейки)
             rows.forEach(row => {
                 const stickerNum = row.cells[1].textContent;
                 const deviceNumCell = row.cells[5];
@@ -431,13 +295,16 @@
                 }
             });
 
+            // 2. Заполняем пустые ячейки для каждого столбца (квитанции, типы, диапазоны)
             const columns = [
-                { index: 2, name: "квитанции", count: 0 },
-                { index: 3, name: "типы приборов", count: 0 },
-                { index: 4, name: "диапазоны", count: 0 }
+                { index: 2, name: "квитанции", count: 0 }, // Номер квитанции
+                { index: 3, name: "типы приборов", count: 0 }, // Тип прибора
+                { index: 4, name: "диапазоны", count: 0 } // Диапазон
             ];
 
+            // Для каждого столбца выполняем заполнение
             columns.forEach(col => {
+                // Находим все заполненные позиции
                 const filledPositions = [];
                 rows.forEach((row, idx) => {
                     const cell = row.cells[col.index];
@@ -449,11 +316,13 @@
                     }
                 });
 
+                // Заполняем промежутки между одинаковыми значениями
                 for (let i = 0; i < filledPositions.length - 1; i++) {
                     const current = filledPositions[i];
                     const next = filledPositions[i + 1];
-                    
+
                     if (current.value === next.value) {
+                        // Заполняем все пустые ячейки между ними
                         for (let j = current.index + 1; j < next.index; j++) {
                             const cell = rows[j].cells[col.index];
                             if (!cell.textContent.trim()) {
@@ -465,8 +334,7 @@
                 }
             });
 
-            saveDeviceTypesHistory();
-
+            // Собираем статистику
             filledAccounts = columns[0].count;
             filledDeviceTypes = columns[1].count;
             filledRanges = columns[2].count;
@@ -615,24 +483,31 @@
 
         function exportGroupToExcel(table, account, deviceType, range) {
             const wb = XLSX.utils.book_new();
-            const data = [['', '']];
+
+            // Создаем массив только с нужными колонками
+            const data = [
+                ['', ''] // Заголовки
+            ];
+
+            // Собираем данные только из нужных столбцов
             const rows = table.querySelectorAll('tbody tr');
-            
             rows.forEach(row => {
                 const cells = row.cells;
                 data.push([
-                    cells[1].textContent,
-                    cells[5].textContent
+                    cells[1].textContent, // Номер наклейки
+                    cells[5].textContent  // Номер прибора
                 ]);
             });
 
+            // Создаем лист из массива данных
             const ws = XLSX.utils.aoa_to_sheet(data);
             XLSX.utils.book_append_sheet(wb, ws, 'Наклейки');
 
+            // Исправляем имя файла (убираем спецсимволы)
             const fileName = `Наклейки_${account || 'Без номера'}_${deviceType || 'Без типа'}_${range || 'Без диапазона'}`
-                .replace(/[\/\\:*?"<>|]/g, '')
-                .replace(/\s+/g, '_')
-                .substring(0, 100) + '.xlsx';
+                .replace(/[\/\\:*?"<>|]/g, '') // Удаляем запрещенные символы
+                .replace(/\s+/g, '_')          // Заменяем пробелы на подчеркивания
+                .substring(0, 100) + '.xlsx';  // Ограничиваем длину
 
             XLSX.writeFile(wb, fileName);
         }
@@ -648,6 +523,7 @@
             const stickerNumber = document.getElementById('stickerNumber').value;
             const size = document.getElementById('size').value;
 
+            // Исправляем имя файла
             const fileName = `Наклейки_${stickerNumber}_${size}мм.xlsx`
                 .replace(/[\/\\:*?"<>|]/g, '')
                 .replace(/\s+/g, '_');
@@ -689,7 +565,6 @@
             localStorage.removeItem('stickerData');
             localStorage.removeItem('stickerNumber');
             localStorage.removeItem('size');
-            localStorage.removeItem('deviceTypesHistory');
             document.getElementById('tableContainer').innerHTML = '';
             document.getElementById('clearData').disabled = true;
             document.getElementById('groupData').disabled = true;
@@ -698,7 +573,6 @@
             document.getElementById('groupData').textContent = 'Сгруппировать';
             isGrouped = false;
             originalTableData = [];
-            deviceTypesHistory = new Set();
         }
     </script>
 </body>

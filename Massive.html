@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Генератор наклеек для приборов</title>
     <style>
+        /* Стили остаются без изменений */
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
@@ -288,53 +289,55 @@
                 }
             });
 
-            // 2. Заполняем пустые номера квитанций/счетов
-            let currentAccount = null;
-            for (let i = 0; i < rows.length; i++) {
-                const accountCell = rows[i].cells[2];
-                const account = accountCell.textContent.trim();
-                
-                if (account) {
-                    currentAccount = account;
-                } else if (currentAccount !== null) {
-                    accountCell.textContent = currentAccount;
-                    filledAccounts++;
-                }
-            }
+            // 2. Заполняем пустые ячейки для каждого столбца (квитанции, типы, диапазоны)
+            const columns = [
+                { index: 2, name: "квитанции", count: 0 }, // Номер квитанции
+                { index: 3, name: "типы приборов", count: 0 }, // Тип прибора
+                { index: 4, name: "диапазоны", count: 0 } // Диапазон
+            ];
 
-            // 3. Заполняем пустые типы приборов
-            let currentDeviceType = null;
-            for (let i = 0; i < rows.length; i++) {
-                const deviceTypeCell = rows[i].cells[3];
-                const deviceType = deviceTypeCell.textContent.trim();
-                
-                if (deviceType) {
-                    currentDeviceType = deviceType;
-                } else if (currentDeviceType !== null) {
-                    deviceTypeCell.textContent = currentDeviceType;
-                    filledDeviceTypes++;
-                }
-            }
+            // Для каждого столбца выполняем заполнение
+            columns.forEach(col => {
+                // Находим все заполненные позиции
+                const filledPositions = [];
+                rows.forEach((row, idx) => {
+                    const cell = row.cells[col.index];
+                    if (cell.textContent.trim()) {
+                        filledPositions.push({
+                            index: idx,
+                            value: cell.textContent.trim()
+                        });
+                    }
+                });
 
-            // 4. Заполняем пустые диапазоны
-            let currentRange = null;
-            for (let i = 0; i < rows.length; i++) {
-                const rangeCell = rows[i].cells[4];
-                const range = rangeCell.textContent.trim();
-                
-                if (range) {
-                    currentRange = range;
-                } else if (currentRange !== null) {
-                    rangeCell.textContent = currentRange;
-                    filledRanges++;
+                // Заполняем промежутки между одинаковыми значениями
+                for (let i = 0; i < filledPositions.length - 1; i++) {
+                    const current = filledPositions[i];
+                    const next = filledPositions[i + 1];
+                    
+                    if (current.value === next.value) {
+                        // Заполняем все пустые ячейки между ними
+                        for (let j = current.index + 1; j < next.index; j++) {
+                            const cell = rows[j].cells[col.index];
+                            if (!cell.textContent.trim()) {
+                                cell.textContent = current.value;
+                                col.count++;
+                            }
+                        }
+                    }
                 }
-            }
+            });
+
+            // Собираем статистику
+            filledAccounts = columns[0].count;
+            filledDeviceTypes = columns[1].count;
+            filledRanges = columns[2].count;
 
             if (filledDeviceNumbers > 0 || filledAccounts > 0 || filledDeviceTypes > 0 || filledRanges > 0) {
                 saveDataToLocalStorage();
                 let message = "Заполнено ячеек:\n";
                 if (filledDeviceNumbers > 0) message += `- Номера приборов: ${filledDeviceNumbers}\n`;
-                if (filledAccounts > 0) message += `- Номера квитанций/счетов: ${filledAccounts}\n`;
+                if (filledAccounts > 0) message += `- Номера квитанций: ${filledAccounts}\n`;
                 if (filledDeviceTypes > 0) message += `- Типы приборов: ${filledDeviceTypes}\n`;
                 if (filledRanges > 0) message += `- Диапазоны: ${filledRanges}`;
                 alert(message);
@@ -475,7 +478,6 @@
         function exportGroupToExcel(table, account, deviceType, range) {
             const wb = XLSX.utils.book_new();
 
-          
             // Создаем массив только с нужными колонками
             const data = [
                 ['', ''] // Заголовки

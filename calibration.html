@@ -5,130 +5,317 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калибровка</title>
     <style>
+        /* Основные стили */
+        * {
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+            background-attachment: fixed;
+            color: #333;
+            min-height: 100vh;
         }
+        
+        /* Шапка сайта */
+        header {
+            background: linear-gradient(135deg, #003366 0%, #002244 100%);
+            color: #ffffff;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 34, 68, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .logo::before {
+            content: "📐";
+            margin-right: 12px;
+            font-size: 32px;
+        }
+        
+        /* Основное содержимое */
+        main {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: calc(100vh - 70px);
+            box-sizing: border-box;
+        }
+        
         h1 {
+            color: #003366;
             text-align: center;
-            color: #fff;
-            background-color: #007BFF; /* Синий цвет */
-            padding: 15px 0;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 102, 204, 0.2);
         }
+        
+        /* Таблицы */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
+            margin: 25px 0;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 8px;
             overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 34, 68, 0.1);
+            border: 1px solid rgba(0, 102, 204, 0.1);
         }
+        
         th, td {
-            border: 1px solid #ccc;
-            padding: 12px;
+            padding: 15px;
             text-align: left;
+            border-bottom: 1px solid rgba(0, 102, 204, 0.1);
         }
+        
         th {
-            background-color: #007BFF; /* Синий цвет для шапки таблицы */
-            color: #fff; /* Белый текст */
+            background: linear-gradient(135deg, #0066cc 0%, #003366 100%);
+            color: #fff;
+            font-weight: 500;
         }
-        tbody tr:nth-child(odd) {
-            background-color: #f9f9f9; /* Серый фон для четных строк */
+        
+        tbody tr:nth-child(even) {
+            background: rgba(0, 102, 204, 0.03);
         }
+        
         tbody tr:hover {
-            background-color: #eaeaea; /* Фон при наведении на строку */
+            background: rgba(0, 102, 204, 0.08);
         }
-        .spacing {
-            margin-top: 40px; /* Отступ перед новой таблицей */
-        }
+        
+        /* Кнопка "Назад" */
         .back-button {
             display: block;
-            width: 100%;
+            width: 200px;
+            margin: 30px auto;
+            padding: 12px;
+            background: linear-gradient(135deg, #0066cc 0%, #003366 100%);
+            color: #ffffff;
             text-align: center;
-            background-color: #007BFF;
-            color: white;
-            padding: 15px;
+            border: none;
+            border-radius: 8px;
             text-decoration: none;
-            border-radius: 5px;
-            margin-top: 20px;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.3);
         }
+        
         .back-button:hover {
-            background-color: #0056b3; /* Темнее при наведении */
+            background: linear-gradient(135deg, #0088ff 0%, #0055aa 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 85, 170, 0.4);
         }
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 1.5em;
+        
+        /* Боковая панель */
+        .sidebar {
+            width: 240px;
+            background: linear-gradient(160deg, #ffffff 0%, #f8f9fb 100%);
+            padding: 20px 15px;
+            box-shadow: 5px 0 15px rgba(0, 34, 68, 0.1);
+            position: fixed;
+            top: 70px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            border-right: 1px solid #e0e6ed;
+            z-index: 99;
+        }
+        
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            color: #003366;
+            text-decoration: none;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-weight: 500;
+            background: rgba(0, 102, 204, 0.05);
+            border: 1px solid rgba(0, 102, 204, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 51, 102, 0.05);
+        }
+        
+        .sidebar a::before {
+            content: "➤";
+            margin-right: 10px;
+            font-size: 14px;
+            color: #0066cc;
+        }
+        
+        .sidebar a:hover {
+            background: linear-gradient(135deg, #e6f0ff 0%, #d0e0f0 100%);
+            transform: translateX(5px);
+            border-color: rgba(0, 102, 204, 0.2);
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.1);
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 200px;
+                top: 60px;
             }
-            th, td {
-                padding: 8px;
+            main {
+                margin-left: 220px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                top: 0;
+                box-shadow: 0 4px 8px rgba(0, 34, 68, 0.1);
+                border-right: none;
+                border-bottom: 1px solid #e0e6ed;
+            }
+            main {
+                margin-left: 0;
+                padding: 20px;
             }
         }
     </style>
 </head>
 <body>
+    <header>
+        <div class="logo">Калибровка</div>
+    </header>
 
-    <h1>Калибровка</h1>
+    <nav class="sidebar" role="navigation">
+        <a href="#" onclick="toggleDropdown('certificateList')">Примеры свидетельств и заключений</a>
+        <div id="certificateList" class="dropdown" aria-hidden="true">
+            <p><a href="Заключение-о-непригодности-в-не-сферы.pdf" target="_blank">Пример заключения об непригодности вне сферы законодательной метрологии</a></p>
+            <p><a href="Cell.html" target="_blank">Исправление свидетельств</a></p>
+        </div>
+        
+        <a href="#" onclick="toggleDropdown('verificationList')">Поверка</a>
+        <div id="verificationList" class="dropdown" aria-hidden="true">
+            <p><a href="verification-VCEM5100.html" target="_blank">Расчёт погрешности VCEM 5100</a></p> 
+            <p><a href="Gigro.html" target="_blank">Гигрометры психометрические Вит</a></p>  
+            <p><a href="El-term.html" target="_blank">Термометры электронные цифровые</a></p>
+            <p><a href="Term-glass.html" target="_blank">Термометры стеклянные</a></p>
+            <p><a href="Term-glass-el.html" target="_blank">Термометры стеклянные ртутные электроконтактные</a></p>
+            <p><a href="Infra-el-term.html" target="_blank">Термометры инфракрасные</a></p>
+            <p><a href="Mano.html" target="_blank">Манометры</a></p>
+            <p><a href="Term-table.html" target="_blank">Поверяемые градусные отметки в зависимости от цены деления шкалы</a></p>
+            <p><a href="Massive.html" target="_blank">Массив</a></p>
+            <p><a href="receipt.html" target="_blank">Квитанции счета</a></p>
+        </div>
+        
+        <a href="#" onclick="toggleDropdown('calibrationList')">Калибровка</a>
+        <div id="calibrationList" class="dropdown" aria-hidden="true">
+            <p><a href="calibration.html" target="_blank">Методики калибровки и стандартные неопределенности ИТЭ</a></p>
+            <p><a href="Окр-ср.html" target="_blank">Окружающая среда</a></p>
+        </div>
+        
+        <a href="#" onclick="toggleDropdown('referenceList')">Эталоны</a>
+        <div id="referenceList" class="dropdown" aria-hidden="true">
+            <p><a href="reference.html" target="_blank">Состояние эталонов</a></p>
+        </div>
+    </nav>
 
-    <table>
-        <thead>
-            <tr>
-                <th colspan="2">Методики калибровки</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Биметаллический, манометрический</td>
-                <td>МК.ГМ 1600-2013</td>
-            </tr>
-            <tr>
-                <td>Термометр электрический</td>
-                <td>МК.ГМ 1601-2013</td>
-            </tr>
-            <tr>
-                <td>Термометр технический (жидкостный, ртуть)</td>
-                <td>МК.ГМ 1601-2013</td>
-            </tr>
-        </tbody>
-    </table>
+    <main>
+        <h1>Методики калибровки и стандартные неопределенности ИТЭ</h1>
 
-    <div class="spacing"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="2">Методики калибровки</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Биметаллический, манометрический</td>
+                    <td>МК.ГМ 1600-2013</td>
+                </tr>
+                <tr>
+                    <td>Термометр электрический</td>
+                    <td>МК.ГМ 1601-2013</td>
+                </tr>
+                <tr>
+                    <td>Термометр технический (жидкостный, ртуть)</td>
+                    <td>МК.ГМ 1601-2013</td>
+                </tr>
+            </tbody>
+        </table>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Температура (°C)</th>
-                <th>Стандартные неопределенности ИТЭ (°C)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>от минус 80 до 0 (°C)</td>
-                <td>0,0097</td>
-            </tr>
-            <tr>
-                <td>от 0,01 до 156,6 (°C)</td>
-                <td>0,0008</td>
-            </tr>
-            <tr>
-                <td>от 156,6 до 231,9 (°C)</td>
-                <td>0,0039</td>
-            </tr>
-            <tr>
-                <td>от 231,9 до 419,5 (°C)</td>
-                <td>0,0073</td>
-            </tr>
-            <tr>
-                <td>от 419,5 и свыше (°C)</td>
-                <td>0,0010</td>
-            </tr>
-        </tbody>
-    </table>
+        <table>
+            <thead>
+                <tr>
+                    <th>Температура (°C)</th>
+                    <th>Стандартные неопределенности ИТЭ (°C)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>от минус 80 до 0 (°C)</td>
+                    <td>0,0097</td>
+                </tr>
+                <tr>
+                    <td>от 0,01 до 156,6 (°C)</td>
+                    <td>0,0008</td>
+                </tr>
+                <tr>
+                    <td>от 156,6 до 231,9 (°C)</td>
+                    <td>0,0039</td>
+                </tr>
+                <tr>
+                    <td>от 231,9 до 419,5 (°C)</td>
+                    <td>0,0073</td>
+                </tr>
+                <tr>
+                    <td>от 419,5 и свыше (°C)</td>
+                    <td>0,0010</td>
+                </tr>
+            </tbody>
+        </table>
 
-    <a href="index.html" class="back-button">Назад</a>
+        <a href="index.html" class="back-button">Назад</a>
+    </main>
 
+    <script>
+        function toggleDropdown(listId) {
+            const dropdown = document.getElementById(listId);
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+            dropdown.setAttribute("aria-hidden", dropdown.style.display === "none");
+        }
+
+        window.onclick = function(event) {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(dropdown => {
+                if (event.target.closest('.sidebar') === null) {
+                    dropdown.style.display = "none";
+                    dropdown.setAttribute("aria-hidden", "true");
+                }
+            });
+        }
+        
+        // Добавляем эффект при наведении на пункты меню
+        const sidebarLinks = document.querySelectorAll('.sidebar a');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(5px)';
+            });
+            link.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
 </body>
 </html>

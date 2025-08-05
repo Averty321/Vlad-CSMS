@@ -93,6 +93,14 @@
             color: white;
         }
         
+        tr.completed {
+            background-color: #e8f5e9;
+        }
+        
+        tr.partial {
+            background-color: #fff8e1;
+        }
+        
         .action-btn {
             padding: 6px 10px;
             margin-right: 5px;
@@ -216,8 +224,8 @@
             
             <button id="clearAllBtn" class="clear-btn">Очистить все</button>
             
-            <h2>Список квитанций</h2>
-            <table id="receiptsTable">
+            <h2>Активные квитанции</h2>
+            <table id="activeTable">
                 <thead>
                     <tr>
                         <th>Номер</th>
@@ -227,7 +235,35 @@
                         <th>Действия</th>
                     </tr>
                 </thead>
-                <tbody id="receiptsList"></tbody>
+                <tbody id="activeReceipts"></tbody>
+            </table>
+            
+            <h2>Частично выполненные</h2>
+            <table id="partialTable">
+                <thead>
+                    <tr>
+                        <th>Номер</th>
+                        <th>Тип</th>
+                        <th>Поверители</th>
+                        <th>Дата оплаты</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="partialReceipts"></tbody>
+            </table>
+            
+            <h2>Завершенные квитанции</h2>
+            <table id="completedTable">
+                <thead>
+                    <tr>
+                        <th>Номер</th>
+                        <th>Тип</th>
+                        <th>Поверители</th>
+                        <th>Дата оплаты</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="completedReceipts"></tbody>
             </table>
         </div>
     </main>
@@ -253,7 +289,9 @@
         const receiptInput = document.getElementById('receiptInput');
         const addBtn = document.getElementById('addBtn');
         const clearAllBtn = document.getElementById('clearAllBtn');
-        const receiptsList = document.getElementById('receiptsList');
+        const activeReceipts = document.getElementById('activeReceipts');
+        const partialReceipts = document.getElementById('partialReceipts');
+        const completedReceipts = document.getElementById('completedReceipts');
         const typeBudget = document.getElementById('typeBudget');
         const typeUrgent = document.getElementById('typeUrgent');
         const typeFact = document.getElementById('typeFact');
@@ -262,6 +300,17 @@
         function formatReceiptNumber(number) {
             const prefix = "2150-";
             return number.startsWith(prefix) ? number : prefix + number;
+        }
+        
+        function checkReceiptStatus(verifiers) {
+            if (!verifiers || Object.keys(verifiers).length === 0) {
+                return 'active';
+            }
+            
+            const allCompleted = Object.values(verifiers).every(v => v.completed);
+            const someCompleted = Object.values(verifiers).some(v => v.completed);
+            
+            return allCompleted ? 'completed' : someCompleted ? 'partial' : 'active';
         }
         
         addBtn.addEventListener('click', () => {
@@ -276,6 +325,7 @@
                     number: formatReceiptNumber(receiptNumber),
                     type: type,
                     verifiers: {},
+                    status: 'active',
                     dateAdded: new Date().toISOString(),
                     paymentDate: null
                 };
@@ -292,14 +342,23 @@
             }
         });
 
-        function renderReceipts(snapshot) {
-            receiptsList.innerHTML = '';
+        function renderReceipt(snapshot) {
+            activeReceipts.innerHTML = '';
+            partialReceipts.innerHTML = '';
+            completedReceipts.innerHTML = '';
             
             snapshot.forEach(childSnapshot => {
                 const receipt = childSnapshot.val();
                 receipt.id = childSnapshot.key;
                 
                 const row = document.createElement('tr');
+                
+                // Определяем класс строки в зависимости от статуса
+                if (receipt.status === 'completed') {
+                    row.classList.add('completed');
+                } else if (receipt.status === 'partial') {
+                    row.classList.add('partial');
+                }
                 
                 // Номер квитанции
                 const numberCell = document.createElement('td');
@@ -336,8 +395,16 @@
                         checkbox.addEventListener('change', () => {
                             const updated = {...receipt.verifiers};
                             updated[key].completed = checkbox.checked;
+                            
+                            // Определяем новый статус на основе отметок поверителей
+                            const newStatus = checkReceiptStatus(updated);
+                            
                             database.ref(`receipts/${receipt.id}`).update({
-                                verifiers: updated
+                                verifiers: updated,
+                                status: newStatus,
+                                ...(newStatus === 'completed' ? { 
+                                    dateCompleted: new Date().toISOString() 
+                                } : {})
                             });
                         });
                         
@@ -362,8 +429,13 @@
                         const updated = {...(receipt.verifiers || {})};
                         const key = name.toLowerCase().replace(/\s+/g, '_');
                         updated[key] = { name, completed: false };
+                        
+                        // При добавлении нового поверителя статус может измениться
+                        const newStatus = checkReceiptStatus(updated);
+                        
                         database.ref(`receipts/${receipt.id}`).update({
-                            verifiers: updated
+                            verifiers: updated,
+                            status: newStatus
                         });
                         verifierInput.value = '';
                     }
@@ -433,11 +505,19 @@
                 actionsCell.append(editBtn, deleteBtn);
                 
                 row.append(numberCell, typeCell, verifiersCell, dateCell, actionsCell);
-                receiptsList.appendChild(row);
+                
+                // Добавляем в соответствующую таблицу
+                if (receipt.status === 'completed') {
+                    completedReceipts.appendChild(row);
+                } else if (receipt.status === 'partial') {
+                    partialReceipts.appendChild(row);
+                } else {
+                    activeReceipts.appendChild(row);
+                }
             });
         }
         
-        database.ref('receipts').on('value', renderReceipts);
+        database.ref('receipts').on('value', renderReceipt);
         
         receiptInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addBtn.click();

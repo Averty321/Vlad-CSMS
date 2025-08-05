@@ -54,9 +54,12 @@
         
         input {
             padding: 10px;
-            flex-grow: 1;
             border: 1px solid #ddd;
             border-radius: 4px;
+        }
+        
+        #receiptInput {
+            flex-grow: 1;
         }
         
         button {
@@ -107,17 +110,12 @@
             color: white;
         }
         
-        .receipt-type {
-            margin-top: 5px;
-            display: flex;
-            gap: 5px;
-        }
-        
-        .type-btn {
+        .type-label {
+            display: inline-block;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 12px;
-            cursor: pointer;
+            margin-right: 5px;
         }
         
         .budget {
@@ -133,6 +131,53 @@
         .fact {
             background: #d1ecf1;
             color: #0c5460;
+        }
+        
+        .verifiers-list {
+            margin-top: 5px;
+        }
+        
+        .verifier-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+        
+        .verifier-name {
+            margin-right: 5px;
+        }
+        
+        .add-verifier {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .add-verifier input {
+            flex-grow: 1;
+            padding: 5px;
+        }
+        
+        .add-verifier button {
+            padding: 5px 10px;
+        }
+        
+        .payment-date {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .type-selector {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .type-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
     </style>
 </head>
@@ -150,6 +195,25 @@
                 <button id="addBtn">Добавить</button>
             </div>
             
+            <div class="type-selector">
+                <div class="type-option">
+                    <input type="radio" id="typeBudget" name="receiptType" value="budget">
+                    <label for="typeBudget">Бюджет</label>
+                </div>
+                <div class="type-option">
+                    <input type="radio" id="typeUrgent" name="receiptType" value="urgent">
+                    <label for="typeUrgent">Срочник</label>
+                </div>
+                <div class="type-option">
+                    <input type="radio" id="typeFact" name="receiptType" value="fact">
+                    <label for="typeFact">По факту</label>
+                </div>
+                <div class="type-option">
+                    <input type="radio" id="typeRegular" name="receiptType" value="regular" checked>
+                    <label for="typeRegular">Обычный</label>
+                </div>
+            </div>
+            
             <button id="clearAllBtn" class="clear-btn">Очистить все</button>
             
             <h2>Список квитанций</h2>
@@ -158,6 +222,8 @@
                     <tr>
                         <th>Номер</th>
                         <th>Тип</th>
+                        <th>Поверители</th>
+                        <th>Дата оплаты</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -188,6 +254,10 @@
         const addBtn = document.getElementById('addBtn');
         const clearAllBtn = document.getElementById('clearAllBtn');
         const receiptsList = document.getElementById('receiptsList');
+        const typeBudget = document.getElementById('typeBudget');
+        const typeUrgent = document.getElementById('typeUrgent');
+        const typeFact = document.getElementById('typeFact');
+        const typeRegular = document.getElementById('typeRegular');
 
         function formatReceiptNumber(number) {
             const prefix = "2150-";
@@ -197,14 +267,22 @@
         addBtn.addEventListener('click', () => {
             const receiptNumber = receiptInput.value.trim();
             if (receiptNumber) {
+                let type = 'regular';
+                if (typeBudget.checked) type = 'budget';
+                else if (typeUrgent.checked) type = 'urgent';
+                else if (typeFact.checked) type = 'fact';
+                
                 const newReceipt = {
                     number: formatReceiptNumber(receiptNumber),
-                    type: 'regular',
-                    dateAdded: new Date().toISOString()
+                    type: type,
+                    verifiers: {},
+                    dateAdded: new Date().toISOString(),
+                    paymentDate: null
                 };
                 
                 database.ref('receipts').push(newReceipt);
                 receiptInput.value = '';
+                typeRegular.checked = true;
             }
         });
         
@@ -229,32 +307,104 @@
                 
                 // Тип квитанции
                 const typeCell = document.createElement('td');
-                const typeDiv = document.createElement('div');
-                typeDiv.className = 'receipt-type';
+                if (receipt.type !== 'regular') {
+                    const typeSpan = document.createElement('span');
+                    typeSpan.className = `type-label ${receipt.type}`;
+                    typeSpan.textContent = 
+                        receipt.type === 'budget' ? 'Бюджет' :
+                        receipt.type === 'urgent' ? 'Срочник' : 'По факту';
+                    typeCell.appendChild(typeSpan);
+                }
                 
-                // Кнопки для выбора типа
-                const types = [
-                    { id: 'budget', name: 'Бюджет', class: 'budget' },
-                    { id: 'urgent', name: 'Срочник', class: 'urgent' },
-                    { id: 'fact', name: 'По факту', class: 'fact' }
-                ];
+                // Поверители
+                const verifiersCell = document.createElement('td');
+                const verifiersList = document.createElement('div');
+                verifiersList.className = 'verifiers-list';
                 
-                types.forEach(type => {
-                    const btn = document.createElement('button');
-                    btn.className = `type-btn ${type.class}`;
-                    btn.textContent = type.name;
-                    if (receipt.type === type.id) {
-                        btn.style.fontWeight = 'bold';
-                    }
-                    btn.addEventListener('click', () => {
-                        database.ref(`receipts/${receipt.id}`).update({
-                            type: type.id
+                if (receipt.verifiers) {
+                    Object.entries(receipt.verifiers).forEach(([key, verifier]) => {
+                        const verifierItem = document.createElement('div');
+                        verifierItem.className = 'verifier-item';
+                        
+                        const nameSpan = document.createElement('span');
+                        nameSpan.className = 'verifier-name';
+                        nameSpan.textContent = verifier.name;
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = verifier.completed || false;
+                        checkbox.addEventListener('change', () => {
+                            const updated = {...receipt.verifiers};
+                            updated[key].completed = checkbox.checked;
+                            database.ref(`receipts/${receipt.id}`).update({
+                                verifiers: updated
+                            });
                         });
+                        
+                        verifierItem.append(nameSpan, checkbox);
+                        verifiersList.appendChild(verifierItem);
                     });
-                    typeDiv.appendChild(btn);
+                }
+                
+                // Добавление нового поверителя
+                const addVerifierDiv = document.createElement('div');
+                addVerifierDiv.className = 'add-verifier';
+                
+                const verifierInput = document.createElement('input');
+                verifierInput.type = 'text';
+                verifierInput.placeholder = 'Фамилия поверителя';
+                
+                const addBtn = document.createElement('button');
+                addBtn.textContent = 'Добавить';
+                addBtn.addEventListener('click', () => {
+                    const name = verifierInput.value.trim();
+                    if (name) {
+                        const updated = {...(receipt.verifiers || {})};
+                        const key = name.toLowerCase().replace(/\s+/g, '_');
+                        updated[key] = { name, completed: false };
+                        database.ref(`receipts/${receipt.id}`).update({
+                            verifiers: updated
+                        });
+                        verifierInput.value = '';
+                    }
                 });
                 
-                typeCell.appendChild(typeDiv);
+                addVerifierDiv.append(verifierInput, addBtn);
+                verifiersCell.append(verifiersList, addVerifierDiv);
+                
+                // Дата оплаты
+                const dateCell = document.createElement('td');
+                if (receipt.paymentDate) {
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'payment-date';
+                    dateDiv.textContent = new Date(receipt.paymentDate).toLocaleDateString();
+                    
+                    const changeBtn = document.createElement('button');
+                    changeBtn.textContent = 'Изменить';
+                    changeBtn.style.marginLeft = '5px';
+                    changeBtn.style.padding = '2px 5px';
+                    changeBtn.style.fontSize = '12px';
+                    changeBtn.addEventListener('click', () => {
+                        const newDate = prompt('Введите новую дату (ГГГГ-ММ-ДД):', receipt.paymentDate);
+                        if (newDate) {
+                            database.ref(`receipts/${receipt.id}`).update({
+                                paymentDate: newDate
+                            });
+                        }
+                    });
+                    
+                    dateDiv.appendChild(changeBtn);
+                    dateCell.appendChild(dateDiv);
+                } else {
+                    const dateInput = document.createElement('input');
+                    dateInput.type = 'date';
+                    dateInput.addEventListener('change', (e) => {
+                        database.ref(`receipts/${receipt.id}`).update({
+                            paymentDate: e.target.value
+                        });
+                    });
+                    dateCell.appendChild(dateInput);
+                }
                 
                 // Действия
                 const actionsCell = document.createElement('td');
@@ -282,7 +432,7 @@
                 
                 actionsCell.append(editBtn, deleteBtn);
                 
-                row.append(numberCell, typeCell, actionsCell);
+                row.append(numberCell, typeCell, verifiersCell, dateCell, actionsCell);
                 receiptsList.appendChild(row);
             });
         }

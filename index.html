@@ -87,7 +87,7 @@
         
         /* Боковая панель */
         .sidebar {
-            width: 240px;
+            width: 300px; /* Увеличено с 240px до 300px */
             background: linear-gradient(160deg, #ffffff 0%, #f8f9fb 100%);
             padding: 20px 15px;
             box-shadow: 5px 0 15px rgba(0, 34, 68, 0.1);
@@ -160,7 +160,7 @@
         
         /* Основное содержимое */
         main {
-            margin-left: 260px;
+            margin-left: 320px; /* Увеличено с 260px до 320px */
             padding: 30px;
             min-height: calc(100vh - 70px);
             box-sizing: border-box;
@@ -234,15 +234,24 @@
         <a href="#" onclick="toggleDropdown('verificationList')">Поверка</a>
         <div id="verificationList" class="dropdown" aria-hidden="true">
             <p><a href="verification-VCEM5100.html" target="_blank">Расчёт погрешности VCEM 5100</a></p> 
-            <p><a href="Gigro.html" target="_blank">Гигрометры психометрические Вит</a></p>  
+           <p><a href="Term-table.html" target="_blank">Поверяемые градусные отметки в зависимости от цены деления шкалы</a></p>
+            
+              
+            <p><a href="#" onclick="toggleDropdown('registryList')">Реестры и межповерочные интервалы</a></p>
+    <div id="registryList" class="dropdown" style="margin-left: 15px; border-left: 2px solid #0066cc;">
+        <p><a href="Gigro.html" target="_blank">Гигрометры психометрические Вит</a></p>  
             <p><a href="El-term.html" target="_blank">Термометры электронные цифровые</a></p>
             <p><a href="Term-glass.html" target="_blank">Термометры стеклянные</a></p>
             <p><a href="Term-glass-el.html" target="_blank">Термометры стеклянные ртутные электроконтактные</a></p>
             <p><a href="Infra-el-term.html" target="_blank">Термометры инфракрасные</a></p>
             <p><a href="Mano.html" target="_blank">Манометры</a></p>
-            <p><a href="Term-table.html" target="_blank">Поверяемые градусные отметки в зависимости от цены деления шкалы</a></p>
+    </div>
+
+    <p><a href="#" onclick="toggleDropdown('toolsList')">Инструменты</a></p>
+    <div id="toolsList" class="dropdown" style="margin-left: 15px; border-left: 2px solid #0066cc;">
             <p><a href="Massive.html" target="_blank">Массив</a></p>
             <p><a href="receipt.html" target="_blank">Квитанции счета</a></p>
+    </div>
         </div>
         
         <a href="#" onclick="toggleDropdown('calibrationList')">Калибровка</a>

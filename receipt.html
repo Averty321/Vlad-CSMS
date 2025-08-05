@@ -14,79 +14,58 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+            background: #f5f7fa;
             color: #333;
             min-height: 100vh;
         }
         
         header {
-            background: linear-gradient(135deg, #003366 0%, #002244 100%);
-            color: #ffffff;
+            background: #003366;
+            color: white;
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 34, 68, 0.2);
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
         
         .logo {
             font-size: 28px;
             font-weight: bold;
-            display: flex;
-            align-items: center;
-        }
-        
-        .logo::before {
-            content: "📐";
-            margin-right: 12px;
-            font-size: 32px;
         }
         
         main {
             padding: 30px;
-            min-height: calc(100vh - 70px);
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto;
         }
         
         .content-box {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            padding: 30px;
-            width: 100%;
-            max-width: 1000px;
-            box-shadow: 0 8px 30px rgba(0, 34, 68, 0.1);
-            margin-bottom: 30px;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .input-section {
             display: flex;
             margin-bottom: 20px;
             gap: 10px;
-            width: 100%;
         }
         
         input {
-            padding: 12px 15px;
+            padding: 10px;
             flex-grow: 1;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 4px;
         }
         
         button {
-            padding: 12px 20px;
+            padding: 10px 15px;
             background: #0066cc;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
         }
         
         .clear-btn {
@@ -97,15 +76,12 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
+            margin-top: 20px;
         }
         
         th, td {
             border: 1px solid #ddd;
-            padding: 15px;
+            padding: 12px;
             text-align: left;
         }
         
@@ -114,52 +90,49 @@
             color: white;
         }
         
-        .payment-date {
-            font-size: 12px;
-            color: #666;
+        .action-btn {
+            padding: 6px 10px;
+            margin-right: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .edit-btn {
+            background: #ffc107;
+            color: black;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .receipt-type {
             margin-top: 5px;
             display: flex;
-            align-items: center;
+            gap: 5px;
         }
         
-        .payment-date input {
-            padding: 5px;
-            border: 1px solid #ddd;
+        .type-btn {
+            padding: 4px 8px;
             border-radius: 4px;
-            margin-left: 5px;
-            width: 120px;
+            font-size: 12px;
+            cursor: pointer;
         }
         
-        .filters {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            background: #f0f7ff;
-            padding: 15px;
-            border-radius: 8px;
+        .budget {
+            background: #d4edda;
+            color: #155724;
         }
         
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            min-width: 200px;
+        .urgent {
+            background: #fff3cd;
+            color: #856404;
         }
         
-        .filter-group select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        @media (max-width: 768px) {
-            .content-box {
-                padding: 20px;
-            }
-            
-            .filters {
-                flex-direction: column;
-            }
+        .fact {
+            background: #d1ecf1;
+            color: #0c5460;
         }
     </style>
 </head>
@@ -179,57 +152,16 @@
             
             <button id="clearAllBtn" class="clear-btn">Очистить все</button>
             
-            <div class="filters">
-                <div class="filter-group">
-                    <label>Дата оплаты:</label>
-                    <select id="dateFilter">
-                        <option value="all">Все</option>
-                        <option value="hasDate">С датой</option>
-                        <option value="noDate">Без даты</option>
-                        <option value="overdue">Просроченные</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>Поверитель:</label>
-                    <select id="verifierFilter">
-                        <option value="all">Все</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>Статус:</label>
-                    <select id="statusFilter">
-                        <option value="all">Все</option>
-                        <option value="active">Активные</option>
-                        <option value="partial">Частично</option>
-                        <option value="completed">Завершенные</option>
-                    </select>
-                </div>
-            </div>
-            
-            <h2>Активные квитанции</h2>
-            <table id="activeTable">
+            <h2>Список квитанций</h2>
+            <table id="receiptsTable">
                 <thead>
                     <tr>
                         <th>Номер</th>
-                        <th>Поверители</th>
+                        <th>Тип</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
-                <tbody id="activeReceipts"></tbody>
-            </table>
-            
-            <h2>Завершенные квитанции</h2>
-            <table id="completedTable">
-                <thead>
-                    <tr>
-                        <th>Номер</th>
-                        <th>Поверители</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="completedReceipts"></tbody>
+                <tbody id="receiptsList"></tbody>
             </table>
         </div>
     </main>
@@ -255,19 +187,11 @@
         const receiptInput = document.getElementById('receiptInput');
         const addBtn = document.getElementById('addBtn');
         const clearAllBtn = document.getElementById('clearAllBtn');
-        const activeReceiptsTbody = document.getElementById('activeReceipts');
-        const completedReceiptsTbody = document.getElementById('completedReceipts');
-        const dateFilter = document.getElementById('dateFilter');
-        const verifierFilter = document.getElementById('verifierFilter');
-        const statusFilter = document.getElementById('statusFilter');
+        const receiptsList = document.getElementById('receiptsList');
 
         function formatReceiptNumber(number) {
             const prefix = "2150-";
             return number.startsWith(prefix) ? number : prefix + number;
-        }
-        
-        function getSortableNumber(receiptNumber) {
-            return parseInt(receiptNumber.replace(/\D/g, '')) || 0;
         }
         
         addBtn.addEventListener('click', () => {
@@ -275,11 +199,8 @@
             if (receiptNumber) {
                 const newReceipt = {
                     number: formatReceiptNumber(receiptNumber),
-                    status: 'active',
-                    dateAdded: new Date().toISOString(),
-                    sortKey: getSortableNumber(receiptNumber),
-                    verifiers: {},
-                    paymentDate: null
+                    type: 'regular',
+                    dateAdded: new Date().toISOString()
                 };
                 
                 database.ref('receipts').push(newReceipt);
@@ -292,200 +213,77 @@
                 database.ref('receipts').remove();
             }
         });
-        
-        function checkReceiptStatus(verifiers) {
-            if (!verifiers || Object.keys(verifiers).length === 0) return 'active';
-            
-            const allCompleted = Object.values(verifiers).every(v => v.completed);
-            const someCompleted = Object.values(verifiers).some(v => v.completed);
-            
-            return allCompleted ? 'completed' : someCompleted ? 'partial' : 'active';
-        }
-
-        function updateFilters() {
-            renderReceipts(database.ref('receipts'));
-        }
-
-        dateFilter.addEventListener('change', updateFilters);
-        verifierFilter.addEventListener('change', updateFilters);
-        statusFilter.addEventListener('change', updateFilters);
-
-        function checkReceiptAgainstFilters(receipt) {
-            // Фильтр по статусу
-            if (statusFilter.value !== 'all' && receipt.status !== statusFilter.value) {
-                return false;
-            }
-            
-            // Фильтр по дате оплаты
-            if (dateFilter.value === 'hasDate' && !receipt.paymentDate) return false;
-            if (dateFilter.value === 'noDate' && receipt.paymentDate) return false;
-            if (dateFilter.value === 'overdue' && receipt.paymentDate) {
-                return new Date(receipt.paymentDate) < new Date();
-            }
-            
-            // Фильтр по поверителю
-            if (verifierFilter.value !== 'all' && receipt.verifiers) {
-                return Object.values(receipt.verifiers).some(v => v.name === verifierFilter.value);
-            }
-            
-            return true;
-        }
-
-        function updateVerifierFilter(receipts) {
-            const verifiers = new Set(['all']);
-            
-            receipts.forEach(receipt => {
-                if (receipt.verifiers) {
-                    Object.values(receipt.verifiers).forEach(v => {
-                        if (v.name) verifiers.add(v.name);
-                    });
-                }
-            });
-            
-            verifierFilter.innerHTML = '';
-            verifiers.forEach(v => {
-                const option = document.createElement('option');
-                option.value = v;
-                option.textContent = v === 'all' ? 'Все поверители' : v;
-                verifierFilter.appendChild(option);
-            });
-        }
 
         function renderReceipts(snapshot) {
-            const receipts = [];
+            receiptsList.innerHTML = '';
             
             snapshot.forEach(childSnapshot => {
                 const receipt = childSnapshot.val();
                 receipt.id = childSnapshot.key;
-                receipts.push(receipt);
-            });
-            
-            receipts.sort((a, b) => a.sortKey - b.sortKey);
-            updateVerifierFilter(receipts);
-            
-            activeReceiptsTbody.innerHTML = '';
-            completedReceiptsTbody.innerHTML = '';
-            
-            receipts.forEach(receipt => {
-                if (!checkReceiptAgainstFilters(receipt)) return;
                 
                 const row = document.createElement('tr');
-                if (receipt.status === 'partial') row.classList.add('partial');
-                if (receipt.status === 'completed') row.classList.add('completed');
                 
+                // Номер квитанции
                 const numberCell = document.createElement('td');
                 numberCell.textContent = receipt.number;
                 
-                const verifiersCell = document.createElement('td');
+                // Тип квитанции
+                const typeCell = document.createElement('td');
+                const typeDiv = document.createElement('div');
+                typeDiv.className = 'receipt-type';
                 
-                // Список поверителей
-                const verifiersList = document.createElement('div');
-                if (receipt.verifiers) {
-                    Object.entries(receipt.verifiers).forEach(([key, verifier]) => {
-                        const verifierItem = document.createElement('div');
-                        verifierItem.className = 'verifier-item';
-                        
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.checked = verifier.completed || false;
-                        checkbox.addEventListener('change', () => {
-                            const updated = {...receipt.verifiers};
-                            updated[key].completed = checkbox.checked;
-                            database.ref(`receipts/${receipt.id}`).update({
-                                verifiers: updated,
-                                status: checkReceiptStatus(updated)
-                            });
-                        });
-                        
-                        verifierItem.append(verifier.name, checkbox);
-                        verifiersList.appendChild(verifierItem);
-                    });
-                }
+                // Кнопки для выбора типа
+                const types = [
+                    { id: 'budget', name: 'Бюджет', class: 'budget' },
+                    { id: 'urgent', name: 'Срочник', class: 'urgent' },
+                    { id: 'fact', name: 'По факту', class: 'fact' }
+                ];
                 
-                // Добавление нового поверителя
-                const addVerifierDiv = document.createElement('div');
-                const verifierInput = document.createElement('input');
-                verifierInput.placeholder = 'Фамилия поверителя';
-                
-                const addBtn = document.createElement('button');
-                addBtn.textContent = 'Добавить';
-                addBtn.addEventListener('click', () => {
-                    const name = verifierInput.value.trim();
-                    if (name) {
-                        const updated = {...(receipt.verifiers || {})};
-                        updated[name.replace(/\s+/g, '_')] = { name, completed: false };
-                        database.ref(`receipts/${receipt.id}`).update({
-                            verifiers: updated,
-                            status: checkReceiptStatus(updated)
-                        });
-                        verifierInput.value = '';
+                types.forEach(type => {
+                    const btn = document.createElement('button');
+                    btn.className = `type-btn ${type.class}`;
+                    btn.textContent = type.name;
+                    if (receipt.type === type.id) {
+                        btn.style.fontWeight = 'bold';
                     }
-                });
-                
-                addVerifierDiv.append(verifierInput, addBtn);
-                
-                // Дата оплаты
-                const paymentDateDiv = document.createElement('div');
-                paymentDateDiv.className = 'payment-date';
-                const dateInput = document.createElement('input');
-                dateInput.type = 'date';
-                dateInput.value = receipt.paymentDate || '';
-                dateInput.addEventListener('change', () => {
-                    database.ref(`receipts/${receipt.id}`).update({
-                        paymentDate: dateInput.value
+                    btn.addEventListener('click', () => {
+                        database.ref(`receipts/${receipt.id}`).update({
+                            type: type.id
+                        });
                     });
+                    typeDiv.appendChild(btn);
                 });
-                paymentDateDiv.append('Оплата: ', dateInput);
                 
-                verifiersCell.append(verifiersList, addVerifierDiv, paymentDateDiv);
+                typeCell.appendChild(typeDiv);
                 
                 // Действия
                 const actionsCell = document.createElement('td');
                 
-                if (receipt.status !== 'completed') {
-                    const completeBtn = document.createElement('button');
-                    completeBtn.textContent = 'Выполнено';
-                    completeBtn.addEventListener('click', () => {
-                        const updated = {...receipt.verifiers};
-                        Object.keys(updated).forEach(k => updated[k].completed = true);
+                const editBtn = document.createElement('button');
+                editBtn.className = 'action-btn edit-btn';
+                editBtn.textContent = 'Изменить';
+                editBtn.addEventListener('click', () => {
+                    const newNumber = prompt('Введите новый номер:', receipt.number);
+                    if (newNumber && newNumber.trim() !== '') {
                         database.ref(`receipts/${receipt.id}`).update({
-                            status: 'completed',
-                            verifiers: updated,
-                            dateCompleted: new Date().toISOString()
+                            number: formatReceiptNumber(newNumber.trim())
                         });
-                    });
-                    
-                    actionsCell.appendChild(completeBtn);
-                } else {
-                    const reopenBtn = document.createElement('button');
-                    reopenBtn.textContent = 'Открыть';
-                    reopenBtn.addEventListener('click', () => {
-                        database.ref(`receipts/${receipt.id}`).update({
-                            status: 'active',
-                            dateCompleted: null
-                        });
-                    });
-                    
-                    actionsCell.appendChild(reopenBtn);
-                }
+                    }
+                });
                 
                 const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'action-btn delete-btn';
                 deleteBtn.textContent = 'Удалить';
                 deleteBtn.addEventListener('click', () => {
-                    if (confirm('Удалить квитанцию?')) {
+                    if (confirm(`Удалить квитанцию ${receipt.number}?`)) {
                         database.ref(`receipts/${receipt.id}`).remove();
                     }
                 });
                 
-                actionsCell.appendChild(deleteBtn);
+                actionsCell.append(editBtn, deleteBtn);
                 
-                row.append(numberCell, verifiersCell, actionsCell);
-                
-                if (receipt.status === 'completed') {
-                    completedReceiptsTbody.appendChild(row);
-                } else {
-                    activeReceiptsTbody.appendChild(row);
-                }
+                row.append(numberCell, typeCell, actionsCell);
+                receiptsList.appendChild(row);
             });
         }
         

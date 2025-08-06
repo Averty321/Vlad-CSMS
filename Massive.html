@@ -194,13 +194,6 @@
         2. Нажмите "Заполнить пустые ячейки" - все промежуточные пустые ячейки заполнятся автоматически. (можно выполнять опирацию много раз)<br>
         Для группирования схожих по "номерам квитанции","типам", "диапазонам" необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
     </p>
-<p class="instructions">
-    Для заполнения пустых ячеек в столбцах таблицы (квитанции, типы приборов, диапазоны):<br>
-    1. Убедитесь, что есть две ячейки с одинаковой информацией (например: "Счетчик" ... [пусто] ... "Счетчик")<br>
-    2. Нажмите "Заполнить пустые ячейки" - все промежуточные пустые ячейки заполнятся автоматически. (можно выполнять опирацию много раз)<br>
-    Для группирования схожих по номерам квитанции, типам, диапазонам необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
-    Для группирования схожих по "номерам квитанции","типам", "диапазонам" необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
-</p>
     <div class="controls">
         <label for="stickerNumber">Начальный номер наклейки:</label>
         <input type="number" id="stickerNumber" min="1" required>
@@ -210,6 +203,9 @@
             <option value="16">16 мм (64 наклейки)</option>
             <option value="10">10 мм (144 наклейки)</option>
         </select>
+        <br>
+        <label for="excelFile">Загрузить данные из Excel:</label>
+        <input type="file" id="excelFile" accept=".xlsx">
         <br>
         <button id="createTable">Создать таблицу</button>
         <button id="clearData" disabled>Очистить страницу</button>
@@ -236,7 +232,107 @@
             document.getElementById('groupData').addEventListener('click', toggleGrouping);
             document.getElementById('fillEmpty').addEventListener('click', fillEmptyCells);
             document.getElementById('saveAll').addEventListener('click', exportAllToExcel);
+            document.getElementById('excelFile').addEventListener('change', handleExcelImport);
         });
+
+        function handleExcelImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Предполагаем, что данные находятся на первом листе
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Преобразуем лист в JSON
+                const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                // Загружаем данные в таблицу
+                loadExcelDataToTable(excelData);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function loadExcelDataToTable(excelData) {
+            // Проверяем, создана ли таблица
+            const table = document.getElementById('outputTable');
+            if (!table) {
+                alert('Сначала создайте таблицу, нажав "Создать таблицу"');
+                return;
+            }
+
+            // Получаем все строки таблицы
+            const rows = table.querySelectorAll('tbody tr');
+            if (rows.length === 0) return;
+
+            // Собираем данные из Excel в нужном порядке
+            const deviceNumbers = [];
+            const deviceTypes = [];
+            const ranges = [];
+
+            // 1. Собираем номера приборов (ячейки B4-23, G4-23, L4-23, B27-46, G27-46, L27-46)
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1]); // B
+                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6]); // G
+                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11]); // L
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1]); // B
+                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6]); // G
+                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11]); // L
+            }
+
+            // 2. Собираем типы приборов (ячейки C4-23, H4-23, M4-23, C27-46, H27-46, M27-46)
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2]); // C
+                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7]); // H
+                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12]); // M
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2]); // C
+                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7]); // H
+                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12]); // M
+            }
+
+            // 3. Собираем диапазоны (ячейки E4-23, J4-23, O4-23, E27-46, J27-46, O27-46)
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4]); // E
+                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9]); // J
+                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14]); // O
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4]); // E
+                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9]); // J
+                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14]); // O
+            }
+
+            // Заполняем таблицу данными
+            rows.forEach((row, index) => {
+                // Номера приборов (ячейка 5)
+                if (deviceNumbers[index] && row.cells[5]) {
+                    row.cells[5].textContent = deviceNumbers[index];
+                }
+                
+                // Типы приборов (ячейка 3)
+                if (deviceTypes[index] && row.cells[3]) {
+                    row.cells[3].textContent = deviceTypes[index];
+                    deviceTypesHistory.add(deviceTypes[index].toString().trim());
+                }
+                
+                // Диапазоны (ячейка 4)
+                if (ranges[index] && row.cells[4]) {
+                    row.cells[4].textContent = ranges[index];
+                }
+            });
+
+            saveDeviceTypesHistory();
+            saveDataToLocalStorage();
+            alert(`Данные успешно загружены из Excel файла!\nНомера приборов: ${deviceNumbers.length}\nТипы приборов: ${deviceTypes.length}\nДиапазоны: ${ranges.length}`);
+        }
 
         function loadDeviceTypesHistory() {
             const savedTypes = localStorage.getItem('deviceTypesHistory');
@@ -319,6 +415,7 @@
                     }
                 });
 
+                cell.addEventListener('blur', saveDataToLocalStorage);
                 cell.addEventListener('blur', function() {
                     saveDataToLocalStorage();
                     
@@ -417,7 +514,6 @@
                         cell.focus();
                     }
                 }
-                cell.addEventListener('blur', saveDataToLocalStorage);
             });
         }
 
@@ -447,9 +543,6 @@
                 { index: 2, name: "квитанции", count: 0 },
                 { index: 3, name: "типы приборов", count: 0 },
                 { index: 4, name: "диапазоны", count: 0 }
-                { index: 2, name: "квитанции", count: 0 }, // Номер квитанции
-                { index: 3, name: "типы приборов", count: 0 }, // Тип прибора
-                { index: 4, name: "диапазоны", count: 0 } // Диапазон
             ];
 
             // Для каждого столбца выполняем заполнение
@@ -470,7 +563,6 @@
                 for (let i = 0; i < filledPositions.length - 1; i++) {
                     const current = filledPositions[i];
                     const next = filledPositions[i + 1];
-                    
 
                     if (current.value === next.value) {
                         // Заполняем все пустые ячейки между ними
@@ -485,9 +577,9 @@
                 }
             });
 
+            // Собираем статистику
             saveDeviceTypesHistory();
 
-            // Собираем статистику
             filledAccounts = columns[0].count;
             filledDeviceTypes = columns[1].count;
             filledRanges = columns[2].count;
@@ -636,11 +728,10 @@
 
         function exportGroupToExcel(table, account, deviceType, range) {
             const wb = XLSX.utils.book_new();
-            const data = [['', '']];
 
             // Создаем массив только с нужными колонками
             const data = [
-                ['', ''] // Заголовки
+                ['Номер наклейки', 'Номер прибора']
             ];
 
             // Собираем данные только из нужных столбцов
@@ -651,8 +742,6 @@
                 data.push([
                     cells[1].textContent,
                     cells[5].textContent
-                    cells[1].textContent, // Номер наклейки
-                    cells[5].textContent  // Номер прибора
                 ]);
             });
 
@@ -665,9 +754,6 @@
                 .replace(/[\/\\:*?"<>|]/g, '')
                 .replace(/\s+/g, '_')
                 .substring(0, 100) + '.xlsx';
-                .replace(/[\/\\:*?"<>|]/g, '') // Удаляем запрещенные символы
-                .replace(/\s+/g, '_')          // Заменяем пробелы на подчеркивания
-                .substring(0, 100) + '.xlsx';  // Ограничиваем длину
 
             XLSX.writeFile(wb, fileName);
         }
@@ -735,6 +821,7 @@
             isGrouped = false;
             originalTableData = [];
             deviceTypesHistory = new Set();
+            document.getElementById('excelFile').value = '';
         }
     </script>
 </body>

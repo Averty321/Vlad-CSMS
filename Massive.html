@@ -154,51 +154,17 @@
             background: #0077cc;
             border-radius: 4px;
         }
-
-        /* Стили для автодополнения */
-        .autocomplete-container {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .autocomplete-list {
-            position: absolute;
-            z-index: 99;
-            top: 100%;
-            left: 0;
-            right: 0;
-            border: 1px solid #b8d4f0;
-            border-top: none;
-            background-color: white;
-            max-height: 150px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .autocomplete-item {
-            padding: 8px;
-            cursor: pointer;
-        }
-
-        .autocomplete-item:hover {
-            background-color: #e6f2ff;
-        }
-
-        .highlight {
-            background-color: #fffacd;
-            transition: background-color 0.5s;
-        }
     </style>
 </head>
 <body>
     <h1>Настройка наклеек</h1>
-    <p class="instructions">
-        Для заполнения пустых ячеек в столбцах таблицы (квитанции, типы приборов, диапазоны):<br>
-        1. Убедитесь, что есть две ячейки с одинаковой информацией (например: "Счетчик" ... [пусто] ... "Счетчик")<br>
-        2. Нажмите "Заполнить пустые ячейки" - все промежуточные пустые ячейки заполнятся автоматически. (можно выполнять операцию много раз)<br>
-        Для группирования схожих по "номерам квитанции","типам", "диапазонам" необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
-    </p>
+<p class="instructions">
+    Для заполнения пустых ячеек в столбцах таблицы (квитанции, типы приборов, диапазоны):<br>
+    1. Убедитесь, что есть две ячейки с одинаковой информацией (например: "Счетчик" ... [пусто] ... "Счетчик")<br>
+    2. Нажмите "Заполнить пустые ячейки" - все промежуточные пустые ячейки заполнятся автоматически. (можно выполнять опирацию много раз)<br>
+    Для группирования схожих по номерам квитанции, типам, диапазонам необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
+    Для группирования схожих по "номерам квитанции","типам", "диапазонам" необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
+</p>
     <div class="controls">
         <label for="stickerNumber">Начальный номер наклейки:</label>
         <input type="number" id="stickerNumber" min="1" required>
@@ -208,9 +174,6 @@
             <option value="16">16 мм (64 наклейки)</option>
             <option value="10">10 мм (144 наклейки)</option>
         </select>
-        <br>
-        <label for="excelFile">Загрузить данные из Excel:</label>
-        <input type="file" id="excelFile" accept=".xlsx">
         <br>
         <button id="createTable">Создать таблицу</button>
         <button id="clearData" disabled>Очистить страницу</button>
@@ -226,146 +189,16 @@
     <script>
         let isGrouped = false;
         let originalTableData = [];
-        let deviceTypesHistory = new Set();
 
         document.addEventListener('DOMContentLoaded', function() {
             loadSavedData();
-            loadDeviceTypesHistory();
 
             document.getElementById('createTable').addEventListener('click', createTable);
             document.getElementById('clearData').addEventListener('click', clearData);
             document.getElementById('groupData').addEventListener('click', toggleGrouping);
             document.getElementById('fillEmpty').addEventListener('click', fillEmptyCells);
             document.getElementById('saveAll').addEventListener('click', exportAllToExcel);
-            document.getElementById('excelFile').addEventListener('change', handleExcelImport);
         });
-
-        function handleExcelImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    if (workbook.SheetNames.length === 0) {
-                        alert('Файл не содержит листов');
-                        return;
-                    }
-
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    const excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-                    
-                    loadExcelDataToTable(excelData);
-                } catch (error) {
-                    alert('Ошибка при чтении файла: ' + error.message);
-                    console.error(error);
-                }
-            };
-            reader.onerror = function() {
-                alert('Ошибка при чтении файла');
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function loadExcelDataToTable(excelData) {
-            const table = document.getElementById('outputTable');
-            if (!table) {
-                alert('Сначала создайте таблицу, нажав "Создать таблицу"');
-                return;
-            }
-
-            const rows = table.querySelectorAll('tbody tr');
-            if (rows.length === 0) return;
-
-            // Собираем данные из Excel в нужном порядке
-            const deviceNumbers = [];
-            const deviceTypes = [];
-            const ranges = [];
-
-            // 1. Собираем номера приборов (ячейки B4-23, G4-23, L4-23, B27-46, G27-46, L27-46)
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1].toString().trim()); // B
-                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6].toString().trim()); // G
-                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11].toString().trim()); // L
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1].toString().trim()); // B
-                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6].toString().trim()); // G
-                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11].toString().trim()); // L
-            }
-
-            // 2. Собираем типы приборов (ячейки C4-23, H4-23, M4-23, C27-46, H27-46, M27-46)
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2].toString().trim()); // C
-                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7].toString().trim()); // H
-                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12].toString().trim()); // M
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2].toString().trim()); // C
-                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7].toString().trim()); // H
-                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12].toString().trim()); // M
-            }
-
-            // 3. Собираем диапазоны (ячейки E4-23, J4-23, O4-23, E27-46, J27-46, O27-46)
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4].toString().trim()); // E
-                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9].toString().trim()); // J
-                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14].toString().trim()); // O
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4].toString().trim()); // E
-                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9].toString().trim()); // J
-                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14].toString().trim()); // O
-            }
-
-            // Подсветка изменяемых ячеек
-            function highlightCell(cell) {
-                cell.classList.add('highlight');
-                setTimeout(() => cell.classList.remove('highlight'), 1000);
-            }
-
-            // Заполняем таблицу данными
-            rows.forEach((row, index) => {
-                // Номера приборов (ячейка 5)
-                if (deviceNumbers[index] !== undefined && row.cells[5]) {
-                    row.cells[5].textContent = deviceNumbers[index];
-                    highlightCell(row.cells[5]);
-                }
-                
-                // Типы приборов (ячейка 3)
-                if (deviceTypes[index] !== undefined && row.cells[3]) {
-                    row.cells[3].textContent = deviceTypes[index];
-                    highlightCell(row.cells[3]);
-                    deviceTypesHistory.add(deviceTypes[index]);
-                }
-                
-                // Диапазоны (ячейка 4)
-                if (ranges[index] !== undefined && row.cells[4]) {
-                    row.cells[4].textContent = ranges[index];
-                    highlightCell(row.cells[4]);
-                }
-            });
-
-            saveDeviceTypesHistory();
-            saveDataToLocalStorage();
-            alert(`Данные успешно загружены из Excel файла!\nНомера приборов: ${deviceNumbers.filter(Boolean).length}\nТипы приборов: ${deviceTypes.filter(Boolean).length}\nДиапазоны: ${ranges.filter(Boolean).length}`);
-        }
-
-        function loadDeviceTypesHistory() {
-            const savedTypes = localStorage.getItem('deviceTypesHistory');
-            if (savedTypes) {
-                deviceTypesHistory = new Set(JSON.parse(savedTypes));
-            }
-        }
-
-        function saveDeviceTypesHistory() {
-            localStorage.setItem('deviceTypesHistory', JSON.stringify(Array.from(deviceTypesHistory)));
-        }
 
         function createTable() {
             const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
@@ -438,104 +271,6 @@
                 });
 
                 cell.addEventListener('blur', saveDataToLocalStorage);
-                cell.addEventListener('blur', function() {
-                    saveDataToLocalStorage();
-                    
-                    if (cell.classList.contains('device-type') && cell.textContent.trim()) {
-                        deviceTypesHistory.add(cell.textContent.trim());
-                        saveDeviceTypesHistory();
-                    }
-                });
-
-                if (cell.classList.contains('device-type')) {
-                    setupAutocompleteForDeviceType(cell);
-                }
-            });
-        }
-
-        function setupAutocompleteForDeviceType(cell) {
-            const container = document.createElement('div');
-            container.className = 'autocomplete-container';
-            cell.parentNode.insertBefore(container, cell);
-            container.appendChild(cell);
-
-            const list = document.createElement('div');
-            list.className = 'autocomplete-list';
-            container.appendChild(list);
-
-            cell.addEventListener('input', function() {
-                const input = cell.textContent.trim().toLowerCase();
-                list.innerHTML = '';
-                
-                if (!input) {
-                    list.style.display = 'none';
-                    return;
-                }
-
-                const suggestions = Array.from(deviceTypesHistory)
-                    .filter(type => type.toLowerCase().includes(input))
-                    .slice(0, 5);
-
-                if (suggestions.length === 0) {
-                    list.style.display = 'none';
-                    return;
-                }
-
-                suggestions.forEach(suggestion => {
-                    const item = document.createElement('div');
-                    item.className = 'autocomplete-item';
-                    item.textContent = suggestion;
-                    item.addEventListener('click', function() {
-                        cell.textContent = suggestion;
-                        list.style.display = 'none';
-                        cell.focus();
-                    });
-                    list.appendChild(item);
-                });
-
-                list.style.display = 'block';
-            });
-
-            cell.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    list.style.display = 'none';
-                    e.preventDefault();
-                }
-            });
-
-            document.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('device-type')) {
-                    list.style.display = 'none';
-                }
-            });
-
-            list.addEventListener('keydown', function(e) {
-                const items = list.querySelectorAll('.autocomplete-item');
-                if (items.length === 0) return;
-
-                const current = document.activeElement;
-                const currentIndex = Array.from(items).indexOf(current);
-
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (currentIndex < items.length - 1) {
-                        items[currentIndex + 1].focus();
-                    }
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    if (currentIndex > 0) {
-                        items[currentIndex - 1].focus();
-                    } else {
-                        cell.focus();
-                    }
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (current) {
-                        cell.textContent = current.textContent;
-                        list.style.display = 'none';
-                        cell.focus();
-                    }
-                }
             });
         }
 
@@ -562,9 +297,9 @@
 
             // 2. Заполняем пустые ячейки для каждого столбца (квитанции, типы, диапазоны)
             const columns = [
-                { index: 2, name: "квитанции", count: 0 },
-                { index: 3, name: "типы приборов", count: 0 },
-                { index: 4, name: "диапазоны", count: 0 }
+                { index: 2, name: "квитанции", count: 0 }, // Номер квитанции
+                { index: 3, name: "типы приборов", count: 0 }, // Тип прибора
+                { index: 4, name: "диапазоны", count: 0 } // Диапазон
             ];
 
             // Для каждого столбца выполняем заполнение
@@ -600,8 +335,6 @@
             });
 
             // Собираем статистику
-            saveDeviceTypesHistory();
-
             filledAccounts = columns[0].count;
             filledDeviceTypes = columns[1].count;
             filledRanges = columns[2].count;
@@ -753,17 +486,16 @@
 
             // Создаем массив только с нужными колонками
             const data = [
-                ['Номер наклейки', 'Номер прибора']
+                ['', ''] // Заголовки
             ];
 
             // Собираем данные только из нужных столбцов
             const rows = table.querySelectorAll('tbody tr');
-            
             rows.forEach(row => {
                 const cells = row.cells;
                 data.push([
-                    cells[1].textContent,
-                    cells[5].textContent
+                    cells[1].textContent, // Номер наклейки
+                    cells[5].textContent  // Номер прибора
                 ]);
             });
 
@@ -773,9 +505,9 @@
 
             // Исправляем имя файла (убираем спецсимволы)
             const fileName = `Наклейки_${account || 'Без номера'}_${deviceType || 'Без типа'}_${range || 'Без диапазона'}`
-                .replace(/[\/\\:*?"<>|]/g, '')
-                .replace(/\s+/g, '_')
-                .substring(0, 100) + '.xlsx';
+                .replace(/[\/\\:*?"<>|]/g, '') // Удаляем запрещенные символы
+                .replace(/\s+/g, '_')          // Заменяем пробелы на подчеркивания
+                .substring(0, 100) + '.xlsx';  // Ограничиваем длину
 
             XLSX.writeFile(wb, fileName);
         }
@@ -833,7 +565,6 @@
             localStorage.removeItem('stickerData');
             localStorage.removeItem('stickerNumber');
             localStorage.removeItem('size');
-            localStorage.removeItem('deviceTypesHistory');
             document.getElementById('tableContainer').innerHTML = '';
             document.getElementById('clearData').disabled = true;
             document.getElementById('groupData').disabled = true;
@@ -842,8 +573,6 @@
             document.getElementById('groupData').textContent = 'Сгруппировать';
             isGrouped = false;
             originalTableData = [];
-            deviceTypesHistory = new Set();
-            document.getElementById('excelFile').value = '';
         }
     </script>
 </body>

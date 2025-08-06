@@ -154,17 +154,40 @@
             background: #0077cc;
             border-radius: 4px;
         }
+        
+        /* Стиль для кнопки загрузки Excel */
+        .file-input-container {
+            margin-top: 15px;
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #0077cc;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .file-input-label:hover {
+            background: #005fa3;
+        }
+        
+        #excelFile {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <h1>Настройка наклеек</h1>
-<p class="instructions">
-    Для заполнения пустых ячеек в столбцах таблицы (квитанции, типы приборов, диапазоны):<br>
-    1. Убедитесь, что есть две ячейки с одинаковой информацией (например: "Счетчик" ... [пусто] ... "Счетчик")<br>
-    2. Нажмите "Заполнить пустые ячейки" - все промежуточные пустые ячейки заполнятся автоматически. (можно выполнять опирацию много раз)<br>
-    Для группирования схожих по номерам квитанции, типам, диапазонам необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
-    Для группирования схожих по "номерам квитанции","типам", "диапазонам" необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
-</p>
+    <p class="instructions">
+        Для заполнения пустых ячеек в столбцах таблицы (квитанции, типы приборов, диапазоны):<br>
+        1. Убедитесь, что есть две ячейки с одинаковой информацией (например: "Счетчик" ... [пусто] ... "Счетчик")<br>
+        2. Нажмите "Заполнить пустые ячейки" - все промежуточные пустые ячейки заполнятся автоматически. (можно выполнять опирацию много раз)<br>
+        Для группирования схожих по номерам квитанции, типам, диапазонам необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
+        Для группирования схожих по "номерам квитанции","типам", "диапазонам" необходимо нажать на "Сгруппировать" и после будет доступна возможность выгрузить массив через кнопку "сохранить группу"<br>
+    </p>
     <div class="controls">
         <label for="stickerNumber">Начальный номер наклейки:</label>
         <input type="number" id="stickerNumber" min="1" required>
@@ -180,6 +203,11 @@
         <button id="groupData" disabled>Сгруппировать</button>
         <button id="fillEmpty" disabled>Заполнить пустые ячейки</button>
         <button id="saveAll" disabled>Сохранить все данные</button>
+        
+        <div class="file-input-container">
+            <label for="excelFile" class="file-input-label">Загрузить данные из Excel</label>
+            <input type="file" id="excelFile" accept=".xlsx" />
+        </div>
     </div>
 
     <div id="tableContainer"></div>
@@ -198,7 +226,131 @@
             document.getElementById('groupData').addEventListener('click', toggleGrouping);
             document.getElementById('fillEmpty').addEventListener('click', fillEmptyCells);
             document.getElementById('saveAll').addEventListener('click', exportAllToExcel);
+            document.getElementById('excelFile').addEventListener('change', handleExcelUpload);
         });
+
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Получаем первый лист
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Получаем все данные из листа
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                
+                // Заполняем таблицу данными из Excel
+                fillTableFromExcelData(jsonData);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function fillTableFromExcelData(excelData) {
+            const table = document.getElementById('outputTable');
+            if (!table) {
+                alert('Сначала создайте таблицу');
+                return;
+            }
+            
+            const rows = table.querySelectorAll('tbody tr');
+            if (rows.length === 0) return;
+            
+            // Собираем данные из указанных ячеек Excel
+            const deviceNumbers = [];
+            const deviceTypes = [];
+            const ranges = [];
+            
+            // Номера приборов (B4-23, G4-23, L4-23, B27-46, G27-46, L27-46)
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1]);
+            }
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6]);
+            }
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11]);
+            }
+            
+            // Типы приборов (C4-23, H4-23, M4-23, C27-46, H27-46, M27-46)
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2]);
+            }
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7]);
+            }
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12]);
+            }
+            
+            // Диапазоны (E4-23, J4-23, O4-23, E27-46, J27-46, O27-46)
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4]);
+            }
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9]);
+            }
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14]);
+            }
+            
+            // Заполняем таблицу данными
+            const maxRows = Math.min(rows.length, deviceNumbers.length, deviceTypes.length, ranges.length);
+            
+            for (let i = 0; i < maxRows; i++) {
+                const row = rows[i];
+                
+                // Номер прибора (ячейка 5)
+                if (deviceNumbers[i] && row.cells[5]) {
+                    row.cells[5].textContent = deviceNumbers[i];
+                }
+                
+                // Тип прибора (ячейка 3)
+                if (deviceTypes[i] && row.cells[3]) {
+                    row.cells[3].textContent = deviceTypes[i];
+                }
+                
+                // Диапазон (ячейка 4)
+                if (ranges[i] && row.cells[4]) {
+                    row.cells[4].textContent = ranges[i];
+                }
+            }
+            
+            saveDataToLocalStorage();
+            alert(`Загружено ${maxRows} строк данных из Excel файла`);
+        }
 
         function createTable() {
             const stickerNumber = parseInt(document.getElementById('stickerNumber').value);

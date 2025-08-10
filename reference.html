@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -6,32 +5,111 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Управление эталонами</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+        /* Основные стили */
+        * {
+            box-sizing: border-box;
+            transition: all 0.3s ease;
         }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #f5f7fa 0%, #e4e7eb 100%);
+            background-attachment: fixed;
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        /* Шапка сайта */
+        header {
+            background: linear-gradient(to bottom, #003366 0%, #002244 100%);
+            color: #ffffff;
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0, 34, 68, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Кнопки управления */
+        .controls {
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+        
         button {
+            padding: 10px 15px;
+            background: linear-gradient(to bottom, #0066cc 0%, #003366 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.3);
+            cursor: pointer;
             margin-right: 10px;
         }
+        
+        button:hover {
+            background: linear-gradient(to bottom, #0088ff 0%, #0055aa 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 85, 170, 0.4);
+        }
+        
+        /* Таблица */
+        .table-container {
+            padding: 0 20px;
+        }
+        
         table {
-            margin-top: 20px;
             width: 100%;
             border-collapse: collapse;
-            background-color: #f0f8ff;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 34, 68, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
         }
+        
         th, td {
-            border: 1px solid #007bff;
-            padding: 10px;
+            border: 1px solid #e0e6ed;
+            padding: 12px 15px;
             text-align: left;
         }
+        
         th {
-            background-color: #007bff;
+            background: linear-gradient(to bottom, #0066cc 0%, #003366 100%);
             color: white;
+            font-weight: 600;
+            border-color: #0055aa;
         }
+        
+        tr:nth-child(even) {
+            background-color: rgba(0, 102, 204, 0.05);
+        }
+        
+        tr:hover {
+            background-color: rgba(0, 102, 204, 0.1);
+        }
+        
         .actions {
             display: flex;
-            gap: 5px;
+            gap: 8px;
         }
+        
+        .actions button {
+            padding: 6px 10px;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        /* Модальные окна */
         .overlay {
             display: none;
             position: fixed;
@@ -42,6 +120,7 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
+        
         .modal {
             display: none;
             position: fixed;
@@ -49,40 +128,96 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: white;
-            border: 1px solid #ccc;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 34, 68, 0.3);
+            padding: 25px;
             z-index: 1000;
-            width: 300px;
+            width: 400px;
+            max-width: 90%;
+            border: 1px solid rgba(0, 102, 204, 0.2);
         }
+        
+        .modal h3 {
+            margin-top: 0;
+            color: #003366;
+            border-bottom: 1px solid #e0e6ed;
+            padding-bottom: 10px;
+        }
+        
+        .modal label {
+            display: block;
+            margin: 15px 0 5px;
+            color: #003366;
+            font-weight: 500;
+        }
+        
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e6ed;
+            border-radius: 6px;
+            background-color: #f8f9fb;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        /* Состояния */
         .expired {
-            background-color: #ffcccc;
+            background-color: #ffebee !important;
+            color: #d32f2f;
+        }
+        
+        .expired td {
+            border-color: #ffcdd2;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .actions {
+                flex-direction: column;
+            }
+            
+            .modal {
+                width: 90%;
+            }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 </head>
 <body>
+    <header>
+        <div class="logo">Управление эталонами</div>
+    </header>
 
-    <button id="createRoom">Создать расположение</button>
-    <button id="manageRooms">Управление расположениями</button>
-    <button id="openAddStandard">Добавить эталон</button>
+    <div class="controls">
+        <button id="createRoom">Создать расположение</button>
+        <button id="manageRooms">Управление расположениями</button>
+        <button id="openAddStandard">Добавить эталон</button>
+    </div>
 
-    <table id="items">
-        <thead>
-            <tr>
-                <th>Наименование</th>
-                <th>Номер</th>
-                <th>Дата метрологической оценки</th>
-                <th>Дата окончания метрологической оценки</th>
-                <th>Вид метрологической оценки</th>
-                <th>Расположение</th>
-                <th>Количество дней до окончания действия</th>
-                <th>Действия</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <div class="table-container">
+        <table id="items">
+            <thead>
+                <tr>
+                    <th>Наименование</th>
+                    <th>Номер</th>
+                    <th>Дата метрологической оценки</th>
+                    <th>Дата окончания метрологической оценки</th>
+                    <th>Вид метрологической оценки</th>
+                    <th>Расположение</th>
+                    <th>Количество дней до окончания действия</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
     <div class="overlay" id="overlay"></div>
     <div class="modal" id="addStandardModal">
@@ -102,14 +237,18 @@
             <option value="поверка">Поверка</option>
             <option value="калибровка">Калибровка</option>
         </select>
-        <button id="saveStandard">Сохранить</button>
-        <button id="closeModal">Закрыть</button>
+        <div class="modal-buttons">
+            <button id="saveStandard">Сохранить</button>
+            <button id="closeModal">Закрыть</button>
+        </div>
     </div>
 
     <div class="modal" id="manageRoomsModal">
         <h3>Управление расположениями</h3>
-        <ul id="roomList"></ul>
-        <button id="closeRoomsModal">Закрыть</button>
+        <ul id="roomList" style="list-style: none; padding: 0;"></ul>
+        <div class="modal-buttons">
+            <button id="closeRoomsModal">Закрыть</button>
+        </div>
     </div>
 
     <script>
@@ -152,7 +291,7 @@
         function fetchStandards() {
             database.ref('standards').on('value', snapshot => {
                 standards = snapshot.val() || [];
-                calculateDaysLeft(); // Обновляем количество дней до окончания действия
+                calculateDaysLeft();
                 renderStandards();
             });
         }
@@ -179,10 +318,18 @@
             roomList.innerHTML = '';
             rooms.forEach((room, index) => {
                 const li = document.createElement('li');
+                li.style.padding = '10px';
+                li.style.borderBottom = '1px solid #e0e6ed';
+                li.style.display = 'flex';
+                li.style.justifyContent = 'space-between';
+                li.style.alignItems = 'center';
+                
                 li.textContent = room;
                 li.innerHTML += `
-                    <button onclick="editRoom(${index})">Изменить</button>
-                    <button onclick="deleteRoom(${index})">Удалить</button>
+                    <div>
+                        <button onclick="editRoom(${index})" style="margin-right: 5px;">Изменить</button>
+                        <button onclick="deleteRoom(${index})">Удалить</button>
+                    </div>
                 `;
                 roomList.appendChild(li);
             });
@@ -255,7 +402,7 @@
 
             const expirationDateInput = new Date(dateInput);
             expirationDateInput.setFullYear(expirationDateInput.getFullYear() + interval);
-            expirationDateInput.setDate(expirationDateInput.getDate() - 1); // Уменьшение на 1 день
+            expirationDateInput.setDate(expirationDateInput.getDate() - 1);
             const daysLeft = Math.ceil((expirationDateInput - new Date()) / (1000 * 60 * 60 * 24));
 
             const standard = {
@@ -277,7 +424,7 @@
             }
 
             database.ref('standards').set(standards);
-            calculateDaysLeft(); // Обновляем количество дней до окончания действия
+            calculateDaysLeft();
             renderStandards();
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('addStandardModal').style.display = 'none';
@@ -341,8 +488,6 @@
         // Инициализация данных
         fetchRooms();
         fetchStandards();
-
     </script>
-
 </body>
 </html>

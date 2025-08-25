@@ -177,6 +177,16 @@
         #excelFile {
             display: none;
         }
+        
+        /* Стиль для поля ввода пользовательского количества */
+        #customCountContainer {
+            display: none;
+            margin-top: 10px;
+        }
+        
+        #customCount {
+            width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -197,8 +207,13 @@
         <select id="size">
             <option value="16">16 мм (64 наклейки)</option>
             <option value="10">10 мм (144 наклейки)</option>
+            <option value="custom">Свое количество</option>
         </select>
         <br>
+        <div id="customCountContainer">
+            <label for="customCount">Количество наклеек:</label>
+            <input type="number" id="customCount" min="1" max="1000" value="100">
+        </div>
         <button id="createTable">Создать таблицу</button>
         <button id="clearData" disabled>Очистить страницу</button>
         <button id="groupData" disabled>Сгруппировать</button>
@@ -228,6 +243,16 @@
             document.getElementById('fillEmpty').addEventListener('click', fillEmptyCells);
             document.getElementById('saveAll').addEventListener('click', exportAllToExcel);
             document.getElementById('excelFile').addEventListener('change', handleExcelUpload);
+            
+            // Обработчик изменения выбора размера
+            document.getElementById('size').addEventListener('change', function() {
+                const customCountContainer = document.getElementById('customCountContainer');
+                if (this.value === 'custom') {
+                    customCountContainer.style.display = 'block';
+                } else {
+                    customCountContainer.style.display = 'none';
+                }
+            });
         });
 
         function handleExcelUpload(event) {
@@ -243,7 +268,7 @@
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // Получаем все данные из листа
+                // Получаем все данные из лист
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
                 
                 // Заполняем таблицу данными из Excel
@@ -356,13 +381,26 @@
         function createTable() {
             const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
             const size = document.getElementById('size').value;
+            let totalRows;
 
             if (isNaN(stickerNumber)) {
                 alert('Пожалуйста, введите начальный номер наклейки');
                 return;
             }
 
-            const totalRows = size === "16" ? 64 : 144;
+            // Определяем количество строк в зависимости от выбора
+            if (size === "16") {
+                totalRows = 64;
+            } else if (size === "10") {
+                totalRows = 144;
+            } else if (size === "custom") {
+                totalRows = parseInt(document.getElementById('customCount').value);
+                if (isNaN(totalRows) || totalRows < 1) {
+                    alert('Пожалуйста, введите корректное количество наклеек');
+                    return;
+                }
+            }
+
             const tableContainer = document.getElementById('tableContainer');
             tableContainer.innerHTML = '';
 
@@ -690,9 +728,11 @@
 
             const stickerNumber = document.getElementById('stickerNumber').value;
             const size = document.getElementById('size').value;
+            const customCount = document.getElementById('customCount').value;
 
             localStorage.setItem('stickerNumber', stickerNumber);
             localStorage.setItem('size', size);
+            localStorage.setItem('customCount', customCount);
             localStorage.setItem('stickerData', table.outerHTML);
         }
 
@@ -702,6 +742,15 @@
                 document.getElementById('tableContainer').innerHTML = savedData;
                 document.getElementById('stickerNumber').value = localStorage.getItem('stickerNumber') || '';
                 document.getElementById('size').value = localStorage.getItem('size') || '16';
+                document.getElementById('customCount').value = localStorage.getItem('customCount') || '100';
+
+                // Показываем/скрываем поле для пользовательского количества
+                const customCountContainer = document.getElementById('customCountContainer');
+                if (localStorage.getItem('size') === 'custom') {
+                    customCountContainer.style.display = 'block';
+                } else {
+                    customCountContainer.style.display = 'none';
+                }
 
                 document.getElementById('clearData').disabled = false;
                 document.getElementById('groupData').disabled = false;
@@ -718,6 +767,7 @@
             localStorage.removeItem('stickerData');
             localStorage.removeItem('stickerNumber');
             localStorage.removeItem('size');
+            localStorage.removeItem('customCount');
             document.getElementById('tableContainer').innerHTML = '';
             document.getElementById('clearData').disabled = true;
             document.getElementById('groupData').disabled = true;

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Генератор наклеек для приборов</title>
     <style>
-        /* Стили остаются без изменений */
+        /* Все ваши оригинальные стили остаются без изменений */
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
@@ -141,7 +141,6 @@
             padding: 5px;
         }
 
-        /* Стиль для скролла */
         #tableContainer::-webkit-scrollbar {
             width: 8px;
         }
@@ -155,7 +154,6 @@
             border-radius: 4px;
         }
         
-        /* Стиль для кнопки загрузки Excel */
         .file-input-container {
             margin-top: 15px;
         }
@@ -178,7 +176,6 @@
             display: none;
         }
         
-        /* Стиль для поля ввода пользовательского количества */
         #customCountContainer {
             display: none;
             margin-top: 10px;
@@ -186,6 +183,117 @@
         
         #customCount {
             width: 200px;
+        }
+
+        /* Новые стили для выбора источника данных */
+        .source-selector {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e6f2ff;
+            border-radius: 8px;
+            border: 1px solid #b8d4f0;
+        }
+
+        .source-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .source-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .source-btn.active {
+            background: #005fa3;
+            box-shadow: 0 0 0 2px #0077cc;
+        }
+
+        /* Стили для модального окна */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 25px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .file-upload-item {
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px dashed #b8d4f0;
+            border-radius: 8px;
+            background: #f9fbff;
+        }
+
+        .file-upload-item input {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .add-file-btn {
+            background: #28a745;
+            margin-top: 15px;
+        }
+
+        .add-file-btn:hover {
+            background: #218838;
+        }
+
+        .process-files-btn {
+            background: #dc3545;
+            margin-top: 20px;
+        }
+
+        .process-files-btn:hover {
+            background: #c82333;
+        }
+
+        .modal-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0077cc;
+        }
+
+        .modal-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #e6f2ff;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+
+        .modal-tab.active {
+            background: #0077cc;
+            color: white;
         }
     </style>
 </head>
@@ -199,6 +307,15 @@
         Для загрузки данных с таблицы водоканала необходимо создать таблицу по первому номеру клейма-наклейки. <br>
 Затем нажать загрузить данные из Excel и выбрать файл с таблицей, после чего вся информация будет перенесена в таблицу массива. <br>
     </p>
+
+    <div class="source-selector">
+        <label>Источник данных:</label>
+        <div class="source-buttons">
+            <button class="source-btn" id="vodokanalBtn" onclick="selectSource('vodokanal')">Водоканал</button>
+            <button class="source-btn" id="unicomBtn" onclick="selectSource('unicom')">Уником</button>
+        </div>
+    </div>
+
     <div class="controls">
         <label for="stickerNumber">Начальный номер наклейки:</label>
         <input type="number" id="stickerNumber" min="1" required>
@@ -220,19 +337,65 @@
         <button id="fillEmpty" disabled>Заполнить пустые ячейки</button>
         <button id="saveAll" disabled>Сохранить все данные</button>
         
-        <div class="file-input-container">
-            <label for="excelFile" class="file-input-label">Загрузить данные из Excel</label>
-            <input type="file" id="excelFile" accept=".xlsx" />
+        <!-- Кнопки для разных источников -->
+        <div id="vodokanalControls" style="display: none;" class="file-input-container">
+            <button onclick="openExcelUploadModal()">Загрузить данные из Excel</button>
+        </div>
+        
+        <div id="unicomControls" style="display: none;" class="file-input-container">
+            <button onclick="openWordUploadModal()">Загрузить данные из Word</button>
         </div>
     </div>
 
     <div id="tableContainer"></div>
 
+    <!-- Модальное окно для загрузки Excel файлов -->
+    <div id="excelUploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('excelUploadModal')">&times;</span>
+            <h2>Загрузка файлов Excel (.xlsx)</h2>
+            <p>Загружайте файлы по порядку. Данные будут добавлены в таблицу последовательно.</p>
+            
+            <div id="excelFileUploadContainer">
+                <div class="file-upload-item">
+                    <label>Файл 1:</label>
+                    <input type="file" class="excel-file-input" accept=".xlsx" data-index="0">
+                </div>
+            </div>
+            
+            <button class="add-file-btn" onclick="addExcelFileInput()">+ Добавить еще файл</button>
+            <button class="process-files-btn" onclick="processExcelFiles()">Обработать файлы</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно для загрузки Word файлов -->
+    <div id="wordUploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('wordUploadModal')">&times;</span>
+            <h2>Загрузка файлов Word (.docx)</h2>
+            <p>Загружайте файлы по порядку. Данные будут добавлены в таблицу последовательно.</p>
+            
+            <div id="wordFileUploadContainer">
+                <div class="file-upload-item">
+                    <label>Файл 1:</label>
+                    <input type="file" class="word-file-input" accept=".docx" data-index="0">
+                </div>
+            </div>
+            
+            <button class="add-file-btn" onclick="addWordFileInput()">+ Добавить еще файл</button>
+            <button class="process-files-btn" onclick="processWordFiles()">Обработать файлы</button>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
     <script>
         let isGrouped = false;
         let originalTableData = [];
+        let currentSource = '';
+        let nextExcelFileIndex = 1;
+        let nextWordFileIndex = 1;
 
         document.addEventListener('DOMContentLoaded', function() {
             loadSavedData();
@@ -242,9 +405,7 @@
             document.getElementById('groupData').addEventListener('click', toggleGrouping);
             document.getElementById('fillEmpty').addEventListener('click', fillEmptyCells);
             document.getElementById('saveAll').addEventListener('click', exportAllToExcel);
-            document.getElementById('excelFile').addEventListener('change', handleExcelUpload);
             
-            // Обработчик изменения выбора размера
             document.getElementById('size').addEventListener('change', function() {
                 const customCountContainer = document.getElementById('customCountContainer');
                 if (this.value === 'custom') {
@@ -255,129 +416,380 @@
             });
         });
 
-        function handleExcelUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                // Получаем первый лист
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                // Получаем все данные из листа
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
-                
-                // Заполняем таблицу данными из Excel
-                fillTableFromExcelData(jsonData);
-            };
-            reader.readAsArrayBuffer(file);
+        // ================== ФУНКЦИИ ДЛЯ ВЫБОРА ИСТОЧНИКА ==================
+        function selectSource(source) {
+            currentSource = source;
+            
+            document.getElementById('vodokanalBtn').classList.remove('active');
+            document.getElementById('unicomBtn').classList.remove('active');
+            
+            document.getElementById('vodokanalControls').style.display = 'none';
+            document.getElementById('unicomControls').style.display = 'none';
+            
+            if (source === 'vodokanal') {
+                document.getElementById('vodokanalBtn').classList.add('active');
+                document.getElementById('vodokanalControls').style.display = 'block';
+            } else if (source === 'unicom') {
+                document.getElementById('unicomBtn').classList.add('active');
+                document.getElementById('unicomControls').style.display = 'block';
+            }
         }
 
-        function fillTableFromExcelData(excelData) {
+        // ================== ФУНКЦИИ ДЛЯ EXCEL ==================
+        function openExcelUploadModal() {
             const table = document.getElementById('outputTable');
             if (!table) {
-                alert('Сначала создайте таблицу');
+                alert('Сначала создайте таблицу!');
                 return;
             }
             
+            document.getElementById('excelUploadModal').style.display = 'block';
+            document.getElementById('excelFileUploadContainer').innerHTML = `
+                <div class="file-upload-item">
+                    <label>Файл 1:</label>
+                    <input type="file" class="excel-file-input" accept=".xlsx" data-index="0">
+                </div>
+            `;
+            nextExcelFileIndex = 1;
+        }
+
+        function addExcelFileInput() {
+            const container = document.getElementById('excelFileUploadContainer');
+            const newIndex = nextExcelFileIndex++;
+            
+            const newFileInput = document.createElement('div');
+            newFileInput.className = 'file-upload-item';
+            newFileInput.innerHTML = `
+                <label>Файл ${newIndex + 1}:</label>
+                <input type="file" class="excel-file-input" accept=".xlsx" data-index="${newIndex}">
+            `;
+            
+            container.appendChild(newFileInput);
+        }
+
+        function processExcelFiles() {
+            const fileInputs = document.querySelectorAll('.excel-file-input');
+            const files = Array.from(fileInputs)
+                .map(input => input.files[0])
+                .filter(file => file);
+            
+            if (files.length === 0) {
+                alert('Пожалуйста, выберите хотя бы один файл');
+                return;
+            }
+
+            processExcelFilesSequentially(files)
+                .then(() => {
+                    alert('Все Excel файлы успешно обработаны!');
+                    closeModal('excelUploadModal');
+                })
+                .catch(error => {
+                    console.error('Ошибка обработки Excel файлов:', error);
+                    alert('Произошла ошибка при обработке Excel файлов');
+                });
+        }
+
+        async function processExcelFilesSequentially(files) {
+            const table = document.getElementById('outputTable');
+            if (!table) throw new Error('Таблица не найдена');
+            
             const rows = table.querySelectorAll('tbody tr');
-            if (rows.length === 0) return;
+            let currentRowIndex = 0;
             
-            // Собираем данные из указанных ячеек Excel
-            const deviceNumbers = [];
-            const deviceTypes = [];
-            const ranges = [];
-            
-            // Номера приборов (B4-23, G4-23, L4-23, B27-46, G27-46, L27-46)
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1]);
-            }
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6]);
-            }
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11]);
-            }
-            
-            // Типы приборов (C4-23, H4-23, M4-23, C27-46, H27-46, M27-46)
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2]);
-            }
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7]);
-            }
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12]);
-            }
-            
-            // Диапазоны (E4-23, J4-23, O4-23, E27-46, J27-46, O27-46)
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4]);
-            }
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9]);
-            }
-            for (let row = 3; row < 23; row++) {
-                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9]);
-            }
-            for (let row = 26; row < 46; row++) {
-                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14]);
-            }
-            
-            // Заполняем таблицу данными
-            const maxRows = Math.min(rows.length, deviceNumbers.length, deviceTypes.length, ranges.length);
-            
-            for (let i = 0; i < maxRows; i++) {
-                const row = rows[i];
+            // Находим первую полностью пустую строку
+            for (let i = 0; i < rows.length; i++) {
+                const deviceTypeCell = rows[i].cells[3];
+                const deviceNumberCell = rows[i].cells[4];
                 
-                // Номер прибора (теперь ячейка 4 вместо 5)
-                if (deviceNumbers[i] && row.cells[4]) {
-                    row.cells[4].textContent = deviceNumbers[i];
+                if (!deviceTypeCell.textContent.trim() && !deviceNumberCell.textContent.trim()) {
+                    currentRowIndex = i;
+                    break;
                 }
                 
-                // Тип прибора (ячейка 3)
-                if (deviceTypes[i] && row.cells[3]) {
-                    row.cells[3].textContent = deviceTypes[i];
+                if (i === rows.length - 1) {
+                    alert('Все строки в таблице уже заполнены!');
+                    return;
+                }
+            }
+            
+            for (const file of files) {
+                if (!file.name.endsWith('.xlsx')) {
+                    alert(`Файл "${file.name}" не является .xlsx файлом. Пропускаем.`);
+                    continue;
                 }
                 
-                // Диапазон (теперь ячейка 5 вместо 4)
-                if (ranges[i] && row.cells[5]) {
-                    row.cells[5].textContent = ranges[i];
+                const data = await parseExcelFile(file);
+                
+                // Заполняем таблицу данными из файла
+                for (const item of data) {
+                    if (currentRowIndex >= rows.length) {
+                        alert('Достигнут конец таблицы. Не все данные были добавлены.');
+                        break;
+                    }
+                    
+                    const row = rows[currentRowIndex];
+                    if (item.deviceType && row.cells[3]) {
+                        row.cells[3].textContent = item.deviceType;
+                    }
+                    if (item.deviceNumber && row.cells[4]) {
+                        row.cells[4].textContent = item.deviceNumber;
+                    }
+                    if (item.range && row.cells[5]) {
+                        row.cells[5].textContent = item.range;
+                    }
+                    
+                    currentRowIndex++;
                 }
             }
             
             saveDataToLocalStorage();
-            alert(`Загружено ${maxRows} строк данных из Excel файла`);
         }
 
+        function parseExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                        
+                        const extractedData = extractDataFromExcel(jsonData);
+                        resolve(extractedData);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                reader.onerror = function(error) {
+                    reject(error);
+                };
+                
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function extractDataFromExcel(excelData) {
+            const extractedData = [];
+            
+            // Номера приборов (B4-23, G4-23, L4-23, B27-46, G27-46, L27-46)
+            const deviceNumbers = [];
+            // Типы приборов (C4-23, H4-23, M4-23, C27-46, H27-46, M27-46)
+            const deviceTypes = [];
+            // Диапазоны (E4-23, J4-23, O4-23, E27-46, J27-46, O27-46)
+            const ranges = [];
+            
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1]);
+                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2]);
+                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4]);
+            }
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6]);
+                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7]);
+                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9]);
+            }
+            for (let row = 3; row < 23; row++) {
+                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11]);
+                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12]);
+                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][1]) deviceNumbers.push(excelData[row][1]);
+                if (excelData[row] && excelData[row][2]) deviceTypes.push(excelData[row][2]);
+                if (excelData[row] && excelData[row][4]) ranges.push(excelData[row][4]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][6]) deviceNumbers.push(excelData[row][6]);
+                if (excelData[row] && excelData[row][7]) deviceTypes.push(excelData[row][7]);
+                if (excelData[row] && excelData[row][9]) ranges.push(excelData[row][9]);
+            }
+            for (let row = 26; row < 46; row++) {
+                if (excelData[row] && excelData[row][11]) deviceNumbers.push(excelData[row][11]);
+                if (excelData[row] && excelData[row][12]) deviceTypes.push(excelData[row][12]);
+                if (excelData[row] && excelData[row][14]) ranges.push(excelData[row][14]);
+            }
+            
+            // Объединяем данные в один массив объектов
+            const maxLength = Math.max(deviceNumbers.length, deviceTypes.length, ranges.length);
+            
+            for (let i = 0; i < maxLength; i++) {
+                extractedData.push({
+                    deviceNumber: deviceNumbers[i] || '',
+                    deviceType: deviceTypes[i] || '',
+                    range: ranges[i] || ''
+                });
+            }
+            
+            return extractedData;
+        }
+
+        // ================== ФУНКЦИИ ДЛЯ WORD ==================
+        function openWordUploadModal() {
+            const table = document.getElementById('outputTable');
+            if (!table) {
+                alert('Сначала создайте таблицу!');
+                return;
+            }
+            
+            document.getElementById('wordUploadModal').style.display = 'block';
+            document.getElementById('wordFileUploadContainer').innerHTML = `
+                <div class="file-upload-item">
+                    <label>Файл 1:</label>
+                    <input type="file" class="word-file-input" accept=".docx" data-index="0">
+                </div>
+            `;
+            nextWordFileIndex = 1;
+        }
+
+        function addWordFileInput() {
+            const container = document.getElementById('wordFileUploadContainer');
+            const newIndex = nextWordFileIndex++;
+            
+            const newFileInput = document.createElement('div');
+            newFileInput.className = 'file-upload-item';
+            newFileInput.innerHTML = `
+                <label>Файл ${newIndex + 1}:</label>
+                <input type="file" class="word-file-input" accept=".docx" data-index="${newIndex}">
+            `;
+            
+            container.appendChild(newFileInput);
+        }
+
+        function processWordFiles() {
+            const fileInputs = document.querySelectorAll('.word-file-input');
+            const files = Array.from(fileInputs)
+                .map(input => input.files[0])
+                .filter(file => file);
+            
+            if (files.length === 0) {
+                alert('Пожалуйста, выберите хотя бы один файл');
+                return;
+            }
+
+            processWordFilesSequentially(files)
+                .then(() => {
+                    alert('Все Word файлы успешно обработаны!');
+                    closeModal('wordUploadModal');
+                })
+                .catch(error => {
+                    console.error('Ошибка обработки Word файлов:', error);
+                    alert('Произошла ошибка при обработке Word файлов');
+                });
+        }
+
+        async function processWordFilesSequentially(files) {
+            const table = document.getElementById('outputTable');
+            if (!table) throw new Error('Таблица не найдена');
+            
+            const rows = table.querySelectorAll('tbody tr');
+            let currentRowIndex = 0;
+            
+            // Находим первую полностью пустую строку
+            for (let i = 0; i < rows.length; i++) {
+                const deviceTypeCell = rows[i].cells[3];
+                const deviceNumberCell = rows[i].cells[4];
+                
+                if (!deviceTypeCell.textContent.trim() && !deviceNumberCell.textContent.trim()) {
+                    currentRowIndex = i;
+                    break;
+                }
+                
+                if (i === rows.length - 1) {
+                    alert('Все строки в таблице уже заполнены!');
+                    return;
+                }
+            }
+            
+            for (const file of files) {
+                if (!file.name.endsWith('.docx')) {
+                    alert(`Файл "${file.name}" не является .docx файлом. Пропускаем.`);
+                    continue;
+                }
+                
+                const data = await parseDocxFile(file);
+                
+                // Заполняем таблицу данными из файла
+                for (const item of data) {
+                    if (currentRowIndex >= rows.length) {
+                        alert('Достигнут конец таблицы. Не все данные были добавлены.');
+                        break;
+                    }
+                    
+                    const row = rows[currentRowIndex];
+                    row.cells[3].textContent = item.meterModel; // Тип прибора
+                    row.cells[4].textContent = item.serialNumber; // Номер прибора
+                    
+                    currentRowIndex++;
+                }
+            }
+            
+            saveDataToLocalStorage();
+        }
+
+        function parseDocxFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const arrayBuffer = event.target.result;
+                    
+                    mammoth.convertToHtml({ arrayBuffer: arrayBuffer })
+                        .then(function(result) {
+                            const data = extractDataFromDocxHtml(result.value);
+                            resolve(data);
+                        })
+                        .catch(function(err) {
+                            reject(err);
+                        });
+                };
+                
+                reader.onerror = function(error) {
+                    reject(error);
+                };
+                
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function extractDataFromDocxHtml(html) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            const tables = tempDiv.getElementsByTagName('table');
+            if (tables.length === 0) {
+                return [];
+            }
+
+            const extractedData = [];
+            const table = tables[0];
+            const rows = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                
+                if (cells.length >= 3) {
+                    const serialNumber = cells[1].textContent.trim();
+                    const meterModel = cells[2].textContent.trim();
+                    
+                    if (serialNumber && meterModel) {
+                        extractedData.push({ serialNumber, meterModel });
+                    }
+                }
+            }
+
+            return extractedData;
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // ================== ВАШИ ОРИГИНАЛЬНЫЕ ФУНКЦИИ ==================
         function createTable() {
             const stickerNumber = parseInt(document.getElementById('stickerNumber').value);
             const size = document.getElementById('size').value;
@@ -388,7 +800,6 @@
                 return;
             }
 
-            // Определяем количество строк в зависимости от выбора
             if (size === "16") {
                 totalRows = 64;
             } else if (size === "10") {
@@ -478,7 +889,7 @@
             // 1. Заполняем номера приборов (если пустые - номером наклейки)
             rows.forEach(row => {
                 const stickerNum = row.cells[1].textContent;
-                const deviceNumCell = row.cells[4]; // Теперь ячейка 4 вместо 5
+                const deviceNumCell = row.cells[4];
 
                 if (!deviceNumCell.textContent.trim()) {
                     deviceNumCell.textContent = stickerNum;
@@ -488,14 +899,12 @@
 
             // 2. Заполняем пустые ячейки для каждого столбца (квитанции, типы, диапазоны)
             const columns = [
-                { index: 2, name: "квитанции", count: 0 }, // Номер квитанции
-                { index: 3, name: "типы приборов", count: 0 }, // Тип прибора
-                { index: 5, name: "диапазоны", count: 0 } // Диапазон (теперь ячейка 5 вместо 4)
+                { index: 2, name: "квитанции", count: 0 },
+                { index: 3, name: "типы приборов", count: 0 },
+                { index: 5, name: "диапазоны", count: 0 }
             ];
 
-            // Для каждого столбца выполняем заполнение
             columns.forEach(col => {
-                // Находим все заполненные позиции
                 const filledPositions = [];
                 rows.forEach((row, idx) => {
                     const cell = row.cells[col.index];
@@ -507,13 +916,11 @@
                     }
                 });
 
-                // Заполняем промежутки между одинаковыми значениями
                 for (let i = 0; i < filledPositions.length - 1; i++) {
                     const current = filledPositions[i];
                     const next = filledPositions[i + 1];
 
                     if (current.value === next.value) {
-                        // Заполняем все пустые ячейки между ними
                         for (let j = current.index + 1; j < next.index; j++) {
                             const cell = rows[j].cells[col.index];
                             if (!cell.textContent.trim()) {
@@ -525,7 +932,6 @@
                 }
             });
 
-            // Собираем статистику
             filledAccounts = columns[0].count;
             filledDeviceTypes = columns[1].count;
             filledRanges = columns[2].count;
@@ -563,7 +969,7 @@
             rows.forEach(row => {
                 const account = row.cells[2].textContent.trim();
                 const deviceType = row.cells[3].textContent.trim();
-                const range = row.cells[5].textContent.trim(); // Теперь ячейка 5 вместо 4
+                const range = row.cells[5].textContent.trim();
 
                 if (!account && !deviceType && !range) return;
 
@@ -674,31 +1080,24 @@
 
         function exportGroupToExcel(table, account, deviceType, range) {
             const wb = XLSX.utils.book_new();
+            const data = [['', '']];
 
-            // Создаем массив только с нужными колонками
-            const data = [
-                ['', ''] // Заголовки
-            ];
-
-            // Собираем данные только из нужных столбцов
             const rows = table.querySelectorAll('tbody tr');
             rows.forEach(row => {
                 const cells = row.cells;
                 data.push([
-                    cells[1].textContent, // Номер наклейки
-                    cells[4].textContent  // Номер прибора (теперь ячейка 4 вместо 5)
+                    cells[1].textContent,
+                    cells[4].textContent
                 ]);
             });
 
-            // Создаем лист из массива данных
             const ws = XLSX.utils.aoa_to_sheet(data);
             XLSX.utils.book_append_sheet(wb, ws, 'Наклейки');
 
-            // Исправляем имя файла (убираем спецсимволы)
             const fileName = `Наклейки_${account || 'Без номера'}_${deviceType || 'Без типа'}_${range || 'Без диапазона'}`
-                .replace(/[\/\\:*?"<>|]/g, '') // Удаляем запрещенные символы
-                .replace(/\s+/g, '_')          // Заменяем пробелы на подчеркивания
-                .substring(0, 100) + '.xlsx';  // Ограничиваем длину
+                .replace(/[\/\\:*?"<>|]/g, '')
+                .replace(/\s+/g, '_')
+                .substring(0, 100) + '.xlsx';
 
             XLSX.writeFile(wb, fileName);
         }
@@ -714,7 +1113,6 @@
             const stickerNumber = document.getElementById('stickerNumber').value;
             const size = document.getElementById('size').value;
 
-            // Исправляем имя файла
             const fileName = `Наклейки_${stickerNumber}_${size}мм.xlsx`
                 .replace(/[\/\\:*?"<>|]/g, '')
                 .replace(/\s+/g, '_');
@@ -744,7 +1142,6 @@
                 document.getElementById('size').value = localStorage.getItem('size') || '16';
                 document.getElementById('customCount').value = localStorage.getItem('customCount') || '100';
 
-                // Показываем/скрываем поле для пользовательского количества
                 const customCountContainer = document.getElementById('customCountContainer');
                 if (localStorage.getItem('size') === 'custom') {
                     customCountContainer.style.display = 'block';
@@ -776,10 +1173,20 @@
             document.getElementById('groupData').textContent = 'Сгруппировать';
             isGrouped = false;
             originalTableData = [];
-            
-            // СБРОС ЗНАЧЕНИЯ ФАЙЛОВОГО INPUT ПРИ ОЧИСТКЕ СТРАНИЦЫ
-            document.getElementById('excelFile').value = '';
         }
+
+        // Закрытие модального окна при клике вне его
+        window.onclick = function(event) {
+            const excelModal = document.getElementById('excelUploadModal');
+            const wordModal = document.getElementById('wordUploadModal');
+            
+            if (event.target === excelModal) {
+                closeModal('excelUploadModal');
+            }
+            if (event.target === wordModal) {
+                closeModal('wordUploadModal');
+            }
+        };
     </script>
 </body>
 </html>

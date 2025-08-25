@@ -268,7 +268,7 @@
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // Получаем все данные из лист
+                // Получаем все данные из листа
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
                 
                 // Заполняем таблицу данными из Excel
@@ -358,9 +358,9 @@
             for (let i = 0; i < maxRows; i++) {
                 const row = rows[i];
                 
-                // Номер прибора (ячейка 5)
-                if (deviceNumbers[i] && row.cells[5]) {
-                    row.cells[5].textContent = deviceNumbers[i];
+                // Номер прибора (теперь ячейка 4 вместо 5)
+                if (deviceNumbers[i] && row.cells[4]) {
+                    row.cells[4].textContent = deviceNumbers[i];
                 }
                 
                 // Тип прибора (ячейка 3)
@@ -368,9 +368,9 @@
                     row.cells[3].textContent = deviceTypes[i];
                 }
                 
-                // Диапазон (ячейка 4)
-                if (ranges[i] && row.cells[4]) {
-                    row.cells[4].textContent = ranges[i];
+                // Диапазон (теперь ячейка 5 вместо 4)
+                if (ranges[i] && row.cells[5]) {
+                    row.cells[5].textContent = ranges[i];
                 }
             }
             
@@ -412,8 +412,8 @@
                             <th>Номер наклейки</th>
                             <th>Номер квитанции</th>
                             <th>Тип прибора</th>
-                            <th>Диапазон</th>
                             <th>Номер прибора</th>
+                            <th>Диапазон</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -426,8 +426,8 @@
                         <td>${stickerNumber + i}</td>
                         <td class="editable account-number" contenteditable="true"></td>
                         <td class="editable device-type" contenteditable="true"></td>
-                        <td class="editable range" contenteditable="true"></td>
                         <td class="editable device-number" contenteditable="true"></td>
+                        <td class="editable range" contenteditable="true"></td>
                     </tr>
                 `;
             }
@@ -478,7 +478,7 @@
             // 1. Заполняем номера приборов (если пустые - номером наклейки)
             rows.forEach(row => {
                 const stickerNum = row.cells[1].textContent;
-                const deviceNumCell = row.cells[5];
+                const deviceNumCell = row.cells[4]; // Теперь ячейка 4 вместо 5
 
                 if (!deviceNumCell.textContent.trim()) {
                     deviceNumCell.textContent = stickerNum;
@@ -490,7 +490,7 @@
             const columns = [
                 { index: 2, name: "квитанции", count: 0 }, // Номер квитанции
                 { index: 3, name: "типы приборов", count: 0 }, // Тип прибора
-                { index: 4, name: "диапазоны", count: 0 } // Диапазон
+                { index: 5, name: "диапазоны", count: 0 } // Диапазон (теперь ячейка 5 вместо 4)
             ];
 
             // Для каждого столбца выполняем заполнение
@@ -563,7 +563,7 @@
             rows.forEach(row => {
                 const account = row.cells[2].textContent.trim();
                 const deviceType = row.cells[3].textContent.trim();
-                const range = row.cells[4].textContent.trim();
+                const range = row.cells[5].textContent.trim(); // Теперь ячейка 5 вместо 4
 
                 if (!account && !deviceType && !range) return;
 
@@ -609,8 +609,8 @@
                                 <th>Номер наклейки</th>
                                 <th>Номер квитанции</th>
                                 <th>Тип прибора</th>
-                                <th>Диапазон</th>
                                 <th>Номер прибора</th>
+                                <th>Диапазон</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -649,15 +649,15 @@
                             <th>Номер наклейки</th>
                             <th>Номер квитанции</th>
                             <th>Тип прибора</th>
-                            <th>Диапазон</th>
                             <th>Номер прибора</th>
+                            <th>Диапазон</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${originalTableData.slice(1).map(row => `
                             <tr>
                                 ${row.map((cell, i) => 
-                                    i > 0 ? `<td class="${i === 2 ? 'account-number' : i === 3 ? 'device-type' : i === 4 ? 'range' : i === 5 ? 'device-number' : ''} ${i > 1 ? 'editable' : ''}" ${i > 1 ? 'contenteditable="true"' : ''}>${cell}</td>` 
+                                    i > 0 ? `<td class="${i === 2 ? 'account-number' : i === 3 ? 'device-type' : i === 4 ? 'device-number' : i === 5 ? 'range' : ''} ${i > 1 ? 'editable' : ''}" ${i > 1 ? 'contenteditable="true"' : ''}>${cell}</td>` 
                                     : `<td>${cell}</td>`
                                 ).join('')}
                             </tr>
@@ -686,7 +686,7 @@
                 const cells = row.cells;
                 data.push([
                     cells[1].textContent, // Номер наклейки
-                    cells[5].textContent  // Номер прибора
+                    cells[4].textContent  // Номер прибора (теперь ячейка 4 вместо 5)
                 ]);
             });
 
@@ -776,6 +776,9 @@
             document.getElementById('groupData').textContent = 'Сгруппировать';
             isGrouped = false;
             originalTableData = [];
+            
+            // СБРОС ЗНАЧЕНИЯ ФАЙЛОВОГО INPUT ПРИ ОЧИСТКЕ СТРАНИЦЫ
+            document.getElementById('excelFile').value = '';
         }
     </script>
 </body>

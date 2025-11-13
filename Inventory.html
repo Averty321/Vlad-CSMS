@@ -526,6 +526,7 @@
                         <div>
                             <button class="btn btn-primary" id="add-main-btn">Добавить основное средство</button>
                             <button class="btn btn-info" id="import-main-btn">Импорт из Excel</button>
+                            <button class="btn btn-warning" id="download-main-template">Скачать шаблон</button>
                         </div>
                         <div class="filters">
                             <input type="text" class="filter-input" id="main-filter-name" placeholder="Фильтр по наименованию">
@@ -561,6 +562,7 @@
                         <div>
                             <button class="btn btn-primary" id="add-lowvalue-btn">Добавить малоценку</button>
                             <button class="btn btn-info" id="import-lowvalue-btn">Импорт из Excel</button>
+                            <button class="btn btn-warning" id="download-lowvalue-template">Скачать шаблон</button>
                         </div>
                         <div class="filters">
                             <input type="text" class="filter-input" id="lowvalue-filter-name" placeholder="Фильтр по наименованию">
@@ -722,16 +724,18 @@
                 <div class="excel-format">
                     <h4>Формат Excel файла:</h4>
                     <ul>
-                        <li><strong>A:</strong> Порядковый номер</li>
-                        <li><strong>B:</strong> Наименование</li>
-                        <li><strong>C:</strong> Номенклатурный номер</li>
+                        <li><strong>A:</strong> Порядковый номер (авто)</li>
+                        <li><strong>B:</strong> Наименование (обязательно)</li>
+                        <li><strong>C:</strong> Номенклатурный номер (обязательно)</li>
                         <li><strong>D:</strong> Количество по списку</li>
                         <li><strong>E:</strong> Количество по факту</li>
                         <li><strong>F:</strong> Кабинет</li>
                         <li><strong>G:</strong> Наклейка (Да/Нет)</li>
                         <li><strong>H:</strong> Статус (Активен/На списание/Списан)</li>
+                        <li><strong>I:</strong> Расположение</li>
                     </ul>
-                    <p><strong>Примечание:</strong> Первая строка файла должна содержать заголовки столбцов.</p>
+                    <p><strong>Примечание:</strong> Первая строка должна содержать заголовки. Обязательные поля: Наименование и Номенклатурный номер.</p>
+                    <button type="button" class="btn btn-info" id="download-template-btn">Скачать шаблон</button>
                 </div>
                 <form id="import-form">
                     <input type="hidden" id="import-type">
@@ -893,7 +897,14 @@
         
         // Генерация нового ID
         function generateId(type) {
-            const maxId = inventoryData[type].reduce((max, item) => Math.max(max, item.id), 0);
+            if (!inventoryData[type] || inventoryData[type].length === 0) {
+                return 1;
+            }
+            
+            const maxId = inventoryData[type].reduce((max, item) => {
+                return item && item.id ? Math.max(max, item.id) : max;
+            }, 0);
+            
             return maxId + 1;
         }
         
@@ -1288,7 +1299,7 @@
             document.getElementById('import-modal').style.display = 'flex';
         }
         
-        // ПРОСТАЯ И РАБОЧАЯ ФУНКЦИЯ ИМПОРТА
+        // УЛУЧШЕННАЯ ФУНКЦИЯ ИМПОРТА
         function handleExcelImport(event) {
             event.preventDefault();
             if (!isAuthenticated) return;
@@ -1302,82 +1313,217 @@
                 return;
             }
             
+            // Показываем индикатор загрузки
+            const importBtn = document.querySelector('#import-form button[type="submit"]');
+            const originalText = importBtn.textContent;
+            importBtn.textContent = 'Импорт...';
+            importBtn.disabled = true;
+            
             const reader = new FileReader();
             
             reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Проверяем, есть ли листы в файле
+                    if (workbook.SheetNames.length === 0) {
+                        throw new Error('Файл не содержит листов');
+                    }
+                    
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    
+                    // Преобразуем в JSON с заголовками
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
-                    // Пропускаем заголовок
-                    const rows = jsonData.slice(1);
+                    if (jsonData.length === 0) {
+                        throw new Error('Файл пустой');
+                    }
+                    
+                    console.log('Данные из Excel:', jsonData);
+                    
+                    // Определяем, есть ли заголовки (проверяем первую строку)
+                    const hasHeaders = isHeaderRow(jsonData[0]);
+                    const startRow = hasHeaders ? 1 : 0;
+                    const rows = jsonData.slice(startRow);
                     
                     let importedCount = 0;
+                    let errors = [];
                     
-                    rows.forEach((row) => {
-                        // Проверяем, что есть достаточно данных
-                        if (row.length >= 3) {
-                            const name = row[1] || '';
-                            const inventoryNumber = row[2] || '';
-                            
-                            if (name && inventoryNumber) {
-                                const id = generateId(type);
-                                const quantityList = parseInt(row[3]) || 0;
-                                const quantityFact = parseInt(row[4]) || quantityList;
-                                const cabinet = row[5] || '';
-                                const hasStickerText = (row[6] || 'да').toString().toLowerCase();
-                                const statusText = (row[7] || 'активен').toString().toLowerCase();
-                                
-                                const hasSticker = hasStickerText === 'да' || hasStickerText === 'есть' || hasStickerText === 'true' || hasStickerText === '1';
-                                
-                                let status = 'active';
-                                if (statusText.includes('списан')) {
-                                    status = 'writtenoff';
-                                } else if (statusText.includes('списание')) {
-                                    status = 'writeoff';
-                                }
-                                
-                                // Добавляем новый элемент
-                                inventoryData[type].push({
-                                    id,
-                                    name,
-                                    inventoryNumber,
-                                    quantityList,
-                                    quantityFact,
-                                    cabinet,
-                                    location: 'Общее',
-                                    hasSticker,
-                                    status
-                                });
-                                
-                                importedCount++;
+                    rows.forEach((row, index) => {
+                        try {
+                            // Пропускаем пустые строки
+                            if (!row || row.length === 0 || !row.some(cell => cell !== null && cell !== '')) {
+                                return;
                             }
+                            
+                            // Обрабатываем строку в зависимости от формата
+                            const processedRow = processExcelRow(row);
+                            
+                            const name = processedRow.name;
+                            const inventoryNumber = processedRow.inventoryNumber;
+                            
+                            if (!name || !inventoryNumber) {
+                                errors.push(`Строка ${startRow + index + 1}: Отсутствует название или номер`);
+                                return;
+                            }
+                            
+                            const id = generateId(type);
+                            const quantityList = parseInt(processedRow.quantityList) || 1;
+                            const quantityFact = parseInt(processedRow.quantityFact) || quantityList;
+                            const cabinet = processedRow.cabinet || '';
+                            const location = processedRow.location || 'Общее';
+                            
+                            const hasStickerText = (processedRow.hasSticker || 'да').toString().toLowerCase();
+                            const hasSticker = hasStickerText === 'да' || hasStickerText === 'есть' || 
+                                             hasStickerText === 'true' || hasStickerText === '1' || 
+                                             hasStickerText === 'yes';
+                            
+                            const statusText = (processedRow.status || 'активен').toString().toLowerCase();
+                            let status = 'active';
+                            if (statusText.includes('списан') || statusText === 'writtenoff') {
+                                status = 'writtenoff';
+                            } else if (statusText.includes('списание') || statusText === 'writeoff') {
+                                status = 'writeoff';
+                            }
+                            
+                            // Добавляем новый элемент
+                            inventoryData[type].push({
+                                id,
+                                name: name.toString().trim(),
+                                inventoryNumber: inventoryNumber.toString().trim(),
+                                quantityList,
+                                quantityFact,
+                                cabinet: cabinet.toString().trim(),
+                                location: location.toString().trim(),
+                                hasSticker,
+                                status
+                            });
+                            
+                            importedCount++;
+                            
+                        } catch (error) {
+                            errors.push(`Строка ${startRow + index + 1}: ${error.message}`);
                         }
                     });
+                    
+                    // Восстанавливаем кнопку
+                    importBtn.textContent = originalText;
+                    importBtn.disabled = false;
                     
                     if (importedCount > 0) {
                         saveData();
                         renderTables();
-                        alert(`Импорт завершен! Успешно импортировано: ${importedCount} записей`);
+                        
+                        let message = `Импорт завершен! Успешно импортировано: ${importedCount} записей`;
+                        if (errors.length > 0) {
+                            message += `\n\nОшибки (${errors.length}):\n${errors.slice(0, 5).join('\n')}`;
+                            if (errors.length > 5) {
+                                message += `\n... и еще ${errors.length - 5} ошибок`;
+                            }
+                        }
+                        alert(message);
                     } else {
-                        alert('Не удалось импортировать данные. Проверьте формат файла.');
+                        let errorMessage = 'Не удалось импортировать данные.';
+                        if (errors.length > 0) {
+                            errorMessage += '\n\nОшибки:\n' + errors.slice(0, 10).join('\n');
+                        }
+                        alert(errorMessage);
                     }
                     
                     closeImportModal();
                     
                 } catch (error) {
-                    console.error('Ошибка:', error);
-                    alert('Ошибка при обработке файла. Убедитесь, что файл имеет правильный формат.');
+                    console.error('Ошибка импорта:', error);
+                    
+                    // Восстанавливаем кнопку
+                    importBtn.textContent = originalText;
+                    importBtn.disabled = false;
+                    
+                    alert('Ошибка при обработке файла: ' + error.message + 
+                          '\n\nУбедитесь, что файл:\n- Имеет формат .xlsx или .xls\n- Не поврежден\n- Содержит данные в правильном формате');
                 }
             };
             
             reader.onerror = function() {
-                alert('Ошибка при чтении файла');
+                // Восстанавливаем кнопку
+                importBtn.textContent = originalText;
+                importBtn.disabled = false;
+                
+                alert('Ошибка при чтении файла. Файл может быть поврежден.');
             };
             
             reader.readAsArrayBuffer(file);
+        }
+        
+        // Вспомогательные функции для импорта
+        function isHeaderRow(row) {
+            if (!row || row.length === 0) return false;
+            
+            const firstCell = row[0] ? row[0].toString().toLowerCase() : '';
+            const headerIndicators = ['№', 'номер', 'num', 'id', 'п/п', 'n'];
+            
+            return headerIndicators.some(indicator => 
+                firstCell.includes(indicator.toLowerCase())
+            );
+        }
+        
+        function processExcelRow(row) {
+            // Обрабатываем строку в зависимости от количества столбцов
+            if (row.length >= 8) {
+                // Полный формат: A-H
+                return {
+                    id: row[0],
+                    name: row[1],
+                    inventoryNumber: row[2],
+                    quantityList: row[3],
+                    quantityFact: row[4],
+                    cabinet: row[5],
+                    hasSticker: row[6],
+                    status: row[7],
+                    location: row[8] || 'Общее'
+                };
+            } else if (row.length >= 3) {
+                // Минимальный формат: только обязательные поля
+                return {
+                    name: row[0] || row[1],
+                    inventoryNumber: row[1] || row[2],
+                    quantityList: row[2] || row[3] || 1,
+                    quantityFact: row[3] || row[4] || 1,
+                    cabinet: row[4] || row[5] || '',
+                    hasSticker: row[5] || row[6] || 'да',
+                    status: row[6] || row[7] || 'активен',
+                    location: 'Общее'
+                };
+            } else {
+                throw new Error('Недостаточно данных в строке');
+            }
+        }
+        
+        // Функция для создания шаблона Excel
+        function downloadExcelTemplate(type) {
+            if (!isAuthenticated) return;
+            
+            const headers = [
+                ['№', 'Наименование', 'Номенклатурный номер', 'Количество по списку', 
+                 'Количество по факту', 'Кабинет', 'Наклейка', 'Статус', 'Расположение']
+            ];
+            
+            // Пример данных
+            const exampleData = [
+                [1, 'Компьютер', 'PC-001', 1, 1, '101', 'Да', 'Активен', 'Стол'],
+                [2, 'Монитор', 'MON-002', 1, 1, '101', 'Да', 'Активен', 'Стол'],
+                [3, 'Принтер', 'PRN-003', 1, 1, '102', 'Нет', 'На списание', 'Угол']
+            ];
+            
+            const data = [...headers, ...exampleData];
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Шаблон');
+            
+            const fileName = type === 'main' ? 'шаблон_основные_средства.xlsx' : 'шаблон_малоценка.xlsx';
+            XLSX.writeFile(wb, fileName);
         }
         
         // Открытие модального окна для редактирования
@@ -1594,6 +1740,14 @@
             
             document.getElementById('import-main-btn').addEventListener('click', () => openImportModal('main'));
             document.getElementById('import-lowvalue-btn').addEventListener('click', () => openImportModal('lowvalue'));
+            
+            document.getElementById('download-main-template').addEventListener('click', () => downloadExcelTemplate('main'));
+            document.getElementById('download-lowvalue-template').addEventListener('click', () => downloadExcelTemplate('lowvalue'));
+            
+            document.getElementById('download-template-btn').addEventListener('click', function() {
+                const type = document.getElementById('import-type').value;
+                downloadExcelTemplate(type);
+            });
             
             document.getElementById('item-form').addEventListener('submit', saveItem);
             document.getElementById('import-form').addEventListener('submit', handleExcelImport);

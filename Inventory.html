@@ -9,9 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
-    <!-- Библиотека для чтения Excel -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
     <style>
         :root {
             --primary-color: #3498db;
@@ -36,76 +33,6 @@
             line-height: 1.6;
         }
         
-        /* Стили для экрана входа */
-        #login-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        }
-        
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-        }
-        
-        .login-container h2 {
-            margin-bottom: 20px;
-            color: var(--dark-color);
-        }
-        
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .login-input {
-            padding: 12px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .login-input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
-        
-        .login-btn {
-            padding: 12px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        .login-btn:hover {
-            background: #2980b9;
-        }
-        
-        .login-error {
-            color: var(--danger-color);
-            margin-top: 10px;
-            display: none;
-        }
-        
-        /* Основные стили приложения */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -119,26 +46,6 @@
             margin-bottom: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: relative;
-        }
-        
-        .user-info {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .logout-btn {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
         }
         
         h1 {
@@ -219,11 +126,6 @@
             color: white;
         }
         
-        .btn-info {
-            background-color: #17a2b8;
-            color: white;
-        }
-        
         .btn:hover {
             opacity: 0.9;
         }
@@ -294,19 +196,19 @@
         
         /* Стили для выделения строк */
         .no-sticker {
-            background-color: #ffebee !important;
+            background-color: #ffebee !important; /* Красный для отсутствия наклейки */
         }
         
         .more-fact {
-            background-color: #fff8e1 !important;
+            background-color: #fff8e1 !important; /* Желтый для излишка по факту */
         }
         
         .less-fact {
-            background-color: #ffebee !important;
+            background-color: #ffebee !important; /* Красный для недостачи по факту */
         }
         
         .writeoff-status {
-            background-color: #ffe0b2 !important;
+            background-color: #ffe0b2 !important; /* Оранжевый для статуса "На списание" */
         }
         
         .status-badge {
@@ -362,7 +264,7 @@
             padding: 20px;
             border-radius: 5px;
             width: 90%;
-            max-width: 600px;
+            max-width: 500px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         
@@ -432,13 +334,6 @@
             font-weight: bold;
         }
         
-        .location-header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 10px 15px;
-            font-weight: bold;
-        }
-        
         .location-table {
             width: 100%;
             margin-bottom: 0;
@@ -455,293 +350,265 @@
             color: var(--dark-color);
         }
         
-        .writeoff-modal-content {
-            max-width: 400px;
-        }
-        
-        .excel-format {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 15px;
-            font-size: 0.9em;
-        }
-        
-        .excel-format h4 {
-            margin-bottom: 10px;
-            color: var(--dark-color);
-        }
-        
-        .excel-format ul {
-            list-style-type: none;
-            padding-left: 0;
-        }
-        
-        .excel-format li {
-            margin-bottom: 5px;
-            padding: 5px;
-            background-color: white;
-            border-radius: 3px;
-        }
-        
-        .file-input-container {
-            margin-bottom: 15px;
-        }
-        
-        .file-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-        }
-        
         @media (max-width: 1024px) {
             .tables-container {
                 flex-direction: column;
-            }
-            
-            .user-info {
-                position: static;
-                transform: none;
-                justify-content: center;
-                margin-top: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Экран входа -->
-    <div id="login-screen">
-        <div class="login-container">
-            <h2>Система инвентаризации</h2>
-            <p>Для доступа введите пароль</p>
-            <form class="login-form" id="login-form">
-                <input type="password" class="login-input" id="password-input" placeholder="Введите пароль" required>
-                <button type="submit" class="login-btn">Войти</button>
-                <div class="login-error" id="login-error">Неверный пароль. Попробуйте снова.</div>
+    <header>
+        <div class="container">
+            <h1>Система инвентаризации имущества</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="inventory">Инвентаризация</div>
+            <div class="tab" data-tab="written-off">Списанное имущество</div>
+            <div class="tab" data-tab="cabinet-view">Просмотр по кабинетам</div>
+        </div>
+        
+        <div id="inventory-tab" class="tab-content">
+            <div class="inventory-section">
+                <h2>Основные средства</h2>
+                <div class="controls">
+                    <button class="btn btn-primary" id="add-main-btn">Добавить основное средство</button>
+                    <div class="filters">
+                        <input type="text" class="filter-input" id="main-filter-name" placeholder="Фильтр по наименованию">
+                        <input type="text" class="filter-input" id="main-filter-invnum" placeholder="Фильтр по инв. номеру">
+                        <input type="text" class="filter-input" id="main-filter-cabinet" placeholder="Фильтр по кабинету">
+                    </div>
+                </div>
+                
+                <div class="tables-container">
+                    <div class="table-section">
+                        <h3>По списку</h3>
+                        <table id="main-list-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="id">№</th>
+                                    <th data-sort="name">Наименование</th>
+                                    <th data-sort="inventoryNumber">Инв. номер</th>
+                                    <th data-sort="quantityList">Кол-во (список)</th>
+                                    <th data-sort="cabinet">Кабинет</th>
+                                    <th data-sort="location">Расположение</th>
+                                    <th data-sort="hasSticker">Наклейка</th>
+                                    <th data-sort="status">Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="main-list-table-body">
+                                <!-- Данные будут заполнены через JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="table-section">
+                        <h3>По факту</h3>
+                        <table id="main-fact-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="id">№</th>
+                                    <th data-sort="name">Наименование</th>
+                                    <th data-sort="inventoryNumber">Инв. номер</th>
+                                    <th data-sort="quantityFact">Кол-во (факт)</th>
+                                    <th data-sort="cabinet">Кабинет</th>
+                                    <th data-sort="location">Расположение</th>
+                                    <th data-sort="hasSticker">Наклейка</th>
+                                    <th data-sort="status">Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="main-fact-table-body">
+                                <!-- Данные будут заполнены через JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="inventory-section">
+                <h2>Малоценные средства</h2>
+                <div class="controls">
+                    <button class="btn btn-primary" id="add-lowvalue-btn">Добавить малоценку</button>
+                    <div class="filters">
+                        <input type="text" class="filter-input" id="lowvalue-filter-name" placeholder="Фильтр по наименованию">
+                        <input type="text" class="filter-input" id="lowvalue-filter-invnum" placeholder="Фильтр по инв. номеру">
+                        <input type="text" class="filter-input" id="lowvalue-filter-cabinet" placeholder="Фильтр по кабинету">
+                    </div>
+                </div>
+                
+                <div class="tables-container">
+                    <div class="table-section">
+                        <h3>По списку</h3>
+                        <table id="lowvalue-list-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="id">№</th>
+                                    <th data-sort="name">Наименование</th>
+                                    <th data-sort="inventoryNumber">Инв. номер</th>
+                                    <th data-sort="quantityList">Кол-во (список)</th>
+                                    <th data-sort="cabinet">Кабинет</th>
+                                    <th data-sort="location">Расположение</th>
+                                    <th data-sort="hasSticker">Наклейка</th>
+                                    <th data-sort="status">Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowvalue-list-table-body">
+                                <!-- Данные будут заполнены через JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="table-section">
+                        <h3>По факту</h3>
+                        <table id="lowvalue-fact-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="id">№</th>
+                                    <th data-sort="name">Наименование</th>
+                                    <th data-sort="inventoryNumber">Инв. номер</th>
+                                    <th data-sort="quantityFact">Кол-во (факт)</th>
+                                    <th data-sort="cabinet">Кабинет</th>
+                                    <th data-sort="location">Расположение</th>
+                                    <th data-sort="hasSticker">Наклейка</th>
+                                    <th data-sort="status">Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowvalue-fact-table-body">
+                                <!-- Данные будут заполнены через JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="written-off-tab" class="tab-content" style="display: none;">
+            <div class="inventory-section written-off-section">
+                <h2>Списанные основные средства</h2>
+                <table id="written-off-main-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Наименование</th>
+                            <th>Инв. номер</th>
+                            <th>Кол-во (список)</th>
+                            <th>Кол-во (факт)</th>
+                            <th>Кабинет</th>
+                            <th>Расположение</th>
+                            <th>Наклейка</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="written-off-main-body">
+                        <!-- Данные будут заполнены через JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="inventory-section written-off-section">
+                <h2>Списанные малоценные средства</h2>
+                <table id="written-off-lowvalue-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Наименование</th>
+                            <th>Инв. номер</th>
+                            <th>Кол-во (список)</th>
+                            <th>Кол-во (факт)</th>
+                            <th>Кабинет</th>
+                            <th>Расположение</th>
+                            <th>Наклейка</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="written-off-lowvalue-body">
+                        <!-- Данные будут заполнены через JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="cabinet-view-tab" class="tab-content" style="display: none;">
+            <div class="cabinet-view" id="cabinet-view-container">
+                <div class="loading">Загрузка данных...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно для добавления/редактирования -->
+    <div id="item-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Добавить материальную ценность</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="item-form">
+                <input type="hidden" id="item-id">
+                <input type="hidden" id="item-type">
+                
+                <div class="form-group">
+                    <label for="item-name">Наименование:</label>
+                    <input type="text" id="item-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-inventory-number">Инвентарный номер:</label>
+                    <input type="text" id="item-inventory-number" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-quantity-list">Количество по списку:</label>
+                    <input type="number" id="item-quantity-list" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-quantity-fact">Количество по факту:</label>
+                    <input type="number" id="item-quantity-fact" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-cabinet">Кабинет:</label>
+                    <input type="text" id="item-cabinet" placeholder="Оставьте пустым, если нет кабинета">
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-location">Расположение:</label>
+                    <input type="text" id="item-location" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-has-sticker">Наклейка со штрих-кодом:</label>
+                    <select id="item-has-sticker" required>
+                        <option value="true">Есть</option>
+                        <option value="false">Нет</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-status">Статус:</label>
+                    <select id="item-status" required>
+                        <option value="active">Активен</option>
+                        <option value="writeoff">На списание</option>
+                        <option value="writtenoff">Списан</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-danger" id="cancel-btn">Отмена</button>
+                    <button type="submit" class="btn btn-success">Сохранить</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- Основное приложение (скрыто до входа) -->
-    <div id="app-content" style="display: none;">
-        <header>
-            <div class="container">
-                <h1>Система инвентаризации имущества</h1>
-                <div class="user-info">
-                    <span>Пользователь: Администратор</span>
-                    <button class="logout-btn" id="logout-btn">Выйти</button>
-                </div>
-            </div>
-        </header>
-        
-        <div class="container">
-            <div class="tabs">
-                <div class="tab active" data-tab="inventory">Инвентаризация</div>
-                <div class="tab" data-tab="written-off">Списанное имущество</div>
-                <div class="tab" data-tab="cabinet-view">Просмотр по кабинетам</div>
-            </div>
-            
-            <div id="inventory-tab" class="tab-content">
-                <!-- Остальное содержимое приложения остается без изменений -->
-                <div class="inventory-section">
-                    <h2>Основные средства</h2>
-                    <div class="controls">
-                        <div>
-                            <button class="btn btn-primary" id="add-main-btn">Добавить основное средство</button>
-                            <button class="btn btn-info" id="import-main-btn">Импорт из Excel</button>
-                        </div>
-                        <div class="filters">
-                            <input type="text" class="filter-input" id="main-filter-name" placeholder="Фильтр по наименованию">
-                            <input type="text" class="filter-input" id="main-filter-invnum" placeholder="Фильтр по номенк. номеру">
-                            <input type="text" class="filter-input" id="main-filter-cabinet" placeholder="Фильтр по кабинету">
-                        </div>
-                    </div>
-                    
-                    <div class="tables-container">
-                        <div class="table-section">
-                            <h3>По списку</h3>
-                            <table id="main-list-table">
-                                <thead>
-                                    <tr>
-                                        <th data-sort="id">№</th>
-                                        <th data-sort="name">Наименование</th>
-                                        <th data-sort="inventoryNumber">Номенк. номер</th>
-                                        <th data-sort="quantityList">Кол-во (список)</th>
-                                        <th data-sort="cabinet">Кабинет</th>
-                                        <th data-sort="location">Расположение</th>
-                                        <th data-sort="hasSticker">Наклейка</th>
-                                        <th data-sort="status">Статус</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="main-list-table-body">
-                                    <!-- Данные будут заполнены через JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="table-section">
-                            <h3>По факту</h3>
-                            <table id="main-fact-table">
-                                <thead>
-                                    <tr>
-                                        <th data-sort="id">№</th>
-                                        <th data-sort="name">Наименование</th>
-                                        <th data-sort="inventoryNumber">Номенк. номер</th>
-                                        <th data-sort="quantityFact">Кол-во (факт)</th>
-                                        <th data-sort="cabinet">Кабинет</th>
-                                        <th data-sort="location">Расположение</th>
-                                        <th data-sort="hasSticker">Наклейка</th>
-                                        <th data-sort="status">Статус</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="main-fact-table-body">
-                                    <!-- Данные будут заполнены через JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="inventory-section">
-                    <h2>Малоценные средства</h2>
-                    <div class="controls">
-                        <div>
-                            <button class="btn btn-primary" id="add-lowvalue-btn">Добавить малоценку</button>
-                            <button class="btn btn-info" id="import-lowvalue-btn">Импорт из Excel</button>
-                        </div>
-                        <div class="filters">
-                            <input type="text" class="filter-input" id="lowvalue-filter-name" placeholder="Фильтр по наименованию">
-                            <input type="text" class="filter-input" id="lowvalue-filter-invnum" placeholder="Фильтр по номенк. номеру">
-                            <input type="text" class="filter-input" id="lowvalue-filter-cabinet" placeholder="Фильтр по кабинету">
-                        </div>
-                    </div>
-                    
-                    <div class="tables-container">
-                        <div class="table-section">
-                            <h3>По списку</h3>
-                            <table id="lowvalue-list-table">
-                                <thead>
-                                    <tr>
-                                        <th data-sort="id">№</th>
-                                        <th data-sort="name">Наименование</th>
-                                        <th data-sort="inventoryNumber">Номенк. номер</th>
-                                        <th data-sort="quantityList">Кол-во (список)</th>
-                                        <th data-sort="cabinet">Кабинет</th>
-                                        <th data-sort="location">Расположение</th>
-                                        <th data-sort="hasSticker">Наклейка</th>
-                                        <th data-sort="status">Статус</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="lowvalue-list-table-body">
-                                    <!-- Данные будут заполнены через JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="table-section">
-                            <h3>По факту</h3>
-                            <table id="lowvalue-fact-table">
-                                <thead>
-                                    <tr>
-                                        <th data-sort="id">№</th>
-                                        <th data-sort="name">Наименование</th>
-                                        <th data-sort="inventoryNumber">Номенк. номер</th>
-                                        <th data-sort="quantityFact">Кол-во (факт)</th>
-                                        <th data-sort="cabinet">Кабинет</th>
-                                        <th data-sort="location">Расположение</th>
-                                        <th data-sort="hasSticker">Наклейка</th>
-                                        <th data-sort="status">Статус</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="lowvalue-fact-table-body">
-                                    <!-- Данные будут заполнены через JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="written-off-tab" class="tab-content" style="display: none;">
-                <div class="inventory-section written-off-section">
-                    <h2>Списанные основные средства</h2>
-                    <table id="written-off-main-table">
-                        <thead>
-                            <tr>
-                                <th>№</th>
-                                <th>Наименование</th>
-                                <th>Номенк. номер</th>
-                                <th>Кол-во (список)</th>
-                                <th>Кол-во (факт)</th>
-                                <th>Кабинет</th>
-                                <th>Расположение</th>
-                                <th>Наклейка</th>
-                                <th>Статус</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody id="written-off-main-body">
-                            <!-- Данные будут заполнены через JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="inventory-section written-off-section">
-                    <h2>Списанные малоценные средства</h2>
-                    <table id="written-off-lowvalue-table">
-                        <thead>
-                            <tr>
-                                <th>№</th>
-                                <th>Наименование</th>
-                                <th>Номенк. номер</th>
-                                <th>Кол-во (список)</th>
-                                <th>Кол-во (факт)</th>
-                                <th>Кабинет</th>
-                                <th>Расположение</th>
-                                <th>Наклейка</th>
-                                <th>Статус</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody id="written-off-lowvalue-body">
-                            <!-- Данные будут заполнены через JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div id="cabinet-view-tab" class="tab-content" style="display: none;">
-                <div class="cabinet-view" id="cabinet-view-container">
-                    <div class="loading">Загрузка данных...</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Модальные окна (остаются без изменений) -->
-        <div id="item-modal" class="modal">
-            <!-- Содержимое модального окна -->
-        </div>
-
-        <div id="import-modal" class="modal">
-            <!-- Содержимое модального окна импорта -->
-        </div>
-    </div>
-
     <script>
-        // Конфигурация пароля (можно изменить на любой нужный пароль)
-        const APP_PASSWORD = "2150ТТИ";
-        const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 минут в миллисекундах
-        
-        // Переменные для управления сессией
-        let inactivityTimer;
-        let isAuthenticated = false;
-        
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
@@ -764,95 +631,6 @@
             lowvalue: []
         };
         
-        // Функции для управления аутентификацией
-        function checkAuthentication() {
-            const savedSession = localStorage.getItem('inventory_session');
-            if (savedSession) {
-                const session = JSON.parse(savedSession);
-                // Проверяем, не истекла ли сессия
-                if (Date.now() - session.loginTime < INACTIVITY_TIMEOUT) {
-                    isAuthenticated = true;
-                    showApp();
-                    resetInactivityTimer();
-                    return true;
-                } else {
-                    localStorage.removeItem('inventory_session');
-                }
-            }
-            showLogin();
-            return false;
-        }
-        
-        function authenticate(password) {
-            if (password === APP_PASSWORD) {
-                isAuthenticated = true;
-                // Сохраняем сессию
-                localStorage.setItem('inventory_session', JSON.stringify({
-                    loginTime: Date.now()
-                }));
-                showApp();
-                resetInactivityTimer();
-                return true;
-            }
-            return false;
-        }
-        
-        function logout() {
-            isAuthenticated = false;
-            localStorage.removeItem('inventory_session');
-            showLogin();
-            clearTimeout(inactivityTimer);
-        }
-        
-        function showLogin() {
-            document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('app-content').style.display = 'none';
-        }
-        
-        function showApp() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-content').style.display = 'block';
-            loadData();
-        }
-        
-        function resetInactivityTimer() {
-            clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                alert('Сессия истекла из-за неактивности. Пожалуйста, войдите снова.');
-                logout();
-            }, INACTIVITY_TIMEOUT);
-        }
-        
-        // Обработчики событий для отслеживания активности
-        function setupActivityTracking() {
-            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-            events.forEach(event => {
-                document.addEventListener(event, resetInactivityTimer, true);
-            });
-        }
-        
-        // Обработчик входа
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const password = document.getElementById('password-input').value;
-            const errorElement = document.getElementById('login-error');
-            
-            if (authenticate(password)) {
-                errorElement.style.display = 'none';
-                document.getElementById('password-input').value = '';
-            } else {
-                errorElement.style.display = 'block';
-                document.getElementById('password-input').value = '';
-                document.getElementById('password-input').focus();
-            }
-        });
-        
-        // Обработчик выхода
-        document.getElementById('logout-btn').addEventListener('click', logout);
-        
-        // Остальной код приложения (loadData, saveData, renderTables и т.д.)
-        // остается без изменений, как в предыдущей версии
-        
         // Загрузка данных из Firebase
         function loadData() {
             const loadingElement = document.querySelector('.loading');
@@ -866,6 +644,7 @@
                     if (data) {
                         inventoryData = data;
                     } else {
+                        // Если данных нет, инициализируем пустыми массивами
                         inventoryData = {
                             main: [],
                             lowvalue: []
@@ -898,52 +677,545 @@
                 });
         }
         
-        // Остальные функции приложения (generateId, renderTables, и т.д.)
-        // ... (код из предыдущей версии)
+        // Генерация нового ID
+        function generateId(type) {
+            const maxId = inventoryData[type].reduce((max, item) => Math.max(max, item.id), 0);
+            return maxId + 1;
+        }
+        
+        // Отображение таблиц
+        function renderTables() {
+            renderMainTables();
+            renderLowvalueTables();
+            renderWrittenOffTables();
+            renderCabinetView();
+        }
+        
+        // Отображение таблиц основных средств (только активные и на списание)
+        function renderMainTables() {
+            renderTable('main', 'list');
+            renderTable('main', 'fact');
+        }
+        
+        // Отображение таблиц малоценки (только активные и на списание)
+        function renderLowvalueTables() {
+            renderTable('lowvalue', 'list');
+            renderTable('lowvalue', 'fact');
+        }
+        
+        // Отображение конкретной таблицы (исключая списанные)
+        function renderTable(type, tableType) {
+            const tableBody = document.getElementById(`${type}-${tableType}-table-body`);
+            tableBody.innerHTML = '';
+            
+            // Фильтруем данные - исключаем списанные
+            const activeData = inventoryData[type].filter(item => item.status !== 'writtenoff');
+            const filteredData = filterData(activeData, type);
+            
+            filteredData.forEach(item => {
+                const row = document.createElement('tr');
+                
+                // Определяем классы для выделения строк
+                let rowClass = '';
+                if (!item.hasSticker) {
+                    rowClass = 'no-sticker';
+                } else if (item.quantityFact > item.quantityList) {
+                    rowClass = 'more-fact';
+                } else if (item.quantityFact < item.quantityList) {
+                    rowClass = 'less-fact';
+                } else if (item.status === 'writeoff') {
+                    rowClass = 'writeoff-status'; // Оранжевый для статуса "На списание"
+                }
+                
+                row.className = rowClass;
+                
+                // Для таблицы "По списку" показываем количество по списку
+                // Для таблицы "По факту" показываем количество по факту
+                const quantity = tableType === 'list' ? item.quantityList : item.quantityFact;
+                
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.inventoryNumber}</td>
+                    <td>${quantity}</td>
+                    <td>${item.cabinet || '-'}</td>
+                    <td>${item.location}</td>
+                    <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
+                    <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
+                    <td class="actions">
+                        <button class="action-btn btn-primary" onclick="editItem('${type}', ${item.id})">Изменить</button>
+                        <button class="action-btn btn-warning" onclick="toggleWriteOff('${type}', ${item.id})">${item.status === 'writtenoff' ? 'Вернуть' : 'Списать'}</button>
+                        <button class="action-btn btn-danger" onclick="deleteItem('${type}', ${item.id})">Удалить</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Отображение таблиц списанного имущества (только списанные)
+        function renderWrittenOffTables() {
+            const mainBody = document.getElementById('written-off-main-body');
+            const lowvalueBody = document.getElementById('written-off-lowvalue-body');
+            
+            mainBody.innerHTML = '';
+            lowvalueBody.innerHTML = '';
+            
+            // Основные средства со статусом "writtenoff"
+            const writtenOffMain = inventoryData.main.filter(item => item.status === 'writtenoff');
+            writtenOffMain.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.inventoryNumber}</td>
+                    <td>${item.quantityList}</td>
+                    <td>${item.quantityFact}</td>
+                    <td>${item.cabinet || '-'}</td>
+                    <td>${item.location}</td>
+                    <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
+                    <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
+                `;
+                mainBody.appendChild(row);
+            });
+            
+            // Малоценка со статусом "writtenoff"
+            const writtenOffLowvalue = inventoryData.lowvalue.filter(item => item.status === 'writtenoff');
+            writtenOffLowvalue.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.inventoryNumber}</td>
+                    <td>${item.quantityList}</td>
+                    <td>${item.quantityFact}</td>
+                    <td>${item.cabinet || '-'}</td>
+                    <td>${item.location}</td>
+                    <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
+                    <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
+                `;
+                lowvalueBody.appendChild(row);
+            });
+        }
+        
+        // Отображение представления по кабинетам (только активные и на списание)
+        function renderCabinetView() {
+            const container = document.getElementById('cabinet-view-container');
+            container.innerHTML = '';
+            
+            // Группировка по кабинетам и расположениям
+            const groups = {};
+            
+            // Обработка основных средств (исключая списанные)
+            inventoryData.main
+                .filter(item => item.status !== 'writtenoff')
+                .forEach(item => {
+                    const groupKey = item.cabinet || item.location; // Если кабинета нет, используем расположение
+                    const groupName = item.cabinet ? `Кабинет ${item.cabinet}` : `Расположение: ${item.location}`;
+                    
+                    if (!groups[groupKey]) {
+                        groups[groupKey] = {
+                            name: groupName,
+                            main: [],
+                            lowvalue: []
+                        };
+                    }
+                    groups[groupKey].main.push(item);
+                });
+            
+            // Обработка малоценки (исключая списанные)
+            inventoryData.lowvalue
+                .filter(item => item.status !== 'writtenoff')
+                .forEach(item => {
+                    const groupKey = item.cabinet || item.location; // Если кабинета нет, используем расположение
+                    const groupName = item.cabinet ? `Кабинет ${item.cabinet}` : `Расположение: ${item.location}`;
+                    
+                    if (!groups[groupKey]) {
+                        groups[groupKey] = {
+                            name: groupName,
+                            main: [],
+                            lowvalue: []
+                        };
+                    }
+                    groups[groupKey].lowvalue.push(item);
+                });
+            
+            // Сортировка групп
+            const sortedGroups = Object.keys(groups).sort((a, b) => {
+                // Сначала кабинеты, потом расположения
+                const isACabinet = inventoryData.main.concat(inventoryData.lowvalue)
+                    .find(item => (item.cabinet || item.location) === a)?.cabinet;
+                const isBCabinet = inventoryData.main.concat(inventoryData.lowvalue)
+                    .find(item => (item.cabinet || item.location) === b)?.cabinet;
+                
+                if (isACabinet && !isBCabinet) return -1;
+                if (!isACabinet && isBCabinet) return 1;
+                
+                // Если оба кабинеты или оба расположения, сортируем по алфавиту
+                return groups[a].name.localeCompare(groups[b].name, undefined, { numeric: true });
+            });
+            
+            // Создание представления для каждой группы
+            sortedGroups.forEach(groupKey => {
+                const group = groups[groupKey];
+                const groupElement = document.createElement('div');
+                groupElement.className = 'cabinet-group';
+                
+                const header = document.createElement('div');
+                header.className = 'cabinet-header';
+                header.textContent = group.name;
+                groupElement.appendChild(header);
+                
+                // Основные средства в группе
+                if (group.main.length > 0) {
+                    const mainTitle = document.createElement('h3');
+                    mainTitle.style.padding = '10px 15px 5px';
+                    mainTitle.textContent = 'Основные средства';
+                    groupElement.appendChild(mainTitle);
+                    
+                    const mainTable = document.createElement('table');
+                    mainTable.className = 'location-table';
+                    mainTable.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>Наименование</th>
+                                <th>Инв. номер</th>
+                                <th>Кол-во (список)</th>
+                                <th>Кол-во (факт)</th>
+                                <th>Расположение</th>
+                                <th>Наклейка</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${group.main.map(item => {
+                                let rowClass = '';
+                                if (!item.hasSticker) {
+                                    rowClass = 'no-sticker';
+                                } else if (item.quantityFact > item.quantityList) {
+                                    rowClass = 'more-fact';
+                                } else if (item.quantityFact < item.quantityList) {
+                                    rowClass = 'less-fact';
+                                } else if (item.status === 'writeoff') {
+                                    rowClass = 'writeoff-status';
+                                }
+                                
+                                return `
+                                <tr class="${rowClass}">
+                                    <td>${item.id}</td>
+                                    <td>${item.name}</td>
+                                    <td>${item.inventoryNumber}</td>
+                                    <td>${item.quantityList}</td>
+                                    <td>${item.quantityFact}</td>
+                                    <td>${item.location}</td>
+                                    <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
+                                    <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
+                                </tr>
+                            `}).join('')}
+                        </tbody>
+                    `;
+                    groupElement.appendChild(mainTable);
+                }
+                
+                // Малоценка в группе
+                if (group.lowvalue.length > 0) {
+                    const lowvalueTitle = document.createElement('h3');
+                    lowvalueTitle.style.padding = '10px 15px 5px';
+                    lowvalueTitle.textContent = 'Малоценные средства';
+                    groupElement.appendChild(lowvalueTitle);
+                    
+                    const lowvalueTable = document.createElement('table');
+                    lowvalueTable.className = 'location-table';
+                    lowvalueTable.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>№</th>
+                                <th>Наименование</th>
+                                <th>Инв. номер</th>
+                                <th>Кол-во (список)</th>
+                                <th>Кол-во (факт)</th>
+                                <th>Расположение</th>
+                                <th>Наклейка</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${group.lowvalue.map(item => {
+                                let rowClass = '';
+                                if (!item.hasSticker) {
+                                    rowClass = 'no-sticker';
+                                } else if (item.quantityFact > item.quantityList) {
+                                    rowClass = 'more-fact';
+                                } else if (item.quantityFact < item.quantityList) {
+                                    rowClass = 'less-fact';
+                                } else if (item.status === 'writeoff') {
+                                    rowClass = 'writeoff-status';
+                                }
+                                
+                                return `
+                                <tr class="${rowClass}">
+                                    <td>${item.id}</td>
+                                    <td>${item.name}</td>
+                                    <td>${item.inventoryNumber}</td>
+                                    <td>${item.quantityList}</td>
+                                    <td>${item.quantityFact}</td>
+                                    <td>${item.location}</td>
+                                    <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
+                                    <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
+                                </tr>
+                            `}).join('')}
+                        </tbody>
+                    `;
+                    groupElement.appendChild(lowvalueTable);
+                }
+                
+                container.appendChild(groupElement);
+            });
+            
+            if (sortedGroups.length === 0) {
+                container.innerHTML = '<div class="loading">Нет данных для отображения</div>';
+            }
+        }
+        
+        // Фильтрация данных
+        function filterData(data, type) {
+            const nameFilter = document.getElementById(`${type}-filter-name`).value.toLowerCase();
+            const invnumFilter = document.getElementById(`${type}-filter-invnum`).value.toLowerCase();
+            const cabinetFilter = document.getElementById(`${type}-filter-cabinet`).value.toLowerCase();
+            
+            return data.filter(item => {
+                return (
+                    item.name.toLowerCase().includes(nameFilter) &&
+                    item.inventoryNumber.toLowerCase().includes(invnumFilter) &&
+                    (item.cabinet || '').toLowerCase().includes(cabinetFilter)
+                );
+            });
+        }
+        
+        // Получение текста статуса
+        function getStatusText(status) {
+            switch(status) {
+                case 'active': return 'Активен';
+                case 'writeoff': return 'На списание';
+                case 'writtenoff': return 'Списан';
+                default: return status;
+            }
+        }
+        
+        // Открытие модального окна для добавления
+        function openAddModal(type) {
+            document.getElementById('modal-title').textContent = type === 'main' 
+                ? 'Добавить основное средство' 
+                : 'Добавить малоценное средство';
+            
+            document.getElementById('item-id').value = '';
+            document.getElementById('item-type').value = type;
+            document.getElementById('item-name').value = '';
+            document.getElementById('item-inventory-number').value = '';
+            document.getElementById('item-quantity-list').value = '1';
+            document.getElementById('item-quantity-fact').value = '1';
+            document.getElementById('item-cabinet').value = '';
+            document.getElementById('item-location').value = '';
+            document.getElementById('item-has-sticker').value = 'true';
+            document.getElementById('item-status').value = 'active';
+            
+            document.getElementById('item-modal').style.display = 'flex';
+        }
+        
+        // Открытие модального окна для редактирования
+        function editItem(type, id) {
+            const item = inventoryData[type].find(item => item.id === id);
+            if (!item) return;
+            
+            document.getElementById('modal-title').textContent = type === 'main' 
+                ? 'Редактировать основное средство' 
+                : 'Редактировать малоценное средство';
+            
+            document.getElementById('item-id').value = item.id;
+            document.getElementById('item-type').value = type;
+            document.getElementById('item-name').value = item.name;
+            document.getElementById('item-inventory-number').value = item.inventoryNumber;
+            document.getElementById('item-quantity-list').value = item.quantityList;
+            document.getElementById('item-quantity-fact').value = item.quantityFact;
+            document.getElementById('item-cabinet').value = item.cabinet || '';
+            document.getElementById('item-location').value = item.location;
+            document.getElementById('item-has-sticker').value = item.hasSticker.toString();
+            document.getElementById('item-status').value = item.status;
+            
+            document.getElementById('item-modal').style.display = 'flex';
+        }
+        
+        // Сохранение элемента
+        function saveItem(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('item-id').value;
+            const type = document.getElementById('item-type').value;
+            const name = document.getElementById('item-name').value;
+            const inventoryNumber = document.getElementById('item-inventory-number').value;
+            const quantityList = parseInt(document.getElementById('item-quantity-list').value);
+            const quantityFact = parseInt(document.getElementById('item-quantity-fact').value);
+            const cabinet = document.getElementById('item-cabinet').value;
+            const location = document.getElementById('item-location').value;
+            const hasSticker = document.getElementById('item-has-sticker').value === 'true';
+            const status = document.getElementById('item-status').value;
+            
+            if (id) {
+                // Редактирование существующего элемента
+                const index = inventoryData[type].findIndex(item => item.id === parseInt(id));
+                if (index !== -1) {
+                    inventoryData[type][index] = {
+                        ...inventoryData[type][index],
+                        name,
+                        inventoryNumber,
+                        quantityList,
+                        quantityFact,
+                        cabinet: cabinet || '',
+                        location,
+                        hasSticker,
+                        status
+                    };
+                }
+            } else {
+                // Добавление нового элемента
+                const newId = generateId(type);
+                inventoryData[type].push({
+                    id: newId,
+                    name,
+                    inventoryNumber,
+                    quantityList,
+                    quantityFact,
+                    cabinet: cabinet || '',
+                    location,
+                    hasSticker,
+                    status
+                });
+            }
+            
+            saveData();
+            renderTables();
+            closeModal();
+        }
+        
+        // Удаление элемента
+        function deleteItem(type, id) {
+            if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
+                inventoryData[type] = inventoryData[type].filter(item => item.id !== id);
+                saveData();
+                renderTables();
+            }
+        }
+        
+        // Изменение статуса списания
+        function toggleWriteOff(type, id) {
+            const item = inventoryData[type].find(item => item.id === id);
+            if (!item) return;
+            
+            if (item.status === 'writtenoff') {
+                item.status = 'active';
+            } else {
+                item.status = 'writtenoff';
+            }
+            
+            saveData();
+            renderTables();
+        }
+        
+        // Закрытие модального окна
+        function closeModal() {
+            document.getElementById('item-modal').style.display = 'none';
+        }
+        
+        // Сортировка таблиц
+        function setupSorting() {
+            document.querySelectorAll('th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const tableId = th.closest('table').id;
+                    const sortBy = th.getAttribute('data-sort');
+                    const type = tableId.includes('main') ? 'main' : 'lowvalue';
+                    
+                    // Определение текущего порядка сортировки
+                    let sortOrder = 'asc';
+                    if (th.classList.contains('sorted-asc')) {
+                        sortOrder = 'desc';
+                    } else if (th.classList.contains('sorted-desc')) {
+                        sortOrder = 'asc';
+                    }
+                    
+                    // Сброс предыдущей сортировки
+                    document.querySelectorAll(`#${tableId} th`).forEach(header => {
+                        header.classList.remove('sorted-asc', 'sorted-desc');
+                    });
+                    
+                    // Установка нового порядка сортировки
+                    th.classList.add(`sorted-${sortOrder}`);
+                    
+                    // Сортировка данных
+                    inventoryData[type].sort((a, b) => {
+                        let aValue = a[sortBy];
+                        let bValue = b[sortBy];
+                        
+                        // Для строк приводим к нижнему регистру
+                        if (typeof aValue === 'string') {
+                            aValue = aValue.toLowerCase();
+                            bValue = bValue.toLowerCase();
+                        }
+                        
+                        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+                        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                    
+                    saveData();
+                    renderTables();
+                });
+            });
+        }
         
         // Инициализация приложения
         function init() {
-            // Проверяем аутентификацию при загрузке
-            checkAuthentication();
-            setupActivityTracking();
-            
-            // Остальная инициализация приложения
+            loadData();
             setupSorting();
             
             // Обработчики событий для вкладок
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => {
-                    if (!isAuthenticated) return;
-                    
+                    // Убираем активный класс у всех вкладок
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    // Добавляем активный класс текущей вкладке
                     tab.classList.add('active');
                     
+                    // Скрываем все содержимое вкладок
                     document.querySelectorAll('.tab-content').forEach(content => {
                         content.style.display = 'none';
                     });
                     
+                    // Показываем содержимое текущей вкладки
                     const tabId = tab.getAttribute('data-tab');
                     document.getElementById(`${tabId}-tab`).style.display = 'block';
                 });
             });
             
             // Обработчики для кнопок добавления
-            document.getElementById('add-main-btn').addEventListener('click', () => {
-                if (isAuthenticated) openAddModal('main');
-            });
-            document.getElementById('add-lowvalue-btn').addEventListener('click', () => {
-                if (isAuthenticated) openAddModal('lowvalue');
+            document.getElementById('add-main-btn').addEventListener('click', () => openAddModal('main'));
+            document.getElementById('add-lowvalue-btn').addEventListener('click', () => openAddModal('lowvalue'));
+            
+            // Обработчики для модального окна
+            document.getElementById('item-form').addEventListener('submit', saveItem);
+            document.querySelector('.close').addEventListener('click', closeModal);
+            document.getElementById('cancel-btn').addEventListener('click', closeModal);
+            
+            // Обработчики для фильтров
+            document.querySelectorAll('.filter-input').forEach(input => {
+                input.addEventListener('input', renderTables);
             });
             
-            // Обработчики для кнопок импорта
-            document.getElementById('import-main-btn').addEventListener('click', () => {
-                if (isAuthenticated) openImportModal('main');
+            // Закрытие модального окна при клике вне его
+            window.addEventListener('click', (event) => {
+                if (event.target === document.getElementById('item-modal')) {
+                    closeModal();
+                }
             });
-            document.getElementById('import-lowvalue-btn').addEventListener('click', () => {
-                if (isAuthenticated) openImportModal('lowvalue');
-            });
-            
-            // Остальные обработчики...
         }
         
         // Запуск приложения после загрузки DOM

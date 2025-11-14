@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Система инвентаризации имущества</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary-color: #3498db;
@@ -145,12 +144,6 @@
             border-radius: 4px;
             flex: 1;
             min-width: 150px;
-        }
-        
-        .export-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
         }
         
         table {
@@ -318,47 +311,6 @@
             background-color: var(--light-color);
         }
         
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 5px;
-            color: white;
-            z-index: 2000;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 0.3s, transform 0.3s;
-        }
-        
-        .notification.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .notification.success {
-            background-color: var(--secondary-color);
-        }
-        
-        .notification.error {
-            background-color: var(--danger-color);
-        }
-        
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
         @media (max-width: 1024px) {
             .main-content {
                 flex-direction: column;
@@ -386,13 +338,6 @@
                     <h2>Основные средства</h2>
                     <div class="controls">
                         <button class="btn btn-primary" id="add-main-btn">Добавить основное средство</button>
-                        <div class="export-buttons">
-                            <button class="btn btn-success" onclick="exportToCSV('main')">Экспорт в CSV</button>
-                            <button class="btn btn-warning" id="import-main-btn" 
-                                    onclick="document.getElementById('excel-main-input').click()">Импорт из Excel</button>
-                            <input type="file" id="excel-main-input" accept=".xlsx,.xls" style="display:none" 
-                                   onchange="importFromExcel('main', this.files[0])">
-                        </div>
                         <div class="filters">
                             <input type="text" class="filter-input" id="main-filter-name" placeholder="Фильтр по наименованию">
                             <input type="text" class="filter-input" id="main-filter-invnum" placeholder="Фильтр по инв. номеру">
@@ -423,13 +368,6 @@
                     <h2>Малоценные средства</h2>
                     <div class="controls">
                         <button class="btn btn-primary" id="add-lowvalue-btn">Добавить малоценку</button>
-                        <div class="export-buttons">
-                            <button class="btn btn-success" onclick="exportToCSV('lowvalue')">Экспорт в CSV</button>
-                            <button class="btn btn-warning" id="import-lowvalue-btn" 
-                                    onclick="document.getElementById('excel-lowvalue-input').click()">Импорт из Excel</button>
-                            <input type="file" id="excel-lowvalue-input" accept=".xlsx,.xls" style="display:none" 
-                                   onchange="importFromExcel('lowvalue', this.files[0])">
-                        </div>
                         <div class="filters">
                             <input type="text" class="filter-input" id="lowvalue-filter-name" placeholder="Фильтр по наименованию">
                             <input type="text" class="filter-input" id="lowvalue-filter-invnum" placeholder="Фильтр по инв. номеру">
@@ -613,12 +551,6 @@
             return maxId + 1;
         }
         
-        // Безопасное отображение данных
-        function safeDisplay(value) {
-            if (value === null || value === undefined || value === '') return '-';
-            return String(value);
-        }
-        
         // Отображение таблиц
         function renderTables() {
             renderMainTable();
@@ -637,12 +569,12 @@
             filteredData.forEach(item => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${safeDisplay(item.id)}</td>
-                    <td>${safeDisplay(item.name)}</td>
-                    <td>${safeDisplay(item.inventoryNumber)}</td>
-                    <td>${safeDisplay(item.quantity)}</td>
-                    <td>${safeDisplay(item.cabinet)}</td>
-                    <td>${safeDisplay(item.location)}</td>
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.inventoryNumber}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.cabinet || '-'}</td>
+                    <td>${item.location}</td>
                     <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
                     <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
                     <td class="actions">
@@ -665,12 +597,12 @@
             filteredData.forEach(item => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${safeDisplay(item.id)}</td>
-                    <td>${safeDisplay(item.name)}</td>
-                    <td>${safeDisplay(item.inventoryNumber)}</td>
-                    <td>${safeDisplay(item.quantity)}</td>
-                    <td>${safeDisplay(item.cabinet)}</td>
-                    <td>${safeDisplay(item.location)}</td>
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.inventoryNumber}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.cabinet || '-'}</td>
+                    <td>${item.location}</td>
                     <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
                     <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
                     <td class="actions">
@@ -696,12 +628,12 @@
             writtenOffMain.forEach(item => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${safeDisplay(item.id)}</td>
-                    <td>${safeDisplay(item.name)}</td>
-                    <td>${safeDisplay(item.inventoryNumber)}</td>
-                    <td>${safeDisplay(item.quantity)}</td>
-                    <td>${safeDisplay(item.cabinet)}</td>
-                    <td>${safeDisplay(item.location)}</td>
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.inventoryNumber}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.cabinet || '-'}</td>
+                    <td>${item.location}</td>
                     <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
                     <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
                 `;
@@ -713,12 +645,12 @@
             writtenOffLowvalue.forEach(item => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${safeDisplay(item.id)}</td>
-                    <td>${safeDisplay(item.name)}</td>
-                    <td>${safeDisplay(item.inventoryNumber)}</td>
-                    <td>${safeDisplay(item.quantity)}</td>
-                    <td>${safeDisplay(item.cabinet)}</td>
-                    <td>${safeDisplay(item.location)}</td>
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.inventoryNumber}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.cabinet || '-'}</td>
+                    <td>${item.location}</td>
                     <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
                     <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
                 `;
@@ -793,11 +725,11 @@
                         <tbody>
                             ${cabinets[cabinet].main.map(item => `
                                 <tr>
-                                    <td>${safeDisplay(item.id)}</td>
-                                    <td>${safeDisplay(item.name)}</td>
-                                    <td>${safeDisplay(item.inventoryNumber)}</td>
-                                    <td>${safeDisplay(item.quantity)}</td>
-                                    <td>${safeDisplay(item.location)}</td>
+                                    <td>${item.id}</td>
+                                    <td>${item.name}</td>
+                                    <td>${item.inventoryNumber}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${item.location}</td>
                                     <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
                                     <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
                                 </tr>
@@ -831,11 +763,11 @@
                         <tbody>
                             ${cabinets[cabinet].lowvalue.map(item => `
                                 <tr>
-                                    <td>${safeDisplay(item.id)}</td>
-                                    <td>${safeDisplay(item.name)}</td>
-                                    <td>${safeDisplay(item.inventoryNumber)}</td>
-                                    <td>${safeDisplay(item.quantity)}</td>
-                                    <td>${safeDisplay(item.location)}</td>
+                                    <td>${item.id}</td>
+                                    <td>${item.name}</td>
+                                    <td>${item.inventoryNumber}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${item.location}</td>
                                     <td>${item.hasSticker ? 'Да' : 'Нет'}</td>
                                     <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
                                 </tr>
@@ -856,15 +788,10 @@
             const cabinetFilter = document.getElementById(`${type}-filter-cabinet`).value.toLowerCase();
             
             return data.filter(item => {
-                // Безопасное преобразование в строку для всех полей
-                const name = String(item.name || '').toLowerCase();
-                const invnum = String(item.inventoryNumber || '').toLowerCase();
-                const cabinet = String(item.cabinet || '').toLowerCase();
-                
                 return (
-                    name.includes(nameFilter) &&
-                    invnum.includes(invnumFilter) &&
-                    cabinet.includes(cabinetFilter)
+                    item.name.toLowerCase().includes(nameFilter) &&
+                    item.inventoryNumber.toLowerCase().includes(invnumFilter) &&
+                    (item.cabinet || '').toLowerCase().includes(cabinetFilter)
                 );
             });
         }
@@ -876,152 +803,6 @@
                 case 'writeoff': return 'На списание';
                 case 'writtenoff': return 'Списан';
                 default: return status;
-            }
-        }
-        
-        // Показ уведомлений
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 100);
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-        
-        // Экспорт данных в CSV
-        function exportToCSV(type) {
-            const data = inventoryData[type];
-            if (data.length === 0) {
-                showNotification('Нет данных для экспорта', 'error');
-                return;
-            }
-            
-            const headers = ['ID', 'Наименование', 'Инвентарный номер', 'Количество', 'Кабинет', 'Расположение', 'Наклейка', 'Статус'];
-            const csvContent = [
-                headers.join(','),
-                ...data.map(item => [
-                    item.id,
-                    `"${item.name}"`,
-                    item.inventoryNumber,
-                    item.quantity,
-                    `"${item.cabinet || ''}"`,
-                    `"${item.location}"`,
-                    item.hasSticker ? 'Да' : 'Нет',
-                    `"${getStatusText(item.status)}"`
-                ].join(','))
-            ].join('\n');
-            
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `${type === 'main' ? 'основные_средства' : 'малоценные_средства'}_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showNotification('Данные успешно экспортированы');
-        }
-        
-        // Функция для обработки Excel файла
-        function processExcelFile(file) {
-            return new Promise((resolve, reject) => {
-                try {
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        try {
-                            const data = new Uint8Array(e.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            
-                            // Берем первую страницу
-                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                            
-                            if (jsonData.length === 0) {
-                                reject(new Error('Файл не содержит данных'));
-                                return;
-                            }
-                            
-                            // Преобразуем данные в нужный формат
-                            const processedData = jsonData.map((item, index) => {
-                                // Безопасная обработка всех полей
-                                const cabinetValue = item.cabinet || item.Кабинет || item.кабинет || '';
-                                const hasStickerValue = item.hasSticker || item.Наклейка || item.наклейка || false;
-                                
-                                return {
-                                    id: index + 1,
-                                    name: String(item.name || item.Наименование || item.наименование || ''),
-                                    inventoryNumber: String(item.inventoryNumber || item['Инв. номер'] || item['инв. номер'] || ''),
-                                    quantity: parseInt(item.quantity || item.Количество || item.количество || 1),
-                                    cabinet: String(cabinetValue),
-                                    location: String(item.location || item.Расположение || item.расположение || ''),
-                                    hasSticker: Boolean(hasStickerValue),
-                                    status: 'active'
-                                };
-                            });
-                            
-                            resolve(processedData);
-                        } catch (parseError) {
-                            reject(new Error('Ошибка при разборе файла: ' + parseError.message));
-                        }
-                    };
-                    
-                    reader.onerror = function() {
-                        reject(new Error('Ошибка при чтении файла'));
-                    };
-                    
-                    reader.readAsArrayBuffer(file);
-                } catch (error) {
-                    reject(new Error('Ошибка при обработке файла: ' + error.message));
-                }
-            });
-        }
-        
-        // Функция для импорта из Excel
-        async function importFromExcel(type, file) {
-            try {
-                // Показываем индикатор загрузки
-                const importBtn = document.getElementById(`import-${type}-btn`);
-                const originalText = importBtn.innerHTML;
-                importBtn.innerHTML = '<span class="loading"></span> Импорт...';
-                importBtn.disabled = true;
-                
-                const importedData = await processExcelFile(file);
-                
-                // Добавляем импортированные данные
-                importedData.forEach(item => {
-                    item.id = generateId(type);
-                    inventoryData[type].push(item);
-                });
-                
-                saveData();
-                renderTables();
-                
-                showNotification(`Успешно импортировано ${importedData.length} записей`);
-                
-            } catch (error) {
-                console.error('Ошибка импорта:', error);
-                showNotification(error.message, 'error');
-            } finally {
-                // Восстанавливаем кнопку
-                const importBtn = document.getElementById(`import-${type}-btn`);
-                importBtn.innerHTML = originalText;
-                importBtn.disabled = false;
-                
-                // Сбрасываем значение input
-                document.getElementById(`excel-${type}-input`).value = '';
             }
         }
         
@@ -1094,7 +875,6 @@
                         hasSticker,
                         status
                     };
-                    showNotification('Элемент успешно обновлен');
                 }
             } else {
                 // Добавление нового элемента
@@ -1109,7 +889,6 @@
                     hasSticker,
                     status
                 });
-                showNotification('Элемент успешно добавлен');
             }
             
             saveData();
@@ -1123,7 +902,6 @@
                 inventoryData[type] = inventoryData[type].filter(item => item.id !== id);
                 saveData();
                 renderTables();
-                showNotification('Элемент успешно удален');
             }
         }
         
@@ -1134,10 +912,8 @@
             
             if (item.status === 'writtenoff') {
                 item.status = 'active';
-                showNotification('Элемент возвращен в активные');
             } else {
                 item.status = 'writtenoff';
-                showNotification('Элемент списан');
             }
             
             saveData();

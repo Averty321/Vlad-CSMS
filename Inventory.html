@@ -1,13 +1,10 @@
-<!DOCTYPE html>
+Раздели на блоки по функционированию и структуры  комментариями этот код <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Система инвентаризации имущества</title>
-    
-    <!-- ==================== БЛОК CSS СТИЛЕЙ ==================== -->
     <style>
-        /* ========== CSS ПЕРЕМЕННЫЕ ========== */
         :root {
             --primary-color: #3498db;
             --secondary-color: #2ecc71;
@@ -18,7 +15,6 @@
             --border-color: #bdc3c7;
         }
         
-        /* ========== ОБЩИЕ СТИЛИ ========== */
         * {
             margin: 0;
             padding: 0;
@@ -38,7 +34,6 @@
             padding: 20px;
         }
         
-        /* ========== СТИЛИ ШАПКИ ========== */
         header {
             background-color: var(--dark-color);
             color: white;
@@ -53,7 +48,6 @@
             margin-bottom: 10px;
         }
         
-        /* ========== СТИЛИ ВКЛАДОК ========== */
         .tabs {
             display: flex;
             margin-bottom: 20px;
@@ -75,7 +69,6 @@
             font-weight: bold;
         }
         
-        /* ========== СТИЛИ ОСНОВНОГО КОНТЕНТА ========== */
         .main-content {
             display: flex;
             gap: 20px;
@@ -97,7 +90,6 @@
             color: var(--dark-color);
         }
         
-        /* ========== СТИЛИ ЭЛЕМЕНТОВ УПРАВЛЕНИЯ ========== */
         .controls {
             display: flex;
             justify-content: space-between;
@@ -154,7 +146,6 @@
             min-width: 150px;
         }
         
-        /* ========== СТИЛИ ТАБЛИЦ ========== */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -188,7 +179,6 @@
             background-color: #f8f9fa;
         }
         
-        /* ========== СТИЛИ СТАТУСОВ ========== */
         .status-badge {
             padding: 4px 8px;
             border-radius: 4px;
@@ -211,7 +201,6 @@
             color: white;
         }
         
-        /* ========== СТИЛИ КНОПОК ДЕЙСТВИЙ ========== */
         .actions {
             display: flex;
             gap: 5px;
@@ -225,7 +214,6 @@
             font-size: 0.8em;
         }
         
-        /* ========== СТИЛИ МОДАЛЬНОГО ОКНА ========== */
         .modal {
             display: none;
             position: fixed;
@@ -263,7 +251,6 @@
             color: var(--dark-color);
         }
         
-        /* ========== СТИЛИ ФОРМ ========== */
         .form-group {
             margin-bottom: 15px;
         }
@@ -288,7 +275,6 @@
             margin-top: 20px;
         }
         
-        /* ========== СПЕЦИАЛЬНЫЕ СТИЛИ РАЗДЕЛОВ ========== */
         .written-off-section {
             background-color: #f8f9fa;
             border-left: 4px solid var(--danger-color);
@@ -298,7 +284,6 @@
             color: var(--danger-color);
         }
         
-        /* ========== СТИЛИ ПРЕДСТАВЛЕНИЯ ПО КАБИНЕТАМ ========== */
         .cabinet-view {
             margin-top: 20px;
         }
@@ -326,7 +311,6 @@
             background-color: var(--light-color);
         }
         
-        /* ========== АДАПТИВНЫЕ СТИЛИ ========== */
         @media (max-width: 1024px) {
             .main-content {
                 flex-direction: column;
@@ -334,11 +318,7 @@
         }
     </style>
 </head>
-
 <body>
-    <!-- ==================== БЛОК HTML РАЗМЕТКИ ==================== -->
-    
-    <!-- ========== ШАПКА САЙТА ========== -->
     <header>
         <div class="container">
             <h1>Система инвентаризации имущества</h1>
@@ -346,17 +326,14 @@
     </header>
     
     <div class="container">
-        <!-- ========== ПАНЕЛЬ ВКЛАДОК ========== -->
         <div class="tabs">
             <div class="tab active" data-tab="inventory">Инвентаризация</div>
             <div class="tab" data-tab="written-off">Списанное имущество</div>
             <div class="tab" data-tab="cabinet-view">Просмотр по кабинетам</div>
         </div>
         
-        <!-- ========== ВКЛАДКА ИНВЕНТАРИЗАЦИИ ========== -->
         <div id="inventory-tab" class="tab-content">
             <div class="main-content">
-                <!-- РАЗДЕЛ ОСНОВНЫХ СРЕДСТВ -->
                 <div class="inventory-section">
                     <h2>Основные средства</h2>
                     <div class="controls">
@@ -387,7 +364,6 @@
                     </table>
                 </div>
                 
-                <!-- РАЗДЕЛ МАЛОЦЕННЫХ СРЕДСТВ -->
                 <div class="inventory-section">
                     <h2>Малоценные средства</h2>
                     <div class="controls">
@@ -420,10 +396,8 @@
             </div>
         </div>
         
-        <!-- ========== ВКЛАДКА СПИСАННОГО ИМУЩЕСТВА ========== -->
         <div id="written-off-tab" class="tab-content" style="display: none;">
             <div class="main-content">
-                <!-- СПИСАННЫЕ ОСНОВНЫЕ СРЕДСТВА -->
                 <div class="inventory-section written-off-section">
                     <h2>Списанные основные средства</h2>
                     <table id="written-off-main-table">
@@ -445,7 +419,6 @@
                     </table>
                 </div>
                 
-                <!-- СПИСАННЫЕ МАЛОЦЕННЫЕ СРЕДСТВА -->
                 <div class="inventory-section written-off-section">
                     <h2>Списанные малоценные средства</h2>
                     <table id="written-off-lowvalue-table">
@@ -469,7 +442,6 @@
             </div>
         </div>
         
-        <!-- ========== ВКЛАДКА ПРОСМОТРА ПО КАБИНЕТАМ ========== -->
         <div id="cabinet-view-tab" class="tab-content" style="display: none;">
             <div class="cabinet-view" id="cabinet-view-container">
                 <!-- Данные будут заполнены через JavaScript -->
@@ -477,7 +449,7 @@
         </div>
     </div>
     
-    <!-- ========== МОДАЛЬНОЕ ОКНО ДЛЯ ДОБАВЛЕНИЯ/РЕДАКТИРОВАНИЯ ========== -->
+    <!-- Модальное окно для добавления/редактирования -->
     <div id="item-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -538,20 +510,14 @@
         </div>
     </div>
 
-    <!-- ==================== БЛОК JAVASCRIPT ==================== -->
     <script>
-        // ========== МОДЕЛЬ ДАННЫХ ==========
+        // Данные приложения
         let inventoryData = {
-            main: [],    // Основные средства
-            lowvalue: [] // Малоценные средства
+            main: [],
+            lowvalue: []
         };
         
-        // ========== ФУНКЦИИ РАБОТЫ С ДАННЫМИ ==========
-        
-        /**
-         * Загрузка данных из localStorage
-         * Если данных нет, инициализирует тестовыми данными
-         */
+        // Загрузка данных из localStorage
         function loadData() {
             const savedData = localStorage.getItem('inventoryData');
             if (savedData) {
@@ -574,28 +540,18 @@
             }
         }
         
-        /**
-         * Сохранение данных в localStorage
-         */
+        // Сохранение данных в localStorage
         function saveData() {
             localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
         }
         
-        /**
-         * Генерация нового ID для элемента
-         * @param {string} type - Тип элемента ('main' или 'lowvalue')
-         * @returns {number} Новый уникальный ID
-         */
+        // Генерация нового ID
         function generateId(type) {
             const maxId = inventoryData[type].reduce((max, item) => Math.max(max, item.id), 0);
             return maxId + 1;
         }
         
-        // ========== ФУНКЦИИ ОТОБРАЖЕНИЯ ДАННЫХ ==========
-        
-        /**
-         * Основная функция отрисовки всех таблиц
-         */
+        // Отображение таблиц
         function renderTables() {
             renderMainTable();
             renderLowvalueTable();
@@ -603,9 +559,7 @@
             renderCabinetView();
         }
         
-        /**
-         * Отрисовка таблицы основных средств
-         */
+        // Отображение таблицы основных средств
         function renderMainTable() {
             const tableBody = document.getElementById('main-table-body');
             tableBody.innerHTML = '';
@@ -633,9 +587,7 @@
             });
         }
         
-        /**
-         * Отрисовка таблицы малоценных средств
-         */
+        // Отображение таблицы малоценки
         function renderLowvalueTable() {
             const tableBody = document.getElementById('lowvalue-table-body');
             tableBody.innerHTML = '';
@@ -663,9 +615,7 @@
             });
         }
         
-        /**
-         * Отрисовка таблиц списанного имущества
-         */
+        // Отображение таблиц списанного имущества
         function renderWrittenOffTables() {
             const mainBody = document.getElementById('written-off-main-body');
             const lowvalueBody = document.getElementById('written-off-lowvalue-body');
@@ -708,9 +658,7 @@
             });
         }
         
-        /**
-         * Отрисовка представления по кабинетам
-         */
+        // Отображение представления по кабинетам
         function renderCabinetView() {
             const container = document.getElementById('cabinet-view-container');
             container.innerHTML = '';
@@ -833,14 +781,7 @@
             });
         }
         
-        // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
-        
-        /**
-         * Фильтрация данных таблицы
-         * @param {Array} data - Данные для фильтрации
-         * @param {string} type - Тип данных ('main' или 'lowvalue')
-         * @returns {Array} Отфильтрованные данные
-         */
+        // Фильтрация данных
         function filterData(data, type) {
             const nameFilter = document.getElementById(`${type}-filter-name`).value.toLowerCase();
             const invnumFilter = document.getElementById(`${type}-filter-invnum`).value.toLowerCase();
@@ -855,11 +796,7 @@
             });
         }
         
-        /**
-         * Получение текстового представления статуса
-         * @param {string} status - Код статуса
-         * @returns {string} Текстовое представление статуса
-         */
+        // Получение текста статуса
         function getStatusText(status) {
             switch(status) {
                 case 'active': return 'Активен';
@@ -869,12 +806,7 @@
             }
         }
         
-        // ========== ФУНКЦИИ РАБОТЫ С ФОРМАМИ ==========
-        
-        /**
-         * Открытие модального окна для добавления элемента
-         * @param {string} type - Тип элемента ('main' или 'lowvalue')
-         */
+        // Открытие модального окна для добавления
         function openAddModal(type) {
             document.getElementById('modal-title').textContent = type === 'main' 
                 ? 'Добавить основное средство' 
@@ -893,11 +825,7 @@
             document.getElementById('item-modal').style.display = 'flex';
         }
         
-        /**
-         * Открытие модального окна для редактирования элемента
-         * @param {string} type - Тип элемента ('main' или 'lowvalue')
-         * @param {number} id - ID элемента
-         */
+        // Открытие модального окна для редактирования
         function editItem(type, id) {
             const item = inventoryData[type].find(item => item.id === id);
             if (!item) return;
@@ -919,10 +847,7 @@
             document.getElementById('item-modal').style.display = 'flex';
         }
         
-        /**
-         * Сохранение элемента (добавление или редактирование)
-         * @param {Event} event - Событие отправки формы
-         */
+        // Сохранение элемента
         function saveItem(event) {
             event.preventDefault();
             
@@ -971,11 +896,7 @@
             closeModal();
         }
         
-        /**
-         * Удаление элемента
-         * @param {string} type - Тип элемента ('main' или 'lowvalue')
-         * @param {number} id - ID элемента
-         */
+        // Удаление элемента
         function deleteItem(type, id) {
             if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
                 inventoryData[type] = inventoryData[type].filter(item => item.id !== id);
@@ -984,11 +905,7 @@
             }
         }
         
-        /**
-         * Изменение статуса списания элемента
-         * @param {string} type - Тип элемента ('main' или 'lowvalue')
-         * @param {number} id - ID элемента
-         */
+        // Изменение статуса списания
         function toggleWriteOff(type, id) {
             const item = inventoryData[type].find(item => item.id === id);
             if (!item) return;
@@ -1003,18 +920,12 @@
             renderTables();
         }
         
-        /**
-         * Закрытие модального окна
-         */
+        // Закрытие модального окна
         function closeModal() {
             document.getElementById('item-modal').style.display = 'none';
         }
         
-        // ========== ФУНКЦИИ СОРТИРОВКИ ==========
-        
-        /**
-         * Настройка сортировки таблиц
-         */
+        // Сортировка таблиц
         function setupSorting() {
             document.querySelectorAll('th[data-sort]').forEach(th => {
                 th.addEventListener('click', () => {
@@ -1060,11 +971,7 @@
             });
         }
         
-        // ========== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ==========
-        
-        /**
-         * Инициализация приложения
-         */
+        // Инициализация приложения
         function init() {
             loadData();
             renderTables();

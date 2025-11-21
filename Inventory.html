@@ -313,7 +313,6 @@
             background-color: var(--light-color);
         }
         
-        /* Стили для группового добавления */
         .bulk-add-table {
             width: 100%;
             border: 2px dashed var(--border-color);
@@ -406,7 +405,6 @@
                             </tr>
                         </thead>
                         <tbody id="main-table-body">
-                            <!-- Данные будут заполнены через JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -439,7 +437,6 @@
                             </tr>
                         </thead>
                         <tbody id="lowvalue-table-body">
-                            <!-- Данные будут заполнены через JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -464,7 +461,6 @@
                             </tr>
                         </thead>
                         <tbody id="written-off-main-body">
-                            <!-- Данные будут заполнены через JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -485,7 +481,6 @@
                             </tr>
                         </thead>
                         <tbody id="written-off-lowvalue-body">
-                            <!-- Данные будут заполнены через JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -494,12 +489,10 @@
         
         <div id="cabinet-view-tab" class="tab-content" style="display: none;">
             <div class="cabinet-view" id="cabinet-view-container">
-                <!-- Данные будут заполнены через JavaScript -->
             </div>
         </div>
     </div>
     
-    <!-- Модальное окно для добавления/редактирования -->
     <div id="item-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -560,12 +553,11 @@
         </div>
     </div>
 
-    <!-- Модальное окно для группового добавления -->
     <div id="bulk-add-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="bulk-modal-title">Групповое добавление</h2>
-                <span class="close">&times;</span>
+                <span class="close" id="bulk-close">&times;</span>
             </div>
             <div class="paste-hint">
                 <strong>Инструкция:</strong> Скопируйте данные из Excel и вставьте (Ctrl+V) в первую ячейку таблицы ниже.
@@ -606,22 +598,18 @@
     </div>
 
     <script>
-        // Данные приложения
         let inventoryData = {
             main: [],
             lowvalue: []
         };
         
-        // Текущий тип для группового добавления
         let currentBulkType = '';
         
-        // Загрузка данных из localStorage
         function loadData() {
             const savedData = localStorage.getItem('inventoryData');
             if (savedData) {
                 inventoryData = JSON.parse(savedData);
             } else {
-                // Инициализация тестовыми данными
                 inventoryData = {
                     main: [
                         { id: 1, name: "Компьютер", inventoryNumber: "INV001", quantity: 5, cabinet: "902", location: "Стол 1", hasSticker: true, status: "active" },
@@ -638,18 +626,15 @@
             }
         }
         
-        // Сохранение данных в localStorage
         function saveData() {
             localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
         }
         
-        // Генерация нового ID
         function generateId(type) {
             const maxId = inventoryData[type].reduce((max, item) => Math.max(max, item.id), 0);
             return maxId + 1;
         }
         
-        // Отображение таблиц
         function renderTables() {
             renderMainTable();
             renderLowvalueTable();
@@ -657,7 +642,6 @@
             renderCabinetView();
         }
         
-        // Отображение таблицы основных средств
         function renderMainTable() {
             const tableBody = document.getElementById('main-table-body');
             tableBody.innerHTML = '';
@@ -685,7 +669,6 @@
             });
         }
         
-        // Отображение таблицы малоценки
         function renderLowvalueTable() {
             const tableBody = document.getElementById('lowvalue-table-body');
             tableBody.innerHTML = '';
@@ -713,7 +696,6 @@
             });
         }
         
-        // Отображение таблиц списанного имущества
         function renderWrittenOffTables() {
             const mainBody = document.getElementById('written-off-main-body');
             const lowvalueBody = document.getElementById('written-off-lowvalue-body');
@@ -721,7 +703,6 @@
             mainBody.innerHTML = '';
             lowvalueBody.innerHTML = '';
             
-            // Основные средства со статусом "writtenoff"
             const writtenOffMain = inventoryData.main.filter(item => item.status === 'writtenoff');
             writtenOffMain.forEach(item => {
                 const row = document.createElement('tr');
@@ -738,7 +719,6 @@
                 mainBody.appendChild(row);
             });
             
-            // Малоценка со статусом "writtenoff"
             const writtenOffLowvalue = inventoryData.lowvalue.filter(item => item.status === 'writtenoff');
             writtenOffLowvalue.forEach(item => {
                 const row = document.createElement('tr');
@@ -756,15 +736,12 @@
             });
         }
         
-        // Отображение представления по кабинетам
         function renderCabinetView() {
             const container = document.getElementById('cabinet-view-container');
             container.innerHTML = '';
             
-            // Группировка по кабинетам
             const cabinets = {};
             
-            // Обработка основных средств
             inventoryData.main.forEach(item => {
                 const cabinet = item.cabinet || 'Без кабинета';
                 if (!cabinets[cabinet]) {
@@ -773,7 +750,6 @@
                 cabinets[cabinet].main.push(item);
             });
             
-            // Обработка малоценки
             inventoryData.lowvalue.forEach(item => {
                 const cabinet = item.cabinet || 'Без кабинета';
                 if (!cabinets[cabinet]) {
@@ -782,14 +758,12 @@
                 cabinets[cabinet].lowvalue.push(item);
             });
             
-            // Сортировка кабинетов
             const sortedCabinets = Object.keys(cabinets).sort((a, b) => {
                 if (a === 'Без кабинета') return 1;
                 if (b === 'Без кабинета') return -1;
                 return a.localeCompare(b, undefined, { numeric: true });
             });
             
-            // Создание представления для каждого кабинета
             sortedCabinets.forEach(cabinet => {
                 const cabinetGroup = document.createElement('div');
                 cabinetGroup.className = 'cabinet-group';
@@ -799,7 +773,6 @@
                 header.textContent = `Кабинет ${cabinet}`;
                 cabinetGroup.appendChild(header);
                 
-                // Основные средства в кабинете
                 if (cabinets[cabinet].main.length > 0) {
                     const mainTitle = document.createElement('h3');
                     mainTitle.style.padding = '10px 15px 5px';
@@ -837,7 +810,6 @@
                     cabinetGroup.appendChild(mainTable);
                 }
                 
-                // Малоценка в кабинете
                 if (cabinets[cabinet].lowvalue.length > 0) {
                     const lowvalueTitle = document.createElement('h3');
                     lowvalueTitle.style.padding = '10px 15px 5px';
@@ -879,7 +851,6 @@
             });
         }
         
-        // Фильтрация данных
         function filterData(data, type) {
             const nameFilter = document.getElementById(`${type}-filter-name`).value.toLowerCase();
             const invnumFilter = document.getElementById(`${type}-filter-invnum`).value.toLowerCase();
@@ -894,7 +865,6 @@
             });
         }
         
-        // Получение текста статуса
         function getStatusText(status) {
             switch(status) {
                 case 'active': return 'Активен';
@@ -904,7 +874,6 @@
             }
         }
         
-        // Открытие модального окна для добавления
         function openAddModal(type) {
             document.getElementById('modal-title').textContent = type === 'main' 
                 ? 'Добавить основное средство' 
@@ -923,14 +892,12 @@
             document.getElementById('item-modal').style.display = 'flex';
         }
         
-        // Открытие модального окна для группового добавления
         function openBulkAddModal(type) {
             currentBulkType = type;
             document.getElementById('bulk-modal-title').textContent = type === 'main' 
                 ? 'Групповое добавление основных средств' 
                 : 'Групповое добавление малоценных средств';
             
-            // Очистка таблицы
             const tableBody = document.getElementById('bulk-add-table-body');
             tableBody.innerHTML = `
                 <tr>
@@ -946,27 +913,22 @@
             
             document.getElementById('bulk-add-modal').style.display = 'flex';
             
-            // Фокус на первую ячейку
             setTimeout(() => {
                 tableBody.querySelector('td').focus();
             }, 100);
         }
         
-        // Обработка вставки данных в таблицу группового добавления
         function handleBulkPaste(event) {
             event.preventDefault();
             
             const clipboardData = event.clipboardData || window.clipboardData;
             const pastedData = clipboardData.getData('text');
             
-            // Разделение данных на строки и столбцы
             const rows = pastedData.split('\n').filter(row => row.trim() !== '');
             const tableBody = document.getElementById('bulk-add-table-body');
             
-            // Очистка таблицы
             tableBody.innerHTML = '';
             
-            // Заполнение таблицы данными
             rows.forEach((row, rowIndex) => {
                 const cells = row.split('\t');
                 const tableRow = document.createElement('tr');
@@ -982,7 +944,6 @@
             });
         }
         
-        // Сохранение данных из группового добавления
         function saveBulkItems() {
             const tableBody = document.getElementById('bulk-add-table-body');
             const rows = tableBody.querySelectorAll('tr');
@@ -998,14 +959,11 @@
                 const hasStickerText = cells[5].textContent.trim().toLowerCase();
                 const statusText = cells[6].textContent.trim().toLowerCase();
                 
-                // Проверка, есть ли данные в строке
                 if (name && inventoryNumber && location) {
                     hasData = true;
                     
-                    // Преобразование текста в булево значение для наклейки
                     const hasSticker = hasStickerText === 'да' || hasStickerText === 'есть' || hasStickerText === 'true' || hasStickerText === '1';
                     
-                    // Преобразование текста в статус
                     let status = 'active';
                     if (statusText.includes('списан')) {
                         status = 'writtenoff';
@@ -1013,7 +971,6 @@
                         status = 'writeoff';
                     }
                     
-                    // Добавление нового элемента
                     const newId = generateId(currentBulkType);
                     inventoryData[currentBulkType].push({
                         id: newId,
@@ -1038,12 +995,10 @@
             }
         }
         
-        // Закрытие модального окна группового добавления
         function closeBulkModal() {
             document.getElementById('bulk-add-modal').style.display = 'none';
         }
         
-        // Открытие модального окна для редактирования
         function editItem(type, id) {
             const item = inventoryData[type].find(item => item.id === id);
             if (!item) return;
@@ -1065,7 +1020,6 @@
             document.getElementById('item-modal').style.display = 'flex';
         }
         
-        // Сохранение элемента
         function saveItem(event) {
             event.preventDefault();
             
@@ -1080,7 +1034,6 @@
             const status = document.getElementById('item-status').value;
             
             if (id) {
-                // Редактирование существующего элемента
                 const index = inventoryData[type].findIndex(item => item.id === parseInt(id));
                 if (index !== -1) {
                     inventoryData[type][index] = {
@@ -1095,7 +1048,6 @@
                     };
                 }
             } else {
-                // Добавление нового элемента
                 const newId = generateId(type);
                 inventoryData[type].push({
                     id: newId,
@@ -1114,7 +1066,6 @@
             closeModal();
         }
         
-        // Удаление элемента
         function deleteItem(type, id) {
             if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
                 inventoryData[type] = inventoryData[type].filter(item => item.id !== id);
@@ -1123,7 +1074,6 @@
             }
         }
         
-        // Изменение статуса списания
         function toggleWriteOff(type, id) {
             const item = inventoryData[type].find(item => item.id === id);
             if (!item) return;
@@ -1138,12 +1088,10 @@
             renderTables();
         }
         
-        // Закрытие модального окна
         function closeModal() {
             document.getElementById('item-modal').style.display = 'none';
         }
         
-        // Сортировка таблиц
         function setupSorting() {
             document.querySelectorAll('th[data-sort]').forEach(th => {
                 th.addEventListener('click', () => {
@@ -1151,7 +1099,6 @@
                     const sortBy = th.getAttribute('data-sort');
                     const type = tableId.includes('main') ? 'main' : 'lowvalue';
                     
-                    // Определение текущего порядка сортировки
                     let sortOrder = 'asc';
                     if (th.classList.contains('sorted-asc')) {
                         sortOrder = 'desc';
@@ -1159,20 +1106,16 @@
                         sortOrder = 'asc';
                     }
                     
-                    // Сброс предыдущей сортировки
                     document.querySelectorAll(`#${tableId} th`).forEach(header => {
                         header.classList.remove('sorted-asc', 'sorted-desc');
                     });
                     
-                    // Установка нового порядка сортировки
                     th.classList.add(`sorted-${sortOrder}`);
                     
-                    // Сортировка данных
                     inventoryData[type].sort((a, b) => {
                         let aValue = a[sortBy];
                         let bValue = b[sortBy];
                         
-                        // Для строк приводим к нижнему регистру
                         if (typeof aValue === 'string') {
                             aValue = aValue.toLowerCase();
                             bValue = bValue.toLowerCase();
@@ -1189,55 +1132,44 @@
             });
         }
         
-        // Инициализация приложения
         function init() {
             loadData();
             renderTables();
             setupSorting();
             
-            // Обработчики событий для вкладок
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => {
-                    // Убираем активный класс у всех вкладок
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    // Добавляем активный класс текущей вкладке
                     tab.classList.add('active');
                     
-                    // Скрываем все содержимое вкладок
                     document.querySelectorAll('.tab-content').forEach(content => {
                         content.style.display = 'none';
                     });
                     
-                    // Показываем содержимое текущей вкладки
                     const tabId = tab.getAttribute('data-tab');
                     document.getElementById(`${tabId}-tab`).style.display = 'block';
                 });
             });
             
-            // Обработчики для кнопок добавления
             document.getElementById('add-main-btn').addEventListener('click', () => openAddModal('main'));
             document.getElementById('add-lowvalue-btn').addEventListener('click', () => openAddModal('lowvalue'));
             
-            // Обработчики для кнопок группового добавления
             document.getElementById('bulk-add-main-btn').addEventListener('click', () => openBulkAddModal('main'));
             document.getElementById('bulk-add-lowvalue-btn').addEventListener('click', () => openBulkAddModal('lowvalue'));
             
-            // Обработчики для модального окна
             document.getElementById('item-form').addEventListener('submit', saveItem);
             document.querySelector('.close').addEventListener('click', closeModal);
             document.getElementById('cancel-btn').addEventListener('click', closeModal);
             
-            // Обработчики для модального окна группового добавления
             document.getElementById('bulk-add-table').addEventListener('paste', handleBulkPaste);
             document.getElementById('bulk-save-btn').addEventListener('click', saveBulkItems);
             document.getElementById('bulk-cancel-btn').addEventListener('click', closeBulkModal);
+            document.getElementById('bulk-close').addEventListener('click', closeBulkModal);
             
-            // Обработчики для фильтров
             document.querySelectorAll('.filter-input').forEach(input => {
                 input.addEventListener('input', renderTables);
             });
             
-            // Закрытие модальных окон при клике вне их
             window.addEventListener('click', (event) => {
                 if (event.target === document.getElementById('item-modal')) {
                     closeModal();
@@ -1248,7 +1180,6 @@
             });
         }
         
-        // Запуск приложения после загрузки DOM
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>

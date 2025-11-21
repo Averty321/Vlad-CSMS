@@ -4,6 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Система инвентаризации имущества</title>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
+            authDomain: "vlad-csms-af6df.firebaseapp.com",
+            databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
+            projectId: "vlad-csms-af6df",
+            storageBucket: "vlad-csms-af6df.firebasestorage.app",
+            messagingSenderId: "417297799117",
+            appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
+            measurementId: "G-0EMQB4HYSQ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        // Сделаем глобальными для использования в основном коде
+        window.firebaseDatabase = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseGet = get;
+        window.firebaseOnValue = onValue;
+    </script>
+
     <style>
         :root {
             --primary-color: #3498db;
@@ -416,6 +447,26 @@
             z-index: 1000;
         }
         
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--secondary-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .sync-status.syncing {
+            background: var(--warning-color);
+        }
+        
+        .sync-status.error {
+            background: var(--danger-color);
+        }
+        
         @media (max-width: 1024px) {
             .main-content {
                 flex-direction: column;
@@ -437,6 +488,7 @@
 
     <!-- Основное содержимое (скрыто до ввода пароля) -->
     <div id="main-content" style="display: none;">
+        <div class="sync-status" id="sync-status">Firebase: Загрузка...</div>
         <button class="btn btn-warning logout-btn" id="logout-btn">Выйти</button>
         
         <header>
@@ -695,44 +747,72 @@
         // Текущий тип для группового добавления
         let currentBulkType = '';
         
-        // Функции для работы с паролем
-        function checkPassword() {
-            const passwordInput = document.getElementById('password-input').value;
-            const errorElement = document.getElementById('password-error');
-            
-            if (passwordInput === SYSTEM_PASSWORD) {
-                // Пароль верный - показываем основное содержимое
-                document.getElementById('password-protection').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                // Загружаем данные и инициализируем приложение
-                loadData();
-                renderTables();
-                setupSorting();
-                setupEventListeners();
-            } else {
-                // Неверный пароль
-                errorElement.textContent = 'Неверный пароль! Попробуйте снова.';
-                document.getElementById('password-input').value = '';
-                document.getElementById('password-input').focus();
+        // Функции для работы с Firebase
+        async function saveDataToFirebase() {
+            try {
+                updateSyncStatus('Синхронизация...', 'syncing');
+                await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'inventoryData'), inventoryData);
+                updateSyncStatus('Синхронизировано', 'success');
+                console.log('Данные сохранены в Firebase');
+            } catch (error) {
+                console.error('Ошибка сохранения в Firebase:', error);
+                updateSyncStatus('Ошибка синхронизации', 'error');
             }
         }
         
-        function logout() {
-            document.getElementById('password-protection').style.display = 'flex';
-            document.getElementById('main-content').style.display = 'none';
-            document.getElementById('password-input').value = '';
-            document.getElementById('password-error').textContent = '';
+        async function loadDataFromFirebase() {
+            try {
+                updateSyncStatus('Загрузка...', 'syncing');
+                const snapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'inventoryData'));
+                if (snapshot.exists()) {
+                    inventoryData = snapshot.val();
+                    updateSyncStatus('Данные загружены', 'success');
+                    console.log('Данные загружены из Firebase');
+                } else {
+                    // Если данных нет в Firebase, используем локальные
+                    loadDataFromLocalStorage();
+                    await saveDataToFirebase(); // Сохраняем локальные данные в Firebase
+                    updateSyncStatus('Новые данные созданы', 'success');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки из Firebase:', error);
+                // При ошибке загружаем из localStorage
+                loadDataFromLocalStorage();
+                updateSyncStatus('Оффлайн режим', 'error');
+            }
         }
         
-        // Обработка нажатия Enter в поле пароля
-        document.getElementById('password-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkPassword();
+        function setupFirebaseRealtimeUpdates() {
+            try {
+                const inventoryRef = window.firebaseRef(window.firebaseDatabase, 'inventoryData');
+                window.firebaseOnValue(inventoryRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const newData = snapshot.val();
+                        // Проверяем, отличаются ли данные
+                        if (JSON.stringify(inventoryData) !== JSON.stringify(newData)) {
+                            inventoryData = newData;
+                            renderTables();
+                            updateSyncStatus('Обновлено в реальном времени', 'success');
+                            console.log('Данные обновлены в реальном времени');
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка настройки real-time updates:', error);
             }
-        });
+        }
         
-        // Загрузка данных из localStorage
-        function loadData() {
+        function updateSyncStatus(message, type = 'success') {
+            const statusElement = document.getElementById('sync-status');
+            statusElement.textContent = `Firebase: ${message}`;
+            statusElement.className = 'sync-status';
+            if (type !== 'success') {
+                statusElement.classList.add(type);
+            }
+        }
+        
+        // Локальное хранилище как fallback
+        function loadDataFromLocalStorage() {
             const savedData = localStorage.getItem('inventoryData');
             if (savedData) {
                 inventoryData = JSON.parse(savedData);
@@ -750,14 +830,57 @@
                         { id: 3, name: "Клавиатура", inventoryNumber: "MV003", quantity: 3, cabinet: "", location: "Склад", hasSticker: true, status: "writtenoff" }
                     ]
                 };
-                saveData();
             }
         }
         
-        // Сохранение данных в localStorage
-        function saveData() {
+        function saveDataToLocalStorage() {
             localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
         }
+        
+        // Объединенная функция сохранения
+        async function saveData() {
+            saveDataToLocalStorage(); // Всегда сохраняем локально
+            await saveDataToFirebase(); // Сохраняем в Firebase
+        }
+        
+        // Функции для работы с паролем
+        function checkPassword() {
+            const passwordInput = document.getElementById('password-input').value;
+            const errorElement = document.getElementById('password-error');
+            
+            if (passwordInput === SYSTEM_PASSWORD) {
+                // Пароль верный - показываем основное содержимое
+                document.getElementById('password-protection').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                // Загружаем данные и инициализируем приложение
+                initializeApp();
+            } else {
+                // Неверный пароль
+                errorElement.textContent = 'Неверный пароль! Попробуйте снова.';
+                document.getElementById('password-input').value = '';
+                document.getElementById('password-input').focus();
+            }
+        }
+        
+        function logout() {
+            document.getElementById('password-protection').style.display = 'flex';
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('password-input').value = '';
+            document.getElementById('password-error').textContent = '';
+        }
+        
+        // Инициализация приложения
+        async function initializeApp() {
+            await loadDataFromFirebase();
+            setupFirebaseRealtimeUpdates();
+            renderTables();
+            setupSorting();
+            setupEventListeners();
+        }
+        
+        // Остальные функции остаются без изменений...
+        // [Здесь должен быть весь остальной код из предыдущей версии]
+        // Генерация нового ID, отображение таблиц, фильтрация, модальные окна и т.д.
         
         // Генерация нового ID
         function generateId(type) {
@@ -837,7 +960,6 @@
             mainBody.innerHTML = '';
             lowvalueBody.innerHTML = '';
             
-            // Основные средства со статусом "writtenoff"
             const writtenOffMain = inventoryData.main.filter(item => item.status === 'writtenoff');
             writtenOffMain.forEach(item => {
                 const row = document.createElement('tr');
@@ -854,7 +976,6 @@
                 mainBody.appendChild(row);
             });
             
-            // Малоценка со статусом "writtenoff"
             const writtenOffLowvalue = inventoryData.lowvalue.filter(item => item.status === 'writtenoff');
             writtenOffLowvalue.forEach(item => {
                 const row = document.createElement('tr');
@@ -877,10 +998,8 @@
             const container = document.getElementById('cabinet-view-container');
             container.innerHTML = '';
             
-            // Группировка по кабинетам
             const cabinets = {};
             
-            // Обработка основных средств
             inventoryData.main.forEach(item => {
                 const cabinet = item.cabinet || 'Без кабинета';
                 if (!cabinets[cabinet]) {
@@ -889,7 +1008,6 @@
                 cabinets[cabinet].main.push(item);
             });
             
-            // Обработка малоценки
             inventoryData.lowvalue.forEach(item => {
                 const cabinet = item.cabinet || 'Без кабинета';
                 if (!cabinets[cabinet]) {
@@ -898,14 +1016,12 @@
                 cabinets[cabinet].lowvalue.push(item);
             });
             
-            // Сортировка кабинетов
             const sortedCabinets = Object.keys(cabinets).sort((a, b) => {
                 if (a === 'Без кабинета') return 1;
                 if (b === 'Без кабинета') return -1;
                 return a.localeCompare(b, undefined, { numeric: true });
             });
             
-            // Создание представления для каждого кабинета
             sortedCabinets.forEach(cabinet => {
                 const cabinetGroup = document.createElement('div');
                 cabinetGroup.className = 'cabinet-group';
@@ -915,7 +1031,6 @@
                 header.textContent = `Кабинет ${cabinet}`;
                 cabinetGroup.appendChild(header);
                 
-                // Основные средства в кабинете
                 if (cabinets[cabinet].main.length > 0) {
                     const mainTitle = document.createElement('h3');
                     mainTitle.style.padding = '10px 15px 5px';
@@ -953,7 +1068,6 @@
                     cabinetGroup.appendChild(mainTable);
                 }
                 
-                // Малоценка в кабинете
                 if (cabinets[cabinet].lowvalue.length > 0) {
                     const lowvalueTitle = document.createElement('h3');
                     lowvalueTitle.style.padding = '10px 15px 5px';
@@ -1062,7 +1176,7 @@
         }
         
         // Сохранение элемента
-        function saveItem(event) {
+        async function saveItem(event) {
             event.preventDefault();
             
             const id = document.getElementById('item-id').value;
@@ -1076,7 +1190,6 @@
             const status = document.getElementById('item-status').value;
             
             if (id) {
-                // Редактирование существующего элемента
                 const index = inventoryData[type].findIndex(item => item.id === parseInt(id));
                 if (index !== -1) {
                     inventoryData[type][index] = {
@@ -1091,7 +1204,6 @@
                     };
                 }
             } else {
-                // Добавление нового элемента
                 const newId = generateId(type);
                 inventoryData[type].push({
                     id: newId,
@@ -1105,22 +1217,22 @@
                 });
             }
             
-            saveData();
+            await saveData();
             renderTables();
             closeModal();
         }
         
         // Удаление элемента
-        function deleteItem(type, id) {
+        async function deleteItem(type, id) {
             if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
                 inventoryData[type] = inventoryData[type].filter(item => item.id !== id);
-                saveData();
+                await saveData();
                 renderTables();
             }
         }
         
         // Изменение статуса списания
-        function toggleWriteOff(type, id) {
+        async function toggleWriteOff(type, id) {
             const item = inventoryData[type].find(item => item.id === id);
             if (!item) return;
             
@@ -1130,7 +1242,7 @@
                 item.status = 'writtenoff';
             }
             
-            saveData();
+            await saveData();
             renderTables();
         }
         
@@ -1139,16 +1251,13 @@
             document.getElementById('item-modal').style.display = 'none';
         }
         
-        // НОВЫЕ ФУНКЦИИ ДЛЯ ГРУППОВОГО ДОБАВЛЕНИЯ
-        
-        // Открытие модального окна для группового добавления
+        // Функции для группового добавления
         function openBulkAddModal(type) {
             currentBulkType = type;
             document.getElementById('bulk-modal-title').textContent = type === 'main' 
                 ? 'Групповое добавление основных средств' 
                 : 'Групповое добавление малоценных средств';
             
-            // Очистка таблицы
             const tableBody = document.getElementById('bulk-add-table-body');
             tableBody.innerHTML = `
                 <tr>
@@ -1164,27 +1273,22 @@
             
             document.getElementById('bulk-add-modal').style.display = 'flex';
             
-            // Фокус на первую ячейку
             setTimeout(() => {
                 tableBody.querySelector('td').focus();
             }, 100);
         }
         
-        // Обработка вставки данных из Excel
         function handleBulkPaste(event) {
             event.preventDefault();
             
             const clipboardData = event.clipboardData || window.clipboardData;
             const pastedData = clipboardData.getData('text');
             
-            // Разделение данных на строки и столбцы
             const rows = pastedData.split('\n').filter(row => row.trim() !== '');
             const tableBody = document.getElementById('bulk-add-table-body');
             
-            // Очистка таблицы
             tableBody.innerHTML = '';
             
-            // Заполнение таблицы данными
             rows.forEach((row, rowIndex) => {
                 const cells = row.split('\t');
                 const tableRow = document.createElement('tr');
@@ -1200,8 +1304,7 @@
             });
         }
         
-        // Сохранение данных из группового добавления
-        function saveBulkItems() {
+        async function saveBulkItems() {
             const tableBody = document.getElementById('bulk-add-table-body');
             const rows = tableBody.querySelectorAll('tr');
             let hasData = false;
@@ -1216,14 +1319,11 @@
                 const hasStickerText = cells[5].textContent.trim().toLowerCase();
                 const statusText = cells[6].textContent.trim().toLowerCase();
                 
-                // Проверка, есть ли данные в строке
                 if (name && inventoryNumber && location) {
                     hasData = true;
                     
-                    // Преобразование текста в булево значение для наклейки
                     const hasSticker = hasStickerText === 'да' || hasStickerText === 'есть' || hasStickerText === 'true' || hasStickerText === '1';
                     
-                    // Преобразование текста в статус
                     let status = 'active';
                     if (statusText.includes('списан')) {
                         status = 'writtenoff';
@@ -1231,7 +1331,6 @@
                         status = 'writeoff';
                     }
                     
-                    // Добавление нового элемента
                     const newId = generateId(currentBulkType);
                     inventoryData[currentBulkType].push({
                         id: newId,
@@ -1247,7 +1346,7 @@
             });
             
             if (hasData) {
-                saveData();
+                await saveData();
                 renderTables();
                 closeBulkModal();
                 alert('Данные успешно добавлены!');
@@ -1256,7 +1355,6 @@
             }
         }
         
-        // Закрытие модального окна группового добавления
         function closeBulkModal() {
             document.getElementById('bulk-add-modal').style.display = 'none';
         }
@@ -1269,7 +1367,6 @@
                     const sortBy = th.getAttribute('data-sort');
                     const type = tableId.includes('main') ? 'main' : 'lowvalue';
                     
-                    // Определение текущего порядка сортировки
                     let sortOrder = 'asc';
                     if (th.classList.contains('sorted-asc')) {
                         sortOrder = 'desc';
@@ -1277,20 +1374,16 @@
                         sortOrder = 'asc';
                     }
                     
-                    // Сброс предыдущей сортировки
                     document.querySelectorAll(`#${tableId} th`).forEach(header => {
                         header.classList.remove('sorted-asc', 'sorted-desc');
                     });
                     
-                    // Установка нового порядка сортировки
                     th.classList.add(`sorted-${sortOrder}`);
                     
-                    // Сортировка данных
                     inventoryData[type].sort((a, b) => {
                         let aValue = a[sortBy];
                         let bValue = b[sortBy];
                         
-                        // Для строк приводим к нижнему регистру
                         if (typeof aValue === 'string') {
                             aValue = aValue.toLowerCase();
                             bValue = bValue.toLowerCase();
@@ -1309,50 +1402,39 @@
         
         // Настройка обработчиков событий
         function setupEventListeners() {
-            // Обработчики событий для вкладок
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => {
-                    // Убираем активный класс у всех вкладок
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    // Добавляем активный класс текущей вкладке
                     tab.classList.add('active');
                     
-                    // Скрываем все содержимое вкладок
                     document.querySelectorAll('.tab-content').forEach(content => {
                         content.style.display = 'none';
                     });
                     
-                    // Показываем содержимое текущей вкладки
                     const tabId = tab.getAttribute('data-tab');
                     document.getElementById(`${tabId}-tab`).style.display = 'block';
                 });
             });
             
-            // Обработчики для кнопок добавления
             document.getElementById('add-main-btn').addEventListener('click', () => openAddModal('main'));
             document.getElementById('add-lowvalue-btn').addEventListener('click', () => openAddModal('lowvalue'));
             
-            // Обработчики для кнопок группового добавления
             document.getElementById('bulk-add-main-btn').addEventListener('click', () => openBulkAddModal('main'));
             document.getElementById('bulk-add-lowvalue-btn').addEventListener('click', () => openBulkAddModal('lowvalue'));
             
-            // Обработчики для модального окна
             document.getElementById('item-form').addEventListener('submit', saveItem);
             document.querySelector('.close').addEventListener('click', closeModal);
             document.getElementById('cancel-btn').addEventListener('click', closeModal);
             
-            // Обработчики для модального окна группового добавления
             document.getElementById('bulk-add-table').addEventListener('paste', handleBulkPaste);
             document.getElementById('bulk-save-btn').addEventListener('click', saveBulkItems);
             document.getElementById('bulk-cancel-btn').addEventListener('click', closeBulkModal);
             document.getElementById('bulk-close').addEventListener('click', closeBulkModal);
             
-            // Обработчики для фильтров
             document.querySelectorAll('.filter-input').forEach(input => {
                 input.addEventListener('input', renderTables);
             });
             
-            // Закрытие модальных окон при клике вне их
             window.addEventListener('click', (event) => {
                 if (event.target === document.getElementById('item-modal')) {
                     closeModal();
@@ -1365,11 +1447,13 @@
         
         // Инициализация приложения после загрузки DOM
         document.addEventListener('DOMContentLoaded', function() {
-            // Настройка обработчиков для защиты паролем
             document.getElementById('login-btn').addEventListener('click', checkPassword);
             document.getElementById('logout-btn').addEventListener('click', logout);
-            
-            // Фокус на поле пароля при загрузке
+            document.getElementById('password-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
             document.getElementById('password-input').focus();
         });
     </script>

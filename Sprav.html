@@ -943,8 +943,8 @@
                 });
             }
             
-            // Сброс всех данных
-            function resetAllData() {
+            // Сброс всех данных (исправлено - добавлен async)
+            async function resetAllData() {
                 if (confirm('Вы уверены, что хотите очистить все загруженные данные? Это действие нельзя отменить.')) {
                     setLoading(true);
                     

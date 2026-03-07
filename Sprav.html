@@ -785,7 +785,7 @@
                 }
                 
                 let html = '<small class="text-muted me-2">Загружено:</small>';
-                loadedFiles.forEach((file, index) => {
+                loadedFiles.forEach((file) => {
                     html += `<span class="file-item"><i class="bi bi-file-earmark"></i>${file.name}</span>`;
                 });
                 
@@ -1068,4 +1068,185 @@
             
             // --- Сортировка по группам ---
             function groupSort(certs) {
-                return [...
+                return [...certs].sort((a, b) => {
+                    const sutA = a['номер СУТ'] || '';
+                    const sutB = b['номер СУТ'] || '';
+                    if (sutA !== sutB) return sutA.localeCompare(sutB);
+                    
+                    const grsiA = a['номер ГРСИ'] || '';
+                    const grsiB = b['номер ГРСИ'] || '';
+                    if (grsiA !== grsiB) return grsiA.localeCompare(grsiB);
+                    
+                    const modA = a['модификация/исполнение'] || '';
+                    const modB = b['модификация/исполнение'] || '';
+                    if (modA !== modB) return modA.localeCompare(modB);
+                    
+                    const dateA = parseDate(a['дата внесения типа СИ']);
+                    const dateB = parseDate(b['дата внесения типа СИ']);
+                    if (dateA > dateB) return -1;
+                    if (dateA < dateB) return 1;
+                    
+                    return 0;
+                });
+            }
+            
+            // --- Рендер категорий ---
+            function renderCategories() {
+                if (filteredCategories.length === 0) {
+                    categoryList.innerHTML = '';
+                    emptyCategories.style.display = 'block';
+                    return;
+                }
+                
+                emptyCategories.style.display = 'none';
+                let html = '';
+                
+                filteredCategories.forEach(category => {
+                    const count = categoriesMap.get(category)?.length || 0;
+                    const isActive = selectedCategory === category;
+                    const icon = getCategoryIcon(category);
+                    
+                    html += `
+                        <div class="category-item ${isActive ? 'active' : ''}" onclick="window.app.selectCategory('${category.replace(/'/g, "\\'")}')">
+                            <div class="category-icon">${icon}</div>
+                            <div class="category-name">${category}</div>
+                            <div class="category-count">${count}</div>
+                        </div>
+                    `;
+                });
+                
+                categoryList.innerHTML = html;
+            }
+            
+            // --- Рендер сертификатов ---
+            function renderCertificates() {
+                if (!selectedCategory || !categoriesMap.has(selectedCategory)) {
+                    certificateList.innerHTML = '';
+                    emptyCertificates.style.display = 'block';
+                    selectedCategoryTitle.textContent = 'Сертификаты';
+                    certificateCount.textContent = '0';
+                    return;
+                }
+                
+                emptyCertificates.style.display = 'none';
+                selectedCategoryTitle.textContent = selectedCategory;
+                
+                let certs = getFilteredCertificates();
+                certs = groupSort(certs);
+                
+                certificateCount.textContent = certs.length;
+                
+                if (certs.length === 0) {
+                    certificateList.innerHTML = '<div class="empty-state"><i class="bi bi-file-text"></i><p class="mb-0">Ничего не найдено</p></div>';
+                    return;
+                }
+                
+                let table = '<table class="certificate-table"><thead><tr>';
+                allHeaders.forEach(header => {
+                    table += `<th>${header}</th>`;
+                });
+                table += '</tr></thead><tbody>';
+                
+                let lastSut = '';
+                let lastGrsi = '';
+                
+                certs.forEach(item => {
+                    const currentSut = item['номер СУТ'] || '-';
+                    const currentGrsi = item['номер ГРСИ'] || '-';
+                    
+                    if (currentSut !== lastSut) {
+                        table += `
+                            <tr class="group-header">
+                                <td colspan="${allHeaders.length}">📁 СУТ: ${currentSut}</td>
+                            </tr>
+                        `;
+                        lastSut = currentSut;
+                        lastGrsi = '';
+                    }
+                    
+                    if (currentSut === lastSut && currentGrsi !== lastGrsi) {
+                        table += `
+                            <tr class="group-subheader">
+                                <td colspan="${allHeaders.length}">📄 ГРСИ: ${currentGrsi}</td>
+                            </tr>
+                        `;
+                        lastGrsi = currentGrsi;
+                    }
+                    
+                    table += '<tr>';
+                    allHeaders.forEach(header => {
+                        let value = item[header] || '-';
+                        
+                        if (header === 'МПИ') {
+                            table += `<td><span class="mpi-badge">${value}</span></td>`;
+                        } else if (header === 'срок действия СУТ') {
+                            const expired = isExpired(value);
+                            table += `<td><span class="status-badge ${expired ? 'status-expired' : 'status-active'}"></span>${formatDate(value)}</td>`;
+                        } else if (header === 'дата внесения типа СИ') {
+                            table += `<td>${formatDate(value)}</td>`;
+                        } else {
+                            table += `<td>${value}</td>`;
+                        }
+                    });
+                    table += '</tr>';
+                });
+                
+                table += '</tbody></table>';
+                certificateList.innerHTML = table;
+            }
+            
+            // --- Экспонируем функции ---
+            window.app = {
+                selectCategory: function(category) {
+                    selectedCategory = category;
+                    renderCategories();
+                    renderCertificates();
+                    updateResultsSummary();
+                },
+                applySuggestion: function(suggestion) {
+                    searchInput.value = suggestion;
+                    performSearch();
+                }
+            };
+            
+            // --- Обработчики ---
+            
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            
+            resetBtn.addEventListener('click', resetAllData);
+            
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length > 0) {
+                    parseMultipleFiles(files);
+                }
+                fileInput.value = '';
+            });
+            
+            searchButton.addEventListener('click', performSearch);
+            
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            
+            searchClear.addEventListener('click', () => {
+                searchInput.value = '';
+                performSearch();
+            });
+            
+            // Начальное состояние
+            emptyCategories.style.display = 'block';
+            emptyCertificates.style.display = 'block';
+            totalRecords.textContent = '0';
+            categoriesCount.textContent = '0';
+            certificateCount.textContent = '0';
+            
+            // Загружаем данные из localStorage при старте
+            loadFromStorage();
+            
+        })();
+    </script>
+</body>
+</html>

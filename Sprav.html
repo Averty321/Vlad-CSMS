@@ -7,9 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         body {
             background-color: #f5f7fb;
@@ -49,32 +46,10 @@
             margin-left: 15px;
             padding-left: 15px;
             border-left: 1px solid rgba(255,255,255,0.3);
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
         .update-time i {
             margin-right: 5px;
             color: #ffd700;
-        }
-        .save-status {
-            font-size: 0.75rem;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.2);
-            margin-left: 5px;
-        }
-        .save-status.saving {
-            background: #ffc107;
-            color: #000;
-        }
-        .save-status.saved {
-            background: #198754;
-            color: white;
-        }
-        .save-status.error {
-            background: #dc3545;
-            color: white;
         }
         
         /* Карточка загрузки */
@@ -190,7 +165,7 @@
             background: white;
             border-radius: 16px;
             padding: 20px;
-            height: calc(100vh - 380px);
+            height: calc(100vh - 350px);
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -519,7 +494,6 @@
                     <div class="update-time" id="updateTime">
                         <i class="bi bi-clock-history"></i>
                         <span id="lastUpdateText">Загрузка...</span>
-                        <span class="save-status" id="saveStatus"></span>
                     </div>
                 </div>
             </div>
@@ -536,6 +510,7 @@
                     <p class="text-muted mb-2 small">
                         Поддерживаются файлы Excel (.xlsx, .xls). 
                         Можно выбрать несколько файлов сразу (Ctrl+клик). Данные накапливаются.
+                        <br><span class="text-success"><i class="bi bi-save"></i> Автосохранение в браузере</span>
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end">
@@ -610,28 +585,12 @@
             <i class="bi bi-lightning-charge"></i> Поиск по Enter или кнопке • 
             <i class="bi bi-files"></i> Множественная загрузка •
             <i class="bi bi-sort-numeric-down"></i> Группировка: СУТ → ГРСИ → модификация → дата •
-            <i class="bi bi-cloud-upload"></i> Автосохранение в Firebase
+            <i class="bi bi-save"></i> Локальное сохранение
         </div>
     </div>
 
     <script>
         (function() {
-            // --- Инициализация Firebase ---
-            const firebaseConfig = {
-                apiKey: "AIzaSyAlMduGeljWyCDj9mje3-ynHiNavAlPC8I",
-                authDomain: "vlad-csms-af6df.firebaseapp.com",
-                databaseURL: "https://vlad-csms-af6df-default-rtdb.firebaseio.com",
-                projectId: "vlad-csms-af6df",
-                storageBucket: "vlad-csms-af6df.firebasestorage.app",
-                messagingSenderId: "417297799117",
-                appId: "1:417297799117:web:07ce2915cbfe0cb1499684",
-                measurementId: "G-0EMQB4HYSQ"
-            };
-
-            // Initialize Firebase
-            const app = firebase.initializeApp(firebaseConfig);
-            const database = firebase.database();
-            
             // --- Глобальные переменные ---
             let allData = [];
             let allHeaders = [];
@@ -646,8 +605,8 @@
             // Флаг для предотвращения двойной загрузки
             let isLoading = false;
             
-            // Флаг сохранения
-            let isSaving = false;
+            // Ключ для localStorage
+            const STORAGE_KEY = 'si_registry_data';
             
             // --- DOM элементы ---
             const fileInput = document.getElementById('fileInput');
@@ -669,7 +628,6 @@
             const fileList = document.getElementById('fileList');
             const quickFilters = document.getElementById('quickFilters');
             const lastUpdateText = document.getElementById('lastUpdateText');
-            const saveStatus = document.getElementById('saveStatus');
             
             // --- Иконки для категорий ---
             const categoryIcons = {
@@ -692,18 +650,6 @@
             
             function setLoading(show) {
                 loadingOverlay.style.display = show ? 'flex' : 'none';
-            }
-            
-            function setSavingStatus(status) {
-                saveStatus.textContent = status;
-                saveStatus.className = 'save-status';
-                if (status === 'Сохранение...') {
-                    saveStatus.classList.add('saving');
-                } else if (status === 'Сохранено') {
-                    saveStatus.classList.add('saved');
-                } else if (status === 'Ошибка') {
-                    saveStatus.classList.add('error');
-                }
             }
             
             function getCategoryIcon(category) {
@@ -757,80 +703,8 @@
                 });
             }
             
-            // Обновление даты обновления
-            async function updateLastUpdateTime() {
-                const now = Date.now();
-                lastUpdateText.textContent = formatUpdateTime(now);
-                // Сохраняем в Firebase
-                await database.ref('metadata/lastUpdate').set(now);
-            }
-            
-            // Загрузка данных из Firebase
-            async function loadFromFirebase() {
-                setLoading(true);
-                try {
-                    // Загружаем данные
-                    const snapshot = await database.ref('data').once('value');
-                    const savedData = snapshot.val();
-                    
-                    console.log('Загружено из Firebase:', savedData);
-                    
-                    if (savedData && savedData.data && savedData.data.length > 0) {
-                        // Восстанавливаем данные
-                        allData = savedData.data || [];
-                        allHeaders = savedData.headers || [];
-                        loadedFiles = savedData.files || [];
-                        
-                        // Перестраиваем карту категорий
-                        rebuildCategories();
-                        
-                        // Обновляем отображение
-                        totalRecords.textContent = allData.length;
-                        updateFileList();
-                        
-                        // Показываем категории
-                        filteredCategories = Array.from(categoriesMap.keys()).sort();
-                        categoriesCount.textContent = filteredCategories.length;
-                        
-                        if (filteredCategories.length > 0) {
-                            selectedCategory = filteredCategories[0];
-                        }
-                        
-                        renderCategories();
-                        renderCertificates();
-                        updateResultsSummary();
-                        updateQuickFilters();
-                        
-                        // Загружаем дату последнего обновления
-                        const metaSnapshot = await database.ref('metadata/lastUpdate').once('value');
-                        const lastUpdate = metaSnapshot.val();
-                        if (lastUpdate) {
-                            lastUpdateText.textContent = formatUpdateTime(lastUpdate);
-                        }
-                        
-                        setSavingStatus('Сохранено');
-                    } else {
-                        console.log('Нет данных в Firebase');
-                        lastUpdateText.textContent = 'Нет данных';
-                        setSavingStatus('');
-                        emptyCategories.style.display = 'block';
-                        emptyCertificates.style.display = 'block';
-                    }
-                } catch (error) {
-                    console.error('Ошибка загрузки из Firebase:', error);
-                    lastUpdateText.textContent = 'Ошибка загрузки';
-                    setSavingStatus('Ошибка');
-                } finally {
-                    setLoading(false);
-                }
-            }
-            
-            // Сохранение данных в Firebase
-            async function saveToFirebase() {
-                if (isSaving) return;
-                isSaving = true;
-                setSavingStatus('Сохранение...');
-                
+            // Сохранение в localStorage
+            function saveToStorage() {
                 try {
                     const dataToSave = {
                         data: allData,
@@ -839,26 +713,67 @@
                         timestamp: Date.now()
                     };
                     
-                    console.log('Сохраняем в Firebase:', dataToSave);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
                     
-                    await database.ref('data').set(dataToSave);
-                    await updateLastUpdateTime();
+                    // Обновляем дату
+                    lastUpdateText.textContent = formatUpdateTime(Date.now());
                     
-                    console.log('✅ Данные успешно сохранены в Firebase');
-                    setSavingStatus('Сохранено');
-                    
-                    // Через 3 секунды убираем статус
-                    setTimeout(() => {
-                        if (saveStatus.textContent === 'Сохранено') {
-                            setSavingStatus('');
-                        }
-                    }, 3000);
-                    
+                    console.log('✅ Данные сохранены в localStorage');
                 } catch (error) {
-                    console.error('❌ Ошибка сохранения в Firebase:', error);
-                    setSavingStatus('Ошибка');
+                    console.error('❌ Ошибка сохранения в localStorage:', error);
+                }
+            }
+            
+            // Загрузка из localStorage
+            function loadFromStorage() {
+                setLoading(true);
+                try {
+                    const savedData = localStorage.getItem(STORAGE_KEY);
+                    
+                    if (savedData) {
+                        const parsed = JSON.parse(savedData);
+                        
+                        allData = parsed.data || [];
+                        allHeaders = parsed.headers || [];
+                        loadedFiles = parsed.files || [];
+                        
+                        if (allData.length > 0) {
+                            rebuildCategories();
+                            
+                            totalRecords.textContent = allData.length;
+                            updateFileList();
+                            
+                            filteredCategories = Array.from(categoriesMap.keys()).sort();
+                            categoriesCount.textContent = filteredCategories.length;
+                            
+                            if (filteredCategories.length > 0) {
+                                selectedCategory = filteredCategories[0];
+                            }
+                            
+                            renderCategories();
+                            renderCertificates();
+                            updateResultsSummary();
+                            updateQuickFilters();
+                            
+                            lastUpdateText.textContent = formatUpdateTime(parsed.timestamp || Date.now());
+                            
+                            console.log('✅ Данные загружены из localStorage');
+                        } else {
+                            lastUpdateText.textContent = 'Нет данных';
+                            emptyCategories.style.display = 'block';
+                            emptyCertificates.style.display = 'block';
+                        }
+                    } else {
+                        console.log('Нет данных в localStorage');
+                        lastUpdateText.textContent = 'Нет данных';
+                        emptyCategories.style.display = 'block';
+                        emptyCertificates.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Ошибка загрузки из localStorage:', error);
+                    lastUpdateText.textContent = 'Ошибка загрузки';
                 } finally {
-                    isSaving = false;
+                    setLoading(false);
                 }
             }
             
@@ -955,8 +870,8 @@
                     // Обновляем отображение
                     updateCategoriesDisplay();
                     
-                    // Сохраняем в Firebase и ждем завершения
-                    await saveToFirebase();
+                    // Сохраняем в localStorage
+                    saveToStorage();
                 }
                 
                 setLoading(false);
@@ -1001,7 +916,7 @@
             }
             
             // Сброс всех данных
-            async function resetAllData() {
+            function resetAllData() {
                 if (confirm('Вы уверены, что хотите очистить все загруженные данные? Это действие нельзя отменить.')) {
                     setLoading(true);
                     
@@ -1031,19 +946,11 @@
                     searchClear.style.display = 'none';
                     quickFilters.innerHTML = '';
                     
-                    // Очищаем Firebase
-                    try {
-                        await database.ref('data').remove();
-                        await database.ref('metadata/lastUpdate').remove();
-                        lastUpdateText.textContent = 'Данные очищены';
-                        setSavingStatus('');
-                        console.log('✅ Firebase очищен');
-                    } catch (error) {
-                        console.error('❌ Ошибка очистки Firebase:', error);
-                        setSavingStatus('Ошибка');
-                    } finally {
-                        setLoading(false);
-                    }
+                    // Очищаем localStorage
+                    localStorage.removeItem(STORAGE_KEY);
+                    lastUpdateText.textContent = 'Данные очищены';
+                    
+                    setLoading(false);
                 }
             }
             
@@ -1161,192 +1068,4 @@
             
             // --- Сортировка по группам ---
             function groupSort(certs) {
-                return [...certs].sort((a, b) => {
-                    const sutA = a['номер СУТ'] || '';
-                    const sutB = b['номер СУТ'] || '';
-                    if (sutA !== sutB) return sutA.localeCompare(sutB);
-                    
-                    const grsiA = a['номер ГРСИ'] || '';
-                    const grsiB = b['номер ГРСИ'] || '';
-                    if (grsiA !== grsiB) return grsiA.localeCompare(grsiB);
-                    
-                    const modA = a['модификация/исполнение'] || '';
-                    const modB = b['модификация/исполнение'] || '';
-                    if (modA !== modB) return modA.localeCompare(modB);
-                    
-                    const dateA = parseDate(a['дата внесения типа СИ']);
-                    const dateB = parseDate(b['дата внесения типа СИ']);
-                    if (dateA > dateB) return -1;
-                    if (dateA < dateB) return 1;
-                    
-                    return 0;
-                });
-            }
-            
-            // --- Рендер категорий ---
-            function renderCategories() {
-                if (filteredCategories.length === 0) {
-                    categoryList.innerHTML = '';
-                    emptyCategories.style.display = 'block';
-                    return;
-                }
-                
-                emptyCategories.style.display = 'none';
-                let html = '';
-                
-                filteredCategories.forEach(category => {
-                    const count = categoriesMap.get(category)?.length || 0;
-                    const isActive = selectedCategory === category;
-                    const icon = getCategoryIcon(category);
-                    
-                    html += `
-                        <div class="category-item ${isActive ? 'active' : ''}" onclick="window.app.selectCategory('${category.replace(/'/g, "\\'")}')">
-                            <div class="category-icon">${icon}</div>
-                            <div class="category-name">${category}</div>
-                            <div class="category-count">${count}</div>
-                        </div>
-                    `;
-                });
-                
-                categoryList.innerHTML = html;
-            }
-            
-            // --- Рендер сертификатов ---
-            function renderCertificates() {
-                if (!selectedCategory || !categoriesMap.has(selectedCategory)) {
-                    certificateList.innerHTML = '';
-                    emptyCertificates.style.display = 'block';
-                    selectedCategoryTitle.textContent = 'Сертификаты';
-                    certificateCount.textContent = '0';
-                    return;
-                }
-                
-                emptyCertificates.style.display = 'none';
-                selectedCategoryTitle.textContent = selectedCategory;
-                
-                let certs = getFilteredCertificates();
-                certs = groupSort(certs);
-                
-                certificateCount.textContent = certs.length;
-                
-                if (certs.length === 0) {
-                    certificateList.innerHTML = '<div class="empty-state"><i class="bi bi-file-text"></i><p class="mb-0">Ничего не найдено</p></div>';
-                    return;
-                }
-                
-                let table = '<table class="certificate-table"><thead><tr>';
-                allHeaders.forEach(header => {
-                    table += `<th>${header}</th>`;
-                });
-                table += '</tr></thead><tbody>';
-                
-                let lastSut = '';
-                let lastGrsi = '';
-                
-                certs.forEach(item => {
-                    const currentSut = item['номер СУТ'] || '-';
-                    const currentGrsi = item['номер ГРСИ'] || '-';
-                    
-                    if (currentSut !== lastSut) {
-                        table += `
-                            <tr class="group-header">
-                                <td colspan="${allHeaders.length}">📁 СУТ: ${currentSut}</td>
-                            </tr>
-                        `;
-                        lastSut = currentSut;
-                        lastGrsi = '';
-                    }
-                    
-                    if (currentSut === lastSut && currentGrsi !== lastGrsi) {
-                        table += `
-                            <tr class="group-subheader">
-                                <td colspan="${allHeaders.length}">📄 ГРСИ: ${currentGrsi}</td>
-                            </tr>
-                        `;
-                        lastGrsi = currentGrsi;
-                    }
-                    
-                    table += '<tr>';
-                    allHeaders.forEach(header => {
-                        let value = item[header] || '-';
-                        
-                        if (header === 'МПИ') {
-                            table += `<td><span class="mpi-badge">${value}</span></td>`;
-                        } else if (header === 'срок действия СУТ') {
-                            const expired = isExpired(value);
-                            table += `<td><span class="status-badge ${expired ? 'status-expired' : 'status-active'}"></span>${formatDate(value)}</td>`;
-                        } else if (header === 'дата внесения типа СИ') {
-                            table += `<td>${formatDate(value)}</td>`;
-                        } else {
-                            table += `<td>${value}</td>`;
-                        }
-                    });
-                    table += '</tr>';
-                });
-                
-                table += '</tbody></table>';
-                certificateList.innerHTML = table;
-            }
-            
-            // --- Экспонируем функции ---
-            window.app = {
-                selectCategory: function(category) {
-                    selectedCategory = category;
-                    renderCategories();
-                    renderCertificates();
-                    updateResultsSummary();
-                },
-                applySuggestion: function(suggestion) {
-                    searchInput.value = suggestion;
-                    performSearch();
-                }
-            };
-            
-            // --- Обработчики ---
-            
-            uploadBtn.addEventListener('click', () => fileInput.click());
-            
-            resetBtn.addEventListener('click', resetAllData);
-            
-            fileInput.addEventListener('change', (e) => {
-                const files = Array.from(e.target.files);
-                if (files.length > 0) {
-                    parseMultipleFiles(files);
-                }
-                fileInput.value = '';
-            });
-            
-            searchButton.addEventListener('click', performSearch);
-            
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch();
-                }
-            });
-            
-            searchClear.addEventListener('click', () => {
-                searchInput.value = '';
-                performSearch();
-            });
-            
-            // Начальное состояние
-            emptyCategories.style.display = 'block';
-            emptyCertificates.style.display = 'block';
-            totalRecords.textContent = '0';
-            categoriesCount.textContent = '0';
-            certificateCount.textContent = '0';
-            
-            // Загружаем данные из Firebase при старте
-            loadFromFirebase();
-            
-            // Сохраняем данные перед уходом со страницы
-            window.addEventListener('beforeunload', function() {
-                if (allData.length > 0 && !isSaving) {
-                    saveToFirebase();
-                }
-            });
-            
-        })();
-    </script>
-</body>
-</html>
+                return [...

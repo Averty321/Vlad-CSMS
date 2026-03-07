@@ -49,10 +49,32 @@
             margin-left: 15px;
             padding-left: 15px;
             border-left: 1px solid rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .update-time i {
             margin-right: 5px;
             color: #ffd700;
+        }
+        .save-status {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.2);
+            margin-left: 5px;
+        }
+        .save-status.saving {
+            background: #ffc107;
+            color: #000;
+        }
+        .save-status.saved {
+            background: #198754;
+            color: white;
+        }
+        .save-status.error {
+            background: #dc3545;
+            color: white;
         }
         
         /* Карточка загрузки */
@@ -168,7 +190,7 @@
             background: white;
             border-radius: 16px;
             padding: 20px;
-            height: calc(100vh - 350px);
+            height: calc(100vh - 380px);
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -497,6 +519,7 @@
                     <div class="update-time" id="updateTime">
                         <i class="bi bi-clock-history"></i>
                         <span id="lastUpdateText">Загрузка...</span>
+                        <span class="save-status" id="saveStatus"></span>
                     </div>
                 </div>
             </div>
@@ -623,6 +646,9 @@
             // Флаг для предотвращения двойной загрузки
             let isLoading = false;
             
+            // Флаг сохранения
+            let isSaving = false;
+            
             // --- DOM элементы ---
             const fileInput = document.getElementById('fileInput');
             const uploadBtn = document.getElementById('uploadBtn');
@@ -643,6 +669,7 @@
             const fileList = document.getElementById('fileList');
             const quickFilters = document.getElementById('quickFilters');
             const lastUpdateText = document.getElementById('lastUpdateText');
+            const saveStatus = document.getElementById('saveStatus');
             
             // --- Иконки для категорий ---
             const categoryIcons = {
@@ -665,6 +692,18 @@
             
             function setLoading(show) {
                 loadingOverlay.style.display = show ? 'flex' : 'none';
+            }
+            
+            function setSavingStatus(status) {
+                saveStatus.textContent = status;
+                saveStatus.className = 'save-status';
+                if (status === 'Сохранение...') {
+                    saveStatus.classList.add('saving');
+                } else if (status === 'Сохранено') {
+                    saveStatus.classList.add('saved');
+                } else if (status === 'Ошибка') {
+                    saveStatus.classList.add('error');
+                }
             }
             
             function getCategoryIcon(category) {
@@ -719,11 +758,11 @@
             }
             
             // Обновление даты обновления
-            function updateLastUpdateTime() {
+            async function updateLastUpdateTime() {
                 const now = Date.now();
                 lastUpdateText.textContent = formatUpdateTime(now);
                 // Сохраняем в Firebase
-                database.ref('metadata/lastUpdate').set(now);
+                await database.ref('metadata/lastUpdate').set(now);
             }
             
             // Загрузка данных из Firebase
@@ -767,18 +806,20 @@
                         const lastUpdate = metaSnapshot.val();
                         if (lastUpdate) {
                             lastUpdateText.textContent = formatUpdateTime(lastUpdate);
-                        } else {
-                            lastUpdateText.textContent = 'Только что';
                         }
+                        
+                        setSavingStatus('Сохранено');
                     } else {
                         console.log('Нет данных в Firebase');
                         lastUpdateText.textContent = 'Нет данных';
+                        setSavingStatus('');
                         emptyCategories.style.display = 'block';
                         emptyCertificates.style.display = 'block';
                     }
                 } catch (error) {
                     console.error('Ошибка загрузки из Firebase:', error);
                     lastUpdateText.textContent = 'Ошибка загрузки';
+                    setSavingStatus('Ошибка');
                 } finally {
                     setLoading(false);
                 }
@@ -786,6 +827,10 @@
             
             // Сохранение данных в Firebase
             async function saveToFirebase() {
+                if (isSaving) return;
+                isSaving = true;
+                setSavingStatus('Сохранение...');
+                
                 try {
                     const dataToSave = {
                         data: allData,
@@ -800,8 +845,20 @@
                     await updateLastUpdateTime();
                     
                     console.log('✅ Данные успешно сохранены в Firebase');
+                    setSavingStatus('Сохранено');
+                    
+                    // Через 3 секунды убираем статус
+                    setTimeout(() => {
+                        if (saveStatus.textContent === 'Сохранено') {
+                            setSavingStatus('');
+                        }
+                    }, 3000);
+                    
                 } catch (error) {
                     console.error('❌ Ошибка сохранения в Firebase:', error);
+                    setSavingStatus('Ошибка');
+                } finally {
+                    isSaving = false;
                 }
             }
             
@@ -895,11 +952,11 @@
                     totalRecords.textContent = allData.length;
                     updateFileList();
                     
-                    // Сохраняем в Firebase
-                    await saveToFirebase();
-                    
                     // Обновляем отображение
                     updateCategoriesDisplay();
+                    
+                    // Сохраняем в Firebase и ждем завершения
+                    await saveToFirebase();
                 }
                 
                 setLoading(false);
@@ -943,7 +1000,7 @@
                 });
             }
             
-            // Сброс всех данных (исправлено - добавлен async)
+            // Сброс всех данных
             async function resetAllData() {
                 if (confirm('Вы уверены, что хотите очистить все загруженные данные? Это действие нельзя отменить.')) {
                     setLoading(true);
@@ -979,9 +1036,11 @@
                         await database.ref('data').remove();
                         await database.ref('metadata/lastUpdate').remove();
                         lastUpdateText.textContent = 'Данные очищены';
+                        setSavingStatus('');
                         console.log('✅ Firebase очищен');
                     } catch (error) {
                         console.error('❌ Ошибка очистки Firebase:', error);
+                        setSavingStatus('Ошибка');
                     } finally {
                         setLoading(false);
                     }
@@ -1279,6 +1338,13 @@
             
             // Загружаем данные из Firebase при старте
             loadFromFirebase();
+            
+            // Сохраняем данные перед уходом со страницы
+            window.addEventListener('beforeunload', function() {
+                if (allData.length > 0 && !isSaving) {
+                    saveToFirebase();
+                }
+            });
             
         })();
     </script>

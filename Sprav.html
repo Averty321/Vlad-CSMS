@@ -246,7 +246,7 @@
             width: 100%;
             font-size: 0.9rem;
             border-collapse: collapse;
-            min-width: 2200px; /* Увеличил общую ширину */
+            min-width: 2200px;
         }
         .certificate-table th {
             position: sticky;
@@ -273,11 +273,11 @@
             min-width: 160px;
         }
         
-        /* ТИП СИ - расширен */
+        /* ТИП СИ */
         .certificate-table th:nth-child(3),
         .certificate-table td:nth-child(3) {
-            min-width: 400px;  /* Было 300px */
-            max-width: 500px;   /* Было 400px */
+            min-width: 400px;
+            max-width: 500px;
             white-space: normal;
             word-break: break-word;
             font-weight: 500;
@@ -295,10 +295,10 @@
             min-width: 250px;
         }
         
-        /* МПИ - расширен */
+        /* МПИ */
         .certificate-table th:nth-child(6),
         .certificate-table td:nth-child(6) {
-            min-width: 180px;  /* Было 100px */
+            min-width: 180px;
             max-width: 250px;
         }
         .certificate-table td:nth-child(6) .mpi-badge {
@@ -306,7 +306,6 @@
             padding: 6px 12px;
             white-space: normal;
             word-break: break-word;
-            max-width: 230px;
         }
         
         /* Дата внесения */
@@ -371,7 +370,6 @@
             white-space: normal;
             word-break: break-word;
             display: inline-block;
-            max-width: 230px;
             line-height: 1.3;
         }
         .status-badge {
@@ -732,32 +730,51 @@
             async function loadFromFirebase() {
                 setLoading(true);
                 try {
+                    // Загружаем данные
                     const snapshot = await database.ref('data').once('value');
                     const savedData = snapshot.val();
                     
-                    if (savedData) {
+                    console.log('Загружено из Firebase:', savedData);
+                    
+                    if (savedData && savedData.data && savedData.data.length > 0) {
+                        // Восстанавливаем данные
                         allData = savedData.data || [];
                         allHeaders = savedData.headers || [];
                         loadedFiles = savedData.files || [];
+                        
+                        // Перестраиваем карту категорий
+                        rebuildCategories();
+                        
+                        // Обновляем отображение
+                        totalRecords.textContent = allData.length;
+                        updateFileList();
+                        
+                        // Показываем категории
+                        filteredCategories = Array.from(categoriesMap.keys()).sort();
+                        categoriesCount.textContent = filteredCategories.length;
+                        
+                        if (filteredCategories.length > 0) {
+                            selectedCategory = filteredCategories[0];
+                        }
+                        
+                        renderCategories();
+                        renderCertificates();
+                        updateResultsSummary();
+                        updateQuickFilters();
                         
                         // Загружаем дату последнего обновления
                         const metaSnapshot = await database.ref('metadata/lastUpdate').once('value');
                         const lastUpdate = metaSnapshot.val();
                         if (lastUpdate) {
                             lastUpdateText.textContent = formatUpdateTime(lastUpdate);
-                        }
-                        
-                        if (allData.length > 0) {
-                            rebuildCategories();
-                            totalRecords.textContent = allData.length;
-                            updateFileList();
-                            updateCategoriesDisplay();
                         } else {
-                            emptyCategories.style.display = 'block';
-                            emptyCertificates.style.display = 'block';
+                            lastUpdateText.textContent = 'Только что';
                         }
                     } else {
+                        console.log('Нет данных в Firebase');
                         lastUpdateText.textContent = 'Нет данных';
+                        emptyCategories.style.display = 'block';
+                        emptyCertificates.style.display = 'block';
                     }
                 } catch (error) {
                     console.error('Ошибка загрузки из Firebase:', error);
@@ -777,11 +794,14 @@
                         timestamp: Date.now()
                     };
                     
+                    console.log('Сохраняем в Firebase:', dataToSave);
+                    
                     await database.ref('data').set(dataToSave);
-                    updateLastUpdateTime();
-                    console.log('Данные сохранены в Firebase');
+                    await updateLastUpdateTime();
+                    
+                    console.log('✅ Данные успешно сохранены в Firebase');
                 } catch (error) {
-                    console.error('Ошибка сохранения в Firebase:', error);
+                    console.error('❌ Ошибка сохранения в Firebase:', error);
                 }
             }
             
@@ -868,17 +888,17 @@
                     }
                 }
                 
-                // Перестраиваем карту категорий
-                rebuildCategories();
-                
-                totalRecords.textContent = allData.length;
-                updateFileList();
-                
-                // Сохраняем в Firebase
-                await saveToFirebase();
-                
-                // Если были загружены новые данные, обновляем отображение
                 if (totalNewRecords > 0) {
+                    // Перестраиваем карту категорий
+                    rebuildCategories();
+                    
+                    totalRecords.textContent = allData.length;
+                    updateFileList();
+                    
+                    // Сохраняем в Firebase
+                    await saveToFirebase();
+                    
+                    // Обновляем отображение
                     updateCategoriesDisplay();
                 }
                 
@@ -898,15 +918,13 @@
                 });
             }
             
-            // Простое обновление отображения категорий (без поиска)
+            // Обновление отображения категорий
             function updateCategoriesDisplay() {
                 filteredCategories = Array.from(categoriesMap.keys()).sort();
                 categoriesCount.textContent = filteredCategories.length;
                 
-                if (filteredCategories.length > 0) {
+                if (filteredCategories.length > 0 && !selectedCategory) {
                     selectedCategory = filteredCategories[0];
-                } else {
-                    selectedCategory = null;
                 }
                 
                 renderCategories();
@@ -957,13 +975,16 @@
                     quickFilters.innerHTML = '';
                     
                     // Очищаем Firebase
-                    database.ref('data').remove()
-                        .then(() => {
-                            database.ref('metadata/lastUpdate').remove();
-                            lastUpdateText.textContent = 'Данные очищены';
-                        })
-                        .catch(error => console.error('Ошибка очистки Firebase:', error))
-                        .finally(() => setLoading(false));
+                    try {
+                        await database.ref('data').remove();
+                        await database.ref('metadata/lastUpdate').remove();
+                        lastUpdateText.textContent = 'Данные очищены';
+                        console.log('✅ Firebase очищен');
+                    } catch (error) {
+                        console.error('❌ Ошибка очистки Firebase:', error);
+                    } finally {
+                        setLoading(false);
+                    }
                 }
             }
             
@@ -981,7 +1002,6 @@
                 } else {
                     const matchedCategories = new Set();
                     allData.forEach(item => {
-                        // Ищем по всем полям
                         const match = Object.values(item).some(val => 
                             String(val).toLowerCase().includes(term)
                         );
@@ -1002,28 +1022,22 @@
                 renderCategories();
                 renderCertificates();
                 updateResultsSummary();
-                // Не обновляем быстрые фильтры при поиске
             }
             
-            // --- Обновление быстрых фильтров (предложений) ---
+            // --- Обновление быстрых фильтров ---
             function updateQuickFilters() {
                 if (allData.length === 0) {
                     quickFilters.innerHTML = '';
                     return;
                 }
                 
-                // Собираем популярные значения для предложений
                 const suggestions = new Set();
-                
-                // Берем первые 100 записей для формирования предложений
                 const sample = allData.slice(0, 100);
                 
                 sample.forEach(item => {
-                    // Добавляем типы СИ
                     if (item['тип СИ'] && item['тип СИ'] !== '-') {
                         suggestions.add(item['тип СИ']);
                     }
-                    // Добавляем производителей
                     if (item['изготовитель'] && item['изготовитель'] !== '-') {
                         const manufacturer = item['изготовитель'].split(' ').slice(0, 2).join(' ');
                         if (manufacturer.length > 3) {
@@ -1032,7 +1046,6 @@
                     }
                 });
                 
-                // Преобразуем в массив и берем первые 8
                 const suggestionList = Array.from(suggestions).slice(0, 8);
                 
                 if (suggestionList.length === 0) {
@@ -1162,7 +1175,6 @@
                     return;
                 }
                 
-                // Создаем таблицу
                 let table = '<table class="certificate-table"><thead><tr>';
                 allHeaders.forEach(header => {
                     table += `<th>${header}</th>`;
@@ -1176,7 +1188,6 @@
                     const currentSut = item['номер СУТ'] || '-';
                     const currentGrsi = item['номер ГРСИ'] || '-';
                     
-                    // Разделитель для новой группы СУТ
                     if (currentSut !== lastSut) {
                         table += `
                             <tr class="group-header">
@@ -1187,7 +1198,6 @@
                         lastGrsi = '';
                     }
                     
-                    // Разделитель для новой группы ГРСИ
                     if (currentSut === lastSut && currentGrsi !== lastGrsi) {
                         table += `
                             <tr class="group-subheader">
@@ -1197,7 +1207,6 @@
                         lastGrsi = currentGrsi;
                     }
                     
-                    // Строка данных
                     table += '<tr>';
                     allHeaders.forEach(header => {
                         let value = item[header] || '-';
@@ -1245,21 +1254,17 @@
                 if (files.length > 0) {
                     parseMultipleFiles(files);
                 }
-                // Очищаем input, чтобы можно было загрузить те же файлы снова
                 fileInput.value = '';
             });
             
-            // Поиск по кнопке
             searchButton.addEventListener('click', performSearch);
             
-            // Поиск по Enter
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     performSearch();
                 }
             });
             
-            // Очистка поиска
             searchClear.addEventListener('click', () => {
                 searchInput.value = '';
                 performSearch();

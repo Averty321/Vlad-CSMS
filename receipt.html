@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сравнение свидетельств о поверке</title>
+    <title>Сравнение свидетельств о поверке (v2.0)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -22,8 +22,14 @@
         h1 {
             text-align: center;
             color: #0f3460;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 30px;
+            font-size: 14px;
         }
         .upload-panel {
             display: flex;
@@ -99,6 +105,12 @@
             background: #c72a48;
             transform: scale(1.02);
         }
+        button:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         .result-section {
             background: white;
             border-radius: 16px;
@@ -116,13 +128,18 @@
             border-radius: 10px;
             margin-bottom: 20px;
             font-weight: 500;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
         }
         .table-wrapper {
             overflow-x: auto;
-            max-height: 500px;
+            max-height: 400px;
             overflow-y: auto;
             border: 1px solid #dee2e6;
             border-radius: 10px;
+            margin-bottom: 20px;
         }
         table {
             width: 100%;
@@ -148,13 +165,25 @@
             background: #f8f9fa;
         }
         .badge {
-            background: #e94560;
             color: white;
             padding: 4px 12px;
             border-radius: 30px;
             font-size: 13px;
             font-weight: bold;
             display: inline-block;
+        }
+        .badge-danger {
+            background: #e94560;
+        }
+        .badge-warning {
+            background: #f0ad4e;
+            color: #1a1a2e;
+        }
+        .badge-success {
+            background: #2a7f6e;
+        }
+        .badge-info {
+            background: #0f3460;
         }
         .footer {
             margin-top: 30px;
@@ -175,11 +204,26 @@
             padding: 10px;
             border-radius: 8px;
         }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid #f0ad4e;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🔍 Сравнение реестра поверок</h1>
+    <h1>🔍 Сравнение реестра поверок (v2.0)</h1>
+    <p class="subtitle">Сверка по номеру документа + наименованию СИ • Записи за сегодня исключаются из проверки</p>
     <div class="upload-panel">
         <div class="upload-box">
             <h3>📁 Файл №1 (База белгим)</h3>
@@ -199,34 +243,83 @@
     <div class="controls">
         <button id="compareBtn">🚀 Сравнить и найти неотгруженные</button>
     </div>
-    <div id="resultContainer" class="result-section" style="display: none;">
-        <h3>📋 Результат: <span id="resultTitle"></span></h3>
-        <div class="stats" id="statsInfo"></div>
-        <div class="table-wrapper" id="resultTableWrapper">
-            <table id="resultTable">
-                <thead id="resultHeader"></thead>
-                <tbody id="resultBody"></tbody>
-            </table>
+    <div id="resultContainer" style="display: none;">
+        <!-- Общая статистика -->
+        <div class="result-section">
+            <h3>📊 Общая статистика</h3>
+            <div class="stats" id="statsInfo"></div>
         </div>
+
+        <!-- Блок: созданные сегодня -->
+        <div class="result-section" id="todaySection" style="display: none;">
+            <h3>📅 Созданы сегодня (проверка пропущена)</h3>
+            <div class="highlight-box">
+                ⚠️ Эти записи созданы <strong>сегодня</strong> и физически не могли попасть в базу ОЕИ. Они будут проверены при следующей сверке (через сутки).
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead id="todayHeader"></thead>
+                    <tbody id="todayBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Блок: реально неотгруженные -->
+        <div class="result-section" id="missingSection" style="display: none;">
+            <h3>❌ Реально неотгруженные (созданы вчера и ранее)</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead id="missingHeader"></thead>
+                    <tbody id="missingBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Блок: успешно найденные -->
+        <div class="result-section" id="foundSection" style="display: none;">
+            <h3>✅ Найдены в базе ОЕИ (отгружены)</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead id="foundHeader"></thead>
+                    <tbody id="foundBody"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div style="margin-top: 20px;">
-            <button id="copyBtn" style="background: #2c3e66; margin-right: 10px;">📋 Копировать результат (CSV)</button>
-            <button id="downloadBtn" style="background: #2c3e66;">💾 Скачать результат (CSV)</button>
+            <button id="copyBtn" style="background: #2c3e66; margin-right: 10px;">📋 Копировать неотгруженные (CSV)</button>
+            <button id="downloadBtn" style="background: #2c3e66;">💾 Скачать неотгруженные (CSV)</button>
         </div>
     </div>
     <div class="footer">
-        Правило: номер документа из первого файла ищется в номере свидетельства из второго файла как подстрока (например, 223705 → 15-000223705-2026).<br>
-        Выводятся ПОЛНЫЕ строки из первого файла, для которых НЕ найдено совпадение.
+        <strong>Правила сверки (v2.0):</strong><br>
+        ✅ Совпадение засчитывается, если номер документа из Файла №1 входит в номер свидетельства Файла №2 <strong>И</strong> наименование СИ из Файла №1 входит в наименование СИ Файла №2.<br>
+        📅 Записи с датой создания «сегодня» исключаются из списка неотгруженных (т.к. база ОЕИ обновляется с задержкой ~1 сутки).
     </div>
 </div>
 
 <script>
     // Глобальные переменные
-    let firstData = [];       // массив строк (сырые строки)
-    let firstHeaders = [];    // заголовки CSV
-    let firstRows = [];       // строки разбитые по колонкам (для таблицы)
-    let secondCertNumbers = new Set(); // множество номеров свидетельств (из второго файла)
+    let firstHeaders = [];
+    let firstRows = [];
+    let firstRawLines = [];
+    let secondRecords = []; // массив объектов {certNumber, siname} из второго файла
     
-    // Парсинг CSV строки с учётом кавычек (простой вариант)
+    // Индексы ключевых колонок в первом файле
+    let docColIndex = -1;
+    let siNameColIndex = -1;
+    let dateColIndex = -1;
+    
+    // Индексы колонок во втором файле
+    let certColIndex2 = 0; // номер свидетельства (по умолчанию первая колонка)
+    let siNameColIndex2 = -1; // наименование СИ
+
+    // Результаты классификации
+    let todayRows = [];
+    let missingRows = [];
+    let foundRows = [];
+    
+    // Парсинг CSV строки с учётом кавычек
     function parseCSVLine(line) {
         const result = [];
         let inQuote = false;
@@ -246,7 +339,7 @@
         return result;
     }
 
-    // Очистка от BOM и лишних символов
+    // Очистка от BOM
     function cleanFirstChar(str) {
         if (str.charCodeAt(0) === 0xFEFF) return str.slice(1);
         return str;
@@ -262,49 +355,196 @@
         });
     }
 
+    // Нормализация строки для сравнения
+    function normalize(str) {
+        if (!str) return '';
+        return str.replace(/^"|"$/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    // Поиск колонки по ключевым словам
+    function findColumnIndex(headers, keywords) {
+        for (let i = 0; i < headers.length; i++) {
+            const h = normalize(headers[i]);
+            for (let kw of keywords) {
+                if (h.includes(kw)) return i;
+            }
+        }
+        return -1;
+    }
+
+    // Определение сегодняшней даты (строка в формате DD.MM.YYYY)
+    function getTodayString() {
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        return `${dd}.${mm}.${yyyy}`;
+    }
+
+    // Проверка, является ли дата сегодняшней
+    function isToday(dateStr) {
+        if (!dateStr) return false;
+        const cleaned = dateStr.replace(/^"|"$/g, '').trim();
+        // Поддерживаем форматы: DD.MM.YYYY, DD.MM.YYYY HH:MM:SS, YYYY-MM-DD и т.п.
+        const today = getTodayString();
+        // Прямое сравнение для формата DD.MM.YYYY
+        if (cleaned.startsWith(today)) return true;
+        // Попытка распарсить как дату
+        try {
+            const parsed = new Date(cleaned);
+            if (isNaN(parsed.getTime())) return false;
+            const now = new Date();
+            return parsed.getDate() === now.getDate() &&
+                   parsed.getMonth() === now.getMonth() &&
+                   parsed.getFullYear() === now.getFullYear();
+        } catch (e) {
+            return false;
+        }
+    }
+
     // Загрузка и парсинг ПЕРВОГО файла
     async function loadFirstFile(file) {
         const content = await readFileAsText(file);
         const cleanContent = cleanFirstChar(content);
         const lines = cleanContent.split(/\r?\n/).filter(l => l.trim().length > 0);
-        if (lines.length === 0) throw new Error('Файл пуст');
+        if (lines.length === 0) throw new Error('Файл №1 пуст');
         
-        // Заголовки
         const rawHeaders = lines[0].split(';');
         firstHeaders = rawHeaders.map(h => h.replace(/^"|"$/g, '').trim());
         
         firstRows = [];
-        firstData = [];
+        firstRawLines = [];
         for (let i = 1; i < lines.length; i++) {
             const rawLine = lines[i];
             const values = parseCSVLine(rawLine);
-            // сохраняем сырую строку для вывода
-            firstData.push(rawLine);
+            firstRawLines.push(rawLine);
             firstRows.push(values);
         }
         
-        return { headers: firstHeaders, rows: firstRows, rawLines: firstData, total: firstData.length };
+        // Поиск ключевых колонок
+        docColIndex = findColumnIndex(firstHeaders, ['номер документа', 'номердокумента', 'документ']);
+        siNameColIndex = findColumnIndex(firstHeaders, ['наименование', 'наименование си', 'средство измерени', 'тип си', 'си']);
+        dateColIndex = findColumnIndex(firstHeaders, ['дата создания', 'датасоздания', 'дата', 'дата поверки', 'date', 'created']);
+        
+        // Фолбэк для номера документа: поиск колонки с числами 5-7 цифр
+        if (docColIndex === -1) {
+            for (let i = 0; i < firstHeaders.length; i++) {
+                for (let r = 0; r < Math.min(5, firstRows.length); r++) {
+                    const val = firstRows[r][i];
+                    if (val && /^\d{5,7}$/.test(val.replace(/^"|"$/g, '').trim())) {
+                        docColIndex = i;
+                        break;
+                    }
+                }
+                if (docColIndex !== -1) break;
+            }
+        }
+        
+        if (docColIndex === -1) throw new Error('Не удалось определить колонку "Номер документа" в первом файле. Найденные заголовки: ' + firstHeaders.join(', '));
+        
+        return { 
+            headers: firstHeaders, 
+            rows: firstRows, 
+            rawLines: firstRawLines, 
+            total: firstRows.length,
+            docColIndex,
+            siNameColIndex,
+            dateColIndex
+        };
     }
 
-    // Загрузка и парсинг ВТОРОГО файла – извлекаем номера свидетельств (первая колонка обычно)
+    // Загрузка и парсинг ВТОРОГО файла
     async function loadSecondFile(file) {
         const content = await readFileAsText(file);
         const cleanContent = cleanFirstChar(content);
         const lines = cleanContent.split(/\r?\n/).filter(l => l.trim().length > 0);
-        if (lines.length === 0) throw new Error('Второй файл пуст');
+        if (lines.length === 0) throw new Error('Файл №2 пуст');
         
-        const certNumbers = new Set();
-        // Ищем колонку с номером свидетельства (чаще всего первая колонка, но перебором)
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const parts = parseCSVLine(line);
+        const rawHeaders = parseCSVLine(lines[0]);
+        const headers2 = rawHeaders.map(h => h.replace(/^"|"$/g, '').trim());
+        
+        // Поиск колонок во втором файле
+        certColIndex2 = findColumnIndex(headers2, ['номер свидетельства', 'свидетельство', 'номер', 'сертификат', 'cert']);
+        if (certColIndex2 === -1) certColIndex2 = 0; // по умолчанию первая колонка
+        
+        siNameColIndex2 = findColumnIndex(headers2, ['наименование', 'наименование си', 'средство измерени', 'тип си', 'си', 'name']);
+        
+        secondRecords = [];
+        for (let i = 1; i < lines.length; i++) {
+            const parts = parseCSVLine(lines[i]);
             if (parts.length > 0) {
-                let candidate = parts[0].replace(/^"|"$/g, '').trim();
-                if (candidate) certNumbers.add(candidate);
-                // дополнительно если в других колонках есть длинные номера — но по заданию номер свидетельства в первой колонке
+                const certNumber = parts[certColIndex2] ? parts[certColIndex2].replace(/^"|"$/g, '').trim() : '';
+                const siName = siNameColIndex2 >= 0 ? (parts[siNameColIndex2] || '').replace(/^"|"$/g, '').trim() : '';
+                if (certNumber) {
+                    secondRecords.push({
+                        certNumber: normalize(certNumber),
+                        siName: normalize(siName),
+                        originalCert: certNumber,
+                        originalSiName: siName
+                    });
+                }
             }
         }
-        return certNumbers;
+        
+        return { total: secondRecords.length, certColIndex: certColIndex2, siNameColIndex: siNameColIndex2 };
+    }
+
+    // Проверка совпадения: номер документа входит в номер свидетельства И наименование СИ входит в наименование СИ второго файла
+    function isFullMatch(docNumber, siName) {
+        const normDoc = normalize(docNumber);
+        const normSiName = normalize(siName);
+        
+        if (!normDoc) return false;
+        
+        for (let rec of secondRecords) {
+            const certMatch = rec.certNumber.includes(normDoc);
+            if (!certMatch) continue;
+            
+            // Если наименование СИ не указано в первом файле или во втором — считаем совпадением по номеру
+            if (!normSiName || !rec.siName) return true;
+            
+            // Проверяем вхождение наименования (в обе стороны)
+            if (normSiName.includes(rec.siName) || rec.siName.includes(normSiName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Классификация строк первого файла
+    function classifyRows() {
+        todayRows = [];
+        missingRows = [];
+        foundRows = [];
+        
+        const today = getTodayString();
+        
+        for (let i = 0; i < firstRows.length; i++) {
+            const row = firstRows[i];
+            const docNumber = row[docColIndex] ? row[docColIndex].replace(/^"|"$/g, '').trim() : '';
+            const siName = siNameColIndex >= 0 ? (row[siNameColIndex] || '').replace(/^"|"$/g, '').trim() : '';
+            const dateValue = dateColIndex >= 0 ? (row[dateColIndex] || '').replace(/^"|"$/g, '').trim() : '';
+            
+            // Проверка даты
+            if (isToday(dateValue)) {
+                todayRows.push({ index: i, row, docNumber, siName, date: dateValue });
+                continue;
+            }
+            
+            // Проверка совпадения
+            if (isFullMatch(docNumber, siName)) {
+                foundRows.push({ index: i, row, docNumber, siName, date: dateValue });
+            } else {
+                missingRows.push({ index: i, row, docNumber, siName, date: dateValue });
+            }
+        }
+        
+        return {
+            total: firstRows.length,
+            today: todayRows.length,
+            missing: missingRows.length,
+            found: foundRows.length
+        };
     }
 
     // Обновить предпросмотр
@@ -325,132 +565,98 @@
         reader.readAsText(file, 'UTF-8');
     }
 
-    // Поиск номера документа в номере свидетельства: из номера свидетельства извлекаем "чистую" часть
-    function isMatch(docNumber, certNumber) {
-        if (!docNumber || !certNumber) return false;
-        const docStr = String(docNumber).trim();
-        const certStr = String(certNumber).trim();
-        // Ищем полное вхождение docStr в certStr
-        return certStr.includes(docStr);
-    }
-
-    // Главная логика сравнения
-    function findMissing() {
-        if (!firstRows.length) throw new Error('Нет данных в первом файле');
-        if (secondCertNumbers.size === 0) throw new Error('Нет данных во втором файле (номера свидетельств)');
+    // Отрисовка таблицы
+    function renderTable(headers, rows, theadEl, tbodyEl) {
+        theadEl.innerHTML = '';
+        tbodyEl.innerHTML = '';
         
-        // Определяем индекс колонки "Номер документа" (разные варианты написания)
-        let docColIndex = -1;
-        const possibleNames = ['Номер документа', 'Номер документа', 'Документ', '№ документа', 'НомерДокумента'];
-        for (let i = 0; i < firstHeaders.length; i++) {
-            const h = firstHeaders[i].toLowerCase();
-            if (h.includes('номер документа') || h === 'номер документа' || h === 'документ') {
-                docColIndex = i;
-                break;
-            }
-        }
-        // если не нашли, пробуем последнюю надежду – колонка с номером 7 (индекс 7) по примеру
-        if (docColIndex === -1 && firstHeaders.length > 7) {
-            if (firstHeaders[7].toLowerCase().includes('номер') || firstHeaders[7].toLowerCase().includes('документ')) {
-                docColIndex = 7;
-            }
-        }
-        if (docColIndex === -1) {
-            // в крайнем случае: ищем колонку где есть "223705" подобное в первых строках
-            for (let i = 0; i < firstHeaders.length; i++) {
-                for (let r = 0; r < Math.min(3, firstRows.length); r++) {
-                    const val = firstRows[r][i];
-                    if (val && /^\d{5,7}$/.test(val)) {
-                        docColIndex = i;
-                        break;
-                    }
-                }
-                if (docColIndex !== -1) break;
-            }
-        }
-        if (docColIndex === -1) throw new Error('Не удалось определить колонку "Номер документа" в первом файле');
-        
-        const missingIndices = [];
-        for (let i = 0; i < firstRows.length; i++) {
-            const row = firstRows[i];
-            const docNumber = row[docColIndex] ? row[docColIndex].replace(/^'|'$/g, '').trim() : '';
-            if (!docNumber) continue;
-            
-            let found = false;
-            for (let cert of secondCertNumbers) {
-                if (isMatch(docNumber, cert)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                missingIndices.push(i);
-            }
-        }
-        return { missingIndices, docColIndex };
-    }
-
-    // Отрисовка результата
-    function renderResult(missingIndices, docColIndex) {
-        if (missingIndices.length === 0) {
-            document.getElementById('resultTitle').innerHTML = '✅ Все свидетельства отгружены';
-            document.getElementById('statsInfo').innerHTML = `<span class="success">🎉 Найдены все! Нет пропущенных строк.</span>`;
-            document.getElementById('resultTableWrapper').innerHTML = '<div style="padding: 20px; text-align:center;">Нет неотгруженных свидетельств</div>';
-            document.getElementById('resultContainer').style.display = 'block';
-            return;
-        }
-        
-        document.getElementById('resultTitle').innerHTML = `❌ Найдено ${missingIndices.length} неотгруженных записей`;
-        document.getElementById('statsInfo').innerHTML = `<span class="badge">Не отгружено: ${missingIndices.length}</span> из ${firstRows.length} записей в первом файле`;
-        
-        // Строим таблицу
-        const thead = document.getElementById('resultHeader');
-        const tbody = document.getElementById('resultBody');
-        thead.innerHTML = '';
-        tbody.innerHTML = '';
-        
-        // Заголовки
         let headerRow = '<tr>';
-        for (let h of firstHeaders) {
+        for (let h of headers) {
             headerRow += `<th>${escapeHtml(h)}</th>`;
         }
         headerRow += '</tr>';
-        thead.innerHTML = headerRow;
+        theadEl.innerHTML = headerRow;
         
-        // Строки
-        for (let idx of missingIndices) {
-            const row = firstRows[idx];
+        for (let item of rows) {
             let tr = '<tr>';
-            for (let cell of row) {
+            for (let cell of item.row) {
                 tr += `<td>${escapeHtml(cell)}</td>`;
             }
             tr += '</tr>';
-            tbody.innerHTML += tr;
+            tbodyEl.innerHTML += tr;
+        }
+    }
+
+    // Отрисовка всех результатов
+    function renderAllResults(stats) {
+        document.getElementById('resultContainer').style.display = 'block';
+        
+        // Общая статистика
+        let statsHtml = '';
+        statsHtml += `<span class="badge badge-info">Всего записей: ${stats.total}</span>`;
+        statsHtml += `<span class="badge badge-success">Найдено (отгружено): ${stats.found}</span>`;
+        statsHtml += `<span class="badge badge-danger">Не отгружено: ${stats.missing}</span>`;
+        statsHtml += `<span class="badge badge-warning">Созданы сегодня: ${stats.today}</span>`;
+        document.getElementById('statsInfo').innerHTML = statsHtml;
+        
+        // Блок "Созданы сегодня"
+        const todaySection = document.getElementById('todaySection');
+        if (todayRows.length > 0) {
+            todaySection.style.display = 'block';
+            renderTable(firstHeaders, todayRows, document.getElementById('todayHeader'), document.getElementById('todayBody'));
+        } else {
+            todaySection.style.display = 'none';
         }
         
-        document.getElementById('resultContainer').style.display = 'block';
+        // Блок "Неотгруженные"
+        const missingSection = document.getElementById('missingSection');
+        if (missingRows.length > 0) {
+            missingSection.style.display = 'block';
+            renderTable(firstHeaders, missingRows, document.getElementById('missingHeader'), document.getElementById('missingBody'));
+        } else {
+            missingSection.style.display = 'none';
+            if (todayRows.length === 0 && missingRows.length === 0) {
+                missingSection.style.display = 'block';
+                document.getElementById('missingHeader').innerHTML = '';
+                document.getElementById('missingBody').innerHTML = '<tr><td colspan="100%" style="text-align:center;padding:20px;">✅ Все записи (кроме сегодняшних) успешно найдены в базе ОЕИ</td></tr>';
+            }
+        }
+        
+        // Блок "Найденные"
+        const foundSection = document.getElementById('foundSection');
+        if (foundRows.length > 0 && foundRows.length <= 100) {
+            foundSection.style.display = 'block';
+            renderTable(firstHeaders, foundRows, document.getElementById('foundHeader'), document.getElementById('foundBody'));
+        } else if (foundRows.length > 100) {
+            foundSection.style.display = 'block';
+            document.getElementById('foundHeader').innerHTML = '';
+            document.getElementById('foundBody').innerHTML = `<tr><td colspan="100%" style="text-align:center;padding:20px;">Найдено ${foundRows.length} записей (слишком много для отображения). Все они успешно сопоставлены.</td></tr>`;
+        } else {
+            foundSection.style.display = 'none';
+        }
+        
+        // Сохраняем missingRows для экспорта
+        window._lastMissingRows = missingRows;
+        window._lastTodayRows = todayRows;
     }
-    
-    // Экспорт CSV для скачивания (полные строки из первого файла для пропущенных)
-    function getMissingCSV(missingIndices) {
+
+    // Экспорт CSV
+    function getMissingCSV(rows) {
         let csvRows = [];
-        // Заголовки
         csvRows.push(firstHeaders.join(';'));
-        for (let idx of missingIndices) {
-            csvRows.push(firstData[idx]);
+        for (let item of rows) {
+            csvRows.push(firstRawLines[item.index]);
         }
         return csvRows.join('\n');
     }
-    
+
     function escapeHtml(str) {
         if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
+        return String(str).replace(/[&<>]/g, function(m) {
             if (m === '&') return '&amp;';
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
 
@@ -470,49 +676,50 @@
             return;
         }
         
+        const btn = document.getElementById('compareBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Сравниваем...';
+        
         try {
-            // Загружаем первый файл
             const firstResult = await loadFirstFile(file1);
-            // Загружаем второй файл
-            secondCertNumbers = await loadSecondFile(file2);
+            const secondResult = await loadSecondFile(file2);
             
-            if (firstResult.total === 0) throw new Error('Первый файл не содержит данных');
-            if (secondCertNumbers.size === 0) throw new Error('Второй файл не содержит номеров свидетельств');
+            if (firstResult.total === 0) throw new Error('Файл №1 не содержит данных');
+            if (secondResult.total === 0) throw new Error('Файл №2 не содержит данных');
             
-            // Сравнение
-            const { missingIndices, docColIndex } = findMissing();
-            renderResult(missingIndices, docColIndex);
-            
-            // Сохраняем missingIndices для копирования/скачивания
-            window._lastMissingIndices = missingIndices;
+            const stats = classifyRows();
+            renderAllResults(stats);
             
         } catch (err) {
             alert('Ошибка: ' + err.message);
             console.error(err);
             document.getElementById('resultContainer').style.display = 'block';
-            document.getElementById('resultTitle').innerHTML = 'Ошибка';
             document.getElementById('statsInfo').innerHTML = `<div class="error">${err.message}</div>`;
-            document.getElementById('resultTableWrapper').innerHTML = '';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🚀 Сравнить и найти неотгруженные';
         }
     });
     
     document.getElementById('copyBtn').addEventListener('click', () => {
-        if (!window._lastMissingIndices || window._lastMissingIndices.length === 0) {
-            alert('Нет данных для копирования');
+        const rows = window._lastMissingRows || [];
+        if (rows.length === 0) {
+            alert('Нет неотгруженных записей для копирования');
             return;
         }
-        const csv = getMissingCSV(window._lastMissingIndices);
+        const csv = getMissingCSV(rows);
         navigator.clipboard.writeText(csv).then(() => {
-            alert('CSV скопирован в буфер обмена');
+            alert('CSV с неотгруженными записями скопирован в буфер обмена');
         }).catch(() => alert('Не удалось скопировать'));
     });
     
     document.getElementById('downloadBtn').addEventListener('click', () => {
-        if (!window._lastMissingIndices || window._lastMissingIndices.length === 0) {
-            alert('Нет данных для скачивания');
+        const rows = window._lastMissingRows || [];
+        if (rows.length === 0) {
+            alert('Нет неотгруженных записей для скачивания');
             return;
         }
-        const csv = getMissingCSV(window._lastMissingIndices);
+        const csv = getMissingCSV(rows);
         const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);

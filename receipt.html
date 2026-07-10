@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сравнение свидетельств о поверке (v2.0)</title>
+    <title>Сравнение свидетельств о поверке (v3.0)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -130,7 +130,7 @@
             font-weight: 500;
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
         }
         .table-wrapper {
@@ -171,6 +171,7 @@
             font-size: 13px;
             font-weight: bold;
             display: inline-block;
+            white-space: nowrap;
         }
         .badge-danger {
             background: #e94560;
@@ -185,6 +186,9 @@
         .badge-info {
             background: #0f3460;
         }
+        .badge-purple {
+            background: #6f42c1;
+        }
         .footer {
             margin-top: 30px;
             text-align: center;
@@ -198,19 +202,6 @@
             border-radius: 10px;
             margin-top: 15px;
         }
-        .success {
-            color: #2a7f6e;
-            background: #e0f2f1;
-            padding: 10px;
-            border-radius: 8px;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 20px 0 10px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #dee2e6;
-        }
         .highlight-box {
             background: #fff3cd;
             border-left: 4px solid #f0ad4e;
@@ -218,12 +209,36 @@
             border-radius: 8px;
             margin-bottom: 15px;
         }
+        .highlight-box-purple {
+            background: #f3e8ff;
+            border-left: 4px solid #6f42c1;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .highlight-box-red {
+            background: #ffe6e9;
+            border-left: 4px solid #e94560;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .match-detail {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 4px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🔍 Сравнение реестра поверок (v2.0)</h1>
-    <p class="subtitle">Сверка по номеру документа + наименованию СИ • Записи за сегодня исключаются из проверки</p>
+    <h1>🔍 Сравнение реестра поверок (v3.0)</h1>
+    <p class="subtitle">
+        ✅ Полное совпадение = отгружено &nbsp;|&nbsp;
+        🟣 Совпал номер, но не наименование = чужое свидетельство &nbsp;|&nbsp;
+        ❌ Номер не найден = не отгружено
+    </p>
     <div class="upload-panel">
         <div class="upload-box">
             <h3>📁 Файл №1 (База белгим)</h3>
@@ -264,9 +279,12 @@
             </div>
         </div>
 
-        <!-- Блок: реально неотгруженные -->
+        <!-- Блок: не отгружено (номер не найден) -->
         <div class="result-section" id="missingSection" style="display: none;">
-            <h3>❌ Реально неотгруженные (созданы вчера и ранее)</h3>
+            <h3>❌ Не отгружено (номер документа не найден в базе ОЕИ)</h3>
+            <div class="highlight-box-red">
+                🔴 Для этих записей <strong>номер документа вообще не найден</strong> ни в одном свидетельстве из базы ОЕИ. Свидетельство не отгружено.
+            </div>
             <div class="table-wrapper">
                 <table>
                     <thead id="missingHeader"></thead>
@@ -275,9 +293,23 @@
             </div>
         </div>
 
-        <!-- Блок: успешно найденные -->
+        <!-- Блок: чужое свидетельство (номер совпал, наименование нет) -->
+        <div class="result-section" id="foreignSection" style="display: none;">
+            <h3>🟣 Отгружено чужое свидетельство (номер совпал, наименование СИ разное)</h3>
+            <div class="highlight-box-purple">
+                🟣 Для этих записей <strong>номер документа найден</strong> в базе ОЕИ, но <strong>наименование средства измерения не совпадает</strong>. Возможно, отгружено свидетельство на другое СИ с таким же номером.
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead id="foreignHeader"></thead>
+                    <tbody id="foreignBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Блок: успешно отгружено (полное совпадение) -->
         <div class="result-section" id="foundSection" style="display: none;">
-            <h3>✅ Найдены в базе ОЕИ (отгружены)</h3>
+            <h3>✅ Отгружено (номер + наименование совпали)</h3>
             <div class="table-wrapper">
                 <table>
                     <thead id="foundHeader"></thead>
@@ -286,15 +318,18 @@
             </div>
         </div>
 
-        <div style="margin-top: 20px;">
-            <button id="copyBtn" style="background: #2c3e66; margin-right: 10px;">📋 Копировать неотгруженные (CSV)</button>
-            <button id="downloadBtn" style="background: #2c3e66;">💾 Скачать неотгруженные (CSV)</button>
+        <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;">
+            <button id="copyMissingBtn" style="background: #c72a48;">📋 Копировать неотгруженные</button>
+            <button id="copyForeignBtn" style="background: #6f42c1;">📋 Копировать чужие</button>
+            <button id="downloadAllBtn" style="background: #2c3e66;">💾 Скачать все проблемы (CSV)</button>
         </div>
     </div>
     <div class="footer">
-        <strong>Правила сверки (v2.0):</strong><br>
-        ✅ Совпадение засчитывается, если номер документа из Файла №1 входит в номер свидетельства Файла №2 <strong>И</strong> наименование СИ из Файла №1 входит в наименование СИ Файла №2.<br>
-        📅 Записи с датой создания «сегодня» исключаются из списка неотгруженных (т.к. база ОЕИ обновляется с задержкой ~1 сутки).
+        <strong>Правила сверки (v3.0):</strong><br>
+        ✅ <strong>Отгружено</strong> — номер документа найден в номере свидетельства И наименование СИ совпадает<br>
+        🟣 <strong>Чужое свидетельство</strong> — номер найден, но наименование СИ разное (риск: отгрузилось свидетельство на другое СИ)<br>
+        ❌ <strong>Не отгружено</strong> — номер документа вообще не найден в базе ОЕИ<br>
+        📅 Записи с датой создания «сегодня» исключаются из проверки
     </div>
 </div>
 
@@ -303,21 +338,20 @@
     let firstHeaders = [];
     let firstRows = [];
     let firstRawLines = [];
-    let secondRecords = []; // массив объектов {certNumber, siname} из второго файла
+    let secondRecords = [];
     
-    // Индексы ключевых колонок в первом файле
     let docColIndex = -1;
     let siNameColIndex = -1;
     let dateColIndex = -1;
     
-    // Индексы колонок во втором файле
-    let certColIndex2 = 0; // номер свидетельства (по умолчанию первая колонка)
-    let siNameColIndex2 = -1; // наименование СИ
+    let certColIndex2 = 0;
+    let siNameColIndex2 = -1;
 
     // Результаты классификации
     let todayRows = [];
-    let missingRows = [];
-    let foundRows = [];
+    let missingRows = [];      // номер не найден
+    let foreignRows = [];      // номер найден, наименование не совпало
+    let foundRows = [];        // полное совпадение
     
     // Парсинг CSV строки с учётом кавычек
     function parseCSVLine(line) {
@@ -339,13 +373,11 @@
         return result;
     }
 
-    // Очистка от BOM
     function cleanFirstChar(str) {
         if (str.charCodeAt(0) === 0xFEFF) return str.slice(1);
         return str;
     }
 
-    // Чтение файла как текст
     function readFileAsText(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -355,13 +387,11 @@
         });
     }
 
-    // Нормализация строки для сравнения
     function normalize(str) {
         if (!str) return '';
         return str.replace(/^"|"$/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
     }
 
-    // Поиск колонки по ключевым словам
     function findColumnIndex(headers, keywords) {
         for (let i = 0; i < headers.length; i++) {
             const h = normalize(headers[i]);
@@ -372,7 +402,6 @@
         return -1;
     }
 
-    // Определение сегодняшней даты (строка в формате DD.MM.YYYY)
     function getTodayString() {
         const now = new Date();
         const dd = String(now.getDate()).padStart(2, '0');
@@ -381,15 +410,11 @@
         return `${dd}.${mm}.${yyyy}`;
     }
 
-    // Проверка, является ли дата сегодняшней
     function isToday(dateStr) {
         if (!dateStr) return false;
         const cleaned = dateStr.replace(/^"|"$/g, '').trim();
-        // Поддерживаем форматы: DD.MM.YYYY, DD.MM.YYYY HH:MM:SS, YYYY-MM-DD и т.п.
         const today = getTodayString();
-        // Прямое сравнение для формата DD.MM.YYYY
         if (cleaned.startsWith(today)) return true;
-        // Попытка распарсить как дату
         try {
             const parsed = new Date(cleaned);
             if (isNaN(parsed.getTime())) return false;
@@ -402,7 +427,6 @@
         }
     }
 
-    // Загрузка и парсинг ПЕРВОГО файла
     async function loadFirstFile(file) {
         const content = await readFileAsText(file);
         const cleanContent = cleanFirstChar(content);
@@ -421,12 +445,10 @@
             firstRows.push(values);
         }
         
-        // Поиск ключевых колонок
         docColIndex = findColumnIndex(firstHeaders, ['номер документа', 'номердокумента', 'документ']);
-        siNameColIndex = findColumnIndex(firstHeaders, ['наименование', 'наименование си', 'средство измерени', 'тип си', 'си']);
+        siNameColIndex = findColumnIndex(firstHeaders, ['наименование', 'наименование си', 'средство измерени', 'тип си', 'си', 'наименование средства']);
         dateColIndex = findColumnIndex(firstHeaders, ['дата создания', 'датасоздания', 'дата', 'дата поверки', 'date', 'created']);
         
-        // Фолбэк для номера документа: поиск колонки с числами 5-7 цифр
         if (docColIndex === -1) {
             for (let i = 0; i < firstHeaders.length; i++) {
                 for (let r = 0; r < Math.min(5, firstRows.length); r++) {
@@ -453,7 +475,6 @@
         };
     }
 
-    // Загрузка и парсинг ВТОРОГО файла
     async function loadSecondFile(file) {
         const content = await readFileAsText(file);
         const cleanContent = cleanFirstChar(content);
@@ -463,9 +484,8 @@
         const rawHeaders = parseCSVLine(lines[0]);
         const headers2 = rawHeaders.map(h => h.replace(/^"|"$/g, '').trim());
         
-        // Поиск колонок во втором файле
         certColIndex2 = findColumnIndex(headers2, ['номер свидетельства', 'свидетельство', 'номер', 'сертификат', 'cert']);
-        if (certColIndex2 === -1) certColIndex2 = 0; // по умолчанию первая колонка
+        if (certColIndex2 === -1) certColIndex2 = 0;
         
         siNameColIndex2 = findColumnIndex(headers2, ['наименование', 'наименование си', 'средство измерени', 'тип си', 'си', 'name']);
         
@@ -489,35 +509,41 @@
         return { total: secondRecords.length, certColIndex: certColIndex2, siNameColIndex: siNameColIndex2 };
     }
 
-    // Проверка совпадения: номер документа входит в номер свидетельства И наименование СИ входит в наименование СИ второго файла
-    function isFullMatch(docNumber, siName) {
+    // Новая функция сравнения с тремя вариантами результата
+    function checkMatch(docNumber, siName) {
         const normDoc = normalize(docNumber);
         const normSiName = normalize(siName);
         
-        if (!normDoc) return false;
+        if (!normDoc) return { status: 'missing', matchedCert: null, matchedSiName: null };
         
+        // Ищем совпадение по номеру
         for (let rec of secondRecords) {
-            const certMatch = rec.certNumber.includes(normDoc);
-            if (!certMatch) continue;
-            
-            // Если наименование СИ не указано в первом файле или во втором — считаем совпадением по номеру
-            if (!normSiName || !rec.siName) return true;
-            
-            // Проверяем вхождение наименования (в обе стороны)
-            if (normSiName.includes(rec.siName) || rec.siName.includes(normSiName)) {
-                return true;
+            if (rec.certNumber.includes(normDoc)) {
+                // Номер найден! Проверяем наименование
+                if (!normSiName || !rec.siName) {
+                    // Нет данных для сравнения наименования — считаем полным совпадением
+                    return { status: 'found', matchedCert: rec.originalCert, matchedSiName: rec.originalSiName };
+                }
+                
+                if (normSiName.includes(rec.siName) || rec.siName.includes(normSiName)) {
+                    // Наименование совпало — полное совпадение
+                    return { status: 'found', matchedCert: rec.originalCert, matchedSiName: rec.originalSiName };
+                } else {
+                    // Номер совпал, но наименование разное — чужое свидетельство
+                    return { status: 'foreign', matchedCert: rec.originalCert, matchedSiName: rec.originalSiName };
+                }
             }
         }
-        return false;
+        
+        // Номер вообще не найден
+        return { status: 'missing', matchedCert: null, matchedSiName: null };
     }
 
-    // Классификация строк первого файла
     function classifyRows() {
         todayRows = [];
         missingRows = [];
+        foreignRows = [];
         foundRows = [];
-        
-        const today = getTodayString();
         
         for (let i = 0; i < firstRows.length; i++) {
             const row = firstRows[i];
@@ -527,15 +553,24 @@
             
             // Проверка даты
             if (isToday(dateValue)) {
-                todayRows.push({ index: i, row, docNumber, siName, date: dateValue });
+                todayRows.push({ index: i, row, docNumber, siName, date: dateValue, matchInfo: null });
                 continue;
             }
             
-            // Проверка совпадения
-            if (isFullMatch(docNumber, siName)) {
-                foundRows.push({ index: i, row, docNumber, siName, date: dateValue });
-            } else {
-                missingRows.push({ index: i, row, docNumber, siName, date: dateValue });
+            const match = checkMatch(docNumber, siName);
+            
+            const record = { index: i, row, docNumber, siName, date: dateValue, matchInfo: match };
+            
+            switch (match.status) {
+                case 'found':
+                    foundRows.push(record);
+                    break;
+                case 'foreign':
+                    foreignRows.push(record);
+                    break;
+                case 'missing':
+                    missingRows.push(record);
+                    break;
             }
         }
         
@@ -543,11 +578,11 @@
             total: firstRows.length,
             today: todayRows.length,
             missing: missingRows.length,
+            foreign: foreignRows.length,
             found: foundRows.length
         };
     }
 
-    // Обновить предпросмотр
     function updatePreview(fileInput, previewDiv, infoDiv) {
         const file = fileInput.files[0];
         if (!file) {
@@ -565,14 +600,16 @@
         reader.readAsText(file, 'UTF-8');
     }
 
-    // Отрисовка таблицы
-    function renderTable(headers, rows, theadEl, tbodyEl) {
+    function renderTable(headers, rows, theadEl, tbodyEl, showMatchInfo = false) {
         theadEl.innerHTML = '';
         tbodyEl.innerHTML = '';
         
         let headerRow = '<tr>';
         for (let h of headers) {
             headerRow += `<th>${escapeHtml(h)}</th>`;
+        }
+        if (showMatchInfo) {
+            headerRow += '<th>Найдено в базе ОЕИ</th>';
         }
         headerRow += '</tr>';
         theadEl.innerHTML = headerRow;
@@ -582,21 +619,28 @@
             for (let cell of item.row) {
                 tr += `<td>${escapeHtml(cell)}</td>`;
             }
+            if (showMatchInfo && item.matchInfo) {
+                if (item.matchInfo.matchedCert) {
+                    tr += `<td>Свидетельство: ${escapeHtml(item.matchInfo.matchedCert)}<br>СИ: ${escapeHtml(item.matchInfo.matchedSiName || '—')}</td>`;
+                } else {
+                    tr += '<td>—</td>';
+                }
+            }
             tr += '</tr>';
             tbodyEl.innerHTML += tr;
         }
     }
 
-    // Отрисовка всех результатов
     function renderAllResults(stats) {
         document.getElementById('resultContainer').style.display = 'block';
         
         // Общая статистика
         let statsHtml = '';
         statsHtml += `<span class="badge badge-info">Всего записей: ${stats.total}</span>`;
-        statsHtml += `<span class="badge badge-success">Найдено (отгружено): ${stats.found}</span>`;
-        statsHtml += `<span class="badge badge-danger">Не отгружено: ${stats.missing}</span>`;
-        statsHtml += `<span class="badge badge-warning">Созданы сегодня: ${stats.today}</span>`;
+        statsHtml += `<span class="badge badge-success">✅ Отгружено: ${stats.found}</span>`;
+        statsHtml += `<span class="badge badge-purple">🟣 Чужие: ${stats.foreign}</span>`;
+        statsHtml += `<span class="badge badge-danger">❌ Не отгружено: ${stats.missing}</span>`;
+        statsHtml += `<span class="badge badge-warning">📅 Сегодня: ${stats.today}</span>`;
         document.getElementById('statsInfo').innerHTML = statsHtml;
         
         // Блок "Созданы сегодня"
@@ -608,25 +652,29 @@
             todaySection.style.display = 'none';
         }
         
-        // Блок "Неотгруженные"
+        // Блок "Не отгружено"
         const missingSection = document.getElementById('missingSection');
         if (missingRows.length > 0) {
             missingSection.style.display = 'block';
             renderTable(firstHeaders, missingRows, document.getElementById('missingHeader'), document.getElementById('missingBody'));
         } else {
             missingSection.style.display = 'none';
-            if (todayRows.length === 0 && missingRows.length === 0) {
-                missingSection.style.display = 'block';
-                document.getElementById('missingHeader').innerHTML = '';
-                document.getElementById('missingBody').innerHTML = '<tr><td colspan="100%" style="text-align:center;padding:20px;">✅ Все записи (кроме сегодняшних) успешно найдены в базе ОЕИ</td></tr>';
-            }
         }
         
-        // Блок "Найденные"
+        // Блок "Чужое свидетельство"
+        const foreignSection = document.getElementById('foreignSection');
+        if (foreignRows.length > 0) {
+            foreignSection.style.display = 'block';
+            renderTable(firstHeaders, foreignRows, document.getElementById('foreignHeader'), document.getElementById('foreignBody'), true);
+        } else {
+            foreignSection.style.display = 'none';
+        }
+        
+        // Блок "Отгружено"
         const foundSection = document.getElementById('foundSection');
         if (foundRows.length > 0 && foundRows.length <= 100) {
             foundSection.style.display = 'block';
-            renderTable(firstHeaders, foundRows, document.getElementById('foundHeader'), document.getElementById('foundBody'));
+            renderTable(firstHeaders, foundRows, document.getElementById('foundHeader'), document.getElementById('foundBody'), true);
         } else if (foundRows.length > 100) {
             foundSection.style.display = 'block';
             document.getElementById('foundHeader').innerHTML = '';
@@ -635,13 +683,21 @@
             foundSection.style.display = 'none';
         }
         
-        // Сохраняем missingRows для экспорта
+        // Если всё отгружено и нет проблем
+        if (missingRows.length === 0 && foreignRows.length === 0 && todayRows.length === 0) {
+            missingSection.style.display = 'block';
+            document.getElementById('missingHeader').innerHTML = '';
+            document.getElementById('missingBody').innerHTML = '<tr><td colspan="100%" style="text-align:center;padding:20px;">✅ Все записи успешно отгружены! Проблем не обнаружено.</td></tr>';
+            document.querySelector('#missingSection .highlight-box-red').style.display = 'none';
+        }
+        
+        // Сохраняем для экспорта
         window._lastMissingRows = missingRows;
+        window._lastForeignRows = foreignRows;
         window._lastTodayRows = todayRows;
     }
 
-    // Экспорт CSV
-    function getMissingCSV(rows) {
+    function getCSV(rows) {
         let csvRows = [];
         csvRows.push(firstHeaders.join(';'));
         for (let item of rows) {
@@ -701,30 +757,48 @@
         }
     });
     
-    document.getElementById('copyBtn').addEventListener('click', () => {
+    // Кнопка: копировать неотгруженные
+    document.getElementById('copyMissingBtn').addEventListener('click', () => {
         const rows = window._lastMissingRows || [];
         if (rows.length === 0) {
             alert('Нет неотгруженных записей для копирования');
             return;
         }
-        const csv = getMissingCSV(rows);
+        const csv = getCSV(rows);
         navigator.clipboard.writeText(csv).then(() => {
-            alert('CSV с неотгруженными записями скопирован в буфер обмена');
+            alert(`Скопировано ${rows.length} неотгруженных записей`);
         }).catch(() => alert('Не удалось скопировать'));
     });
     
-    document.getElementById('downloadBtn').addEventListener('click', () => {
-        const rows = window._lastMissingRows || [];
+    // Кнопка: копировать чужие
+    document.getElementById('copyForeignBtn').addEventListener('click', () => {
+        const rows = window._lastForeignRows || [];
         if (rows.length === 0) {
-            alert('Нет неотгруженных записей для скачивания');
+            alert('Нет записей с чужими свидетельствами для копирования');
             return;
         }
-        const csv = getMissingCSV(rows);
+        const csv = getCSV(rows);
+        navigator.clipboard.writeText(csv).then(() => {
+            alert(`Скопировано ${rows.length} записей с чужими свидетельствами`);
+        }).catch(() => alert('Не удалось скопировать'));
+    });
+    
+    // Кнопка: скачать все проблемы
+    document.getElementById('downloadAllBtn').addEventListener('click', () => {
+        const allProblems = [
+            ...(window._lastMissingRows || []),
+            ...(window._lastForeignRows || [])
+        ];
+        if (allProblems.length === 0) {
+            alert('Нет проблемных записей для скачивания');
+            return;
+        }
+        const csv = getCSV(allProblems);
         const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.href = url;
-        link.setAttribute('download', 'neotgruzhennye.csv');
+        link.setAttribute('download', 'vse_problemy.csv');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
